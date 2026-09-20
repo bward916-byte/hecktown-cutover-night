@@ -1,0 +1,1 @@
+{ "shell": "shell.html", "modules": ["01-walk-engine.js","02-map.js","03-game.js","04-draw-people.js","05-draw-world.js","06-ui.js"] }
