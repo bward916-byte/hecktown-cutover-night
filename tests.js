@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -24,7 +24,7 @@ function route(from,to){ // BFS over nodes
     for(const L of MAP.links) for(const [a,b,iy] of [[L.lo,L.hi,-1],[L.hi,L.lo,1]]) if(a.node===n&&!prev.has(b.node)){ prev.set(b.node,{from:n,link:L,iy:iy,end:a}); q.push(b.node); } }
   const out=[]; let n=to; while(prev.get(n)){ out.unshift(prev.get(n)); n=prev.get(n).from; } return out;
 }
-function step(G,ix,iy){ GM.update(G,ix,iy,DT); checkPose(G); G.events.length=0; }
+function step(G,ix,iy){ GM.update(G,ix,iy,DT); checkPose(G); G.events.length=0; if(G.card) G.card.t=G.card.dur; if(G.dialog&&G.dialog.cine) GM.advance(G,null); }   // the bot skips cutscenes
 function closeDialog(G){ let n=0; while(G.dialog&&n++<40){ if(G.dialog.choices&&G.dialog.i>=G.dialog.pages.length-1) GM.advance(G,0); else GM.advance(G,null); } }
 function walkTo(G,x,limit){
   let t=0; limit=limit||90;
@@ -111,6 +111,7 @@ section('full playthrough');
   talkTo(G,'aaron'); useAt(G,'gar_loft',770,'item'); talkTo(G,'aaron'); ok(S.signoffs.Network,'network');
   talkTo(G,'dave'); useAt(G,'wh_mezz',3080,'item'); talkTo(G,'dave'); ok(S.signoffs.Backup,'backup');
   talkTo(G,'pam'); useAt(G,'wh_cat',2990,'item'); talkTo(G,'melissa'); ok(S.signoffs.Catalog,'catalog');
+  talkTo(G,'pam'); ok(S.flags.skuOn,'Pam hands over the SKU list'); for(const k of GM.STORY.SKUS){ ok(goTo(G,'ground',k.x),'reach '+k.label); ok(G.target&&G.target.kind==='sku','scan target '+k.label); GM.interact(G); } ok(S.flags.skuDone,'three mis-slots fixed');
   talkTo(G,'umesh'); talkTo(G,'rosa'); talkTo(G,'umesh'); ok(S.signoffs.EDI,'edi');
   talkTo(G,'ash'); talkTo(G,'tina'); talkTo(G,'ash'); ok(S.signoffs.Storefront,'storefront');
   talkTo(G,'john'); for(const t of GM.TERMS) useAt(G,t.node,t.x,'term'); talkTo(G,'john'); ok(S.signoffs.Jobs,'jobs');
@@ -118,6 +119,8 @@ section('full playthrough');
   talkTo(G,'greg'); let got=0; GM.PAGES.forEach((pg,i)=>{ if(got<6&&pg[0]!=='tun_2'&&pg[0]!=='tun_3'){ useAt(G,pg[0],pg[1],'page'); got++; } });
   talkTo(G,'greg'); ok(S.inv.tunnelkey,'tunnel key');
   ok(goTo(G,'tun_3',2000),'reach the deep level through the tunnels and the crawl'); useAt(G,'tun_3',2110,'aplus'); ok(S.done,'ending reached');
+  ok(S.flags.ch1&&S.flags.halfway&&S.flags.ch3&&S.flags.ch4,'chapter cards and the halfway call all played'); ok(S.flags.reveal,'the Server Room reveal played'); ok(S.flags.ap_so6&&S.flags.ap_badge,'A+ spoke up along the way');
+  ok(['rianan','aaron','dave','ash','umesh','john','hero'].every(id=>S.flags['vig_'+id]),'vignettes played ('+Object.keys(S.flags).filter(k=>k.indexOf('vig_')===0).join(',')+')');
   console.log('  main line done at '+GM.percent(S)+'%, clock '+GM.clock(S)+', '+Math.round(S.time/60)+' bot-minutes');
   // 100%: everything else
   GM.PAGES.forEach((pg,i)=>{ if(!S.pages[i]) useAt(G,pg[0],pg[1],'page'); });
