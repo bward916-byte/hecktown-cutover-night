@@ -30,7 +30,11 @@ function headShape(ctx,R,f){
 function head(ctx,P,look,C,opt){
   opt=opt||{}; const F=P.face, R=CFG.headR, st=look.style, f=faceOf(look), t=(opt.t||0)+f.phase;
   ctx.save(); ctx.translate(P.head.x,P.head.y+1.2); ctx.rotate(P.head.a); ctx.scale(F*1.16,1.16); ctx.translate(0,-1.2); ctx.lineWidth=1.0; ctx.strokeStyle=INK; ctx.lineJoin='round';
-  if(st==='ponytail'){ ctx.beginPath(); ctx.moveTo(-R+1,-2); ctx.quadraticCurveTo(-R-7,1,-R-4,9); ctx.lineWidth=3.4; ctx.strokeStyle=INK; ctx.stroke(); ctx.lineWidth=2.2; ctx.strokeStyle=look.hair; ctx.stroke(); ctx.lineWidth=1.1; ctx.strokeStyle=INK; }
+  if(st==='ponytail'){ const k=look.pony||1, ax=-R+1, ay=-2;                       // same tail, scaled up for a bigger one
+    ctx.beginPath(); ctx.moveTo(ax,ay); ctx.quadraticCurveTo(ax-8*k,ay+3*k,ax-5*k,ay+11*k); ctx.lineWidth=3.4*k; ctx.strokeStyle=INK; ctx.stroke(); ctx.lineWidth=3.4*k-1.2; ctx.strokeStyle=look.hair; ctx.stroke();
+    if(k>1){ ctx.beginPath(); ctx.moveTo(ax-1.2*k,ay+0.6*k); ctx.quadraticCurveTo(ax-6.5*k,ay+3.4*k,ax-4.6*k,ay+9.5*k); ctx.lineWidth=0.6; ctx.strokeStyle=f.hairDark; ctx.stroke();
+      ctx.beginPath(); ctx.arc(ax-0.8,ay+0.5,1.3,0,7); ctx.fillStyle='#c25a3a'; ctx.fill(); }
+    ctx.lineWidth=1.1; ctx.strokeStyle=INK; }
   if(st==='bun'){ ctx.beginPath(); ctx.arc(-R+0.5,-R+1.5,2.9,0,7); ctx.fillStyle=look.hair; ctx.fill(); ctx.stroke(); }
   if(st==='hoodie'){ ctx.beginPath(); ctx.arc(-1.2,0.6,R+2.2,Math.PI*0.55,Math.PI*1.75); ctx.lineTo(-1,0); ctx.closePath(); ctx.fillStyle=look.shirt; ctx.fill(); ctx.stroke(); }
   headShape(ctx,R,f); ctx.fillStyle=C.skin; ctx.fill(); ctx.stroke();
@@ -58,7 +62,8 @@ function head(ctx,P,look,C,opt){
   if(st!=='beard'||opt.talk){ const open=opt.talk?Math.max(0,Math.sin(t*13))*1.3+0.25:0, my=4.5;
     if(open>0.3){ ctx.beginPath(); ctx.ellipse(5.2,my+0.2,1.2,open,0.1,0,7); ctx.fillStyle='#5a1f1f'; ctx.fill(); ctx.lineWidth=0.7; ctx.stroke(); }
     else{ ctx.beginPath(); ctx.moveTo(6.2,my); ctx.quadraticCurveTo(5.0,my+(opt.happy?1.5:0.35+f.lip*0.4),3.7,my+(opt.happy?-0.2:0.25)); ctx.lineWidth=0.9; ctx.stroke(); } }
-  if(look.acc==='glasses'){ ctx.beginPath(); ctx.arc(ex+0.2,ey,2.3,0,7); ctx.moveTo(ex-2.1,ey-0.3); ctx.lineTo(-0.6,0.1); ctx.lineWidth=0.55; ctx.stroke(); ctx.fillStyle='rgba(200,230,255,.16)'; ctx.beginPath(); ctx.arc(ex+0.2,ey,2.3,0,7); ctx.fill(); }
+  if(look.stache){ ctx.beginPath(); ctx.moveTo(6.8,3.3); ctx.quadraticCurveTo(5.3,2.8,3.5,3.8); ctx.quadraticCurveTo(3.3,4.7,4.1,4.5); ctx.quadraticCurveTo(5.3,4.0,6.7,4.2); ctx.closePath(); ctx.fillStyle=look.hair; ctx.fill(); ctx.lineWidth=0.6; ctx.strokeStyle=INK; ctx.stroke(); }
+  if(look.acc==='glasses'||look.glasses){ ctx.beginPath(); ctx.arc(ex+0.2,ey,2.3,0,7); ctx.moveTo(ex-2.1,ey-0.3); ctx.lineTo(-0.6,0.1); ctx.lineWidth=0.55; ctx.stroke(); ctx.fillStyle='rgba(200,230,255,.16)'; ctx.beginPath(); ctx.arc(ex+0.2,ey,2.3,0,7); ctx.fill(); }
   if(look.acc==='headset'){ ctx.beginPath(); ctx.arc(0,0,R+1.3,Math.PI*1.1,Math.PI*1.75); ctx.lineWidth=1.6; ctx.stroke(); ctx.fillStyle='#22262e'; ctx.fillRect(-2.6,-1.4,3.4,4.8); ctx.beginPath(); ctx.moveTo(-0.6,3.2); ctx.quadraticCurveTo(2,7.2,5.2,5.4); ctx.lineWidth=0.9; ctx.stroke(); ctx.beginPath(); ctx.arc(5.4,5.3,0.8,0,7); ctx.fill(); }
   ctx.restore();
 }
