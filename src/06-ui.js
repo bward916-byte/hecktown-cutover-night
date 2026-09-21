@@ -18,17 +18,30 @@ addEventListener('pagehide',save); document.addEventListener('visibilitychange',
 
 /* ---------------- input ---------------- */
 const keys={}, queue=[]; let stick=null;
-const actKeys={Space:'jump',KeyX:'roll',KeyC:'crawl',KeyF:'throw',KeyR:'read',KeyG:'dance',KeyV:'clap',KeyE:'use',Enter:'use'};
+/* keys are rebindable (Options): each action has a list of codes, the first is the one you can change */
+const DEF_KEYS={left:['ArrowLeft','KeyA'],right:['ArrowRight','KeyD'],up:['ArrowUp','KeyW'],down:['ArrowDown','KeyS'],use:['KeyE','Enter'],jump:['Space'],roll:['KeyX'],crawl:['KeyC'],throw:['KeyF'],read:['KeyR'],dance:['KeyG'],clap:['KeyV'],
+  stroll:['ShiftLeft','ShiftRight'],journal:['KeyJ','Tab'],zoom:['KeyZ'],sound:['KeyM'],map:['KeyN'],photo:['KeyP']};
+const KEYS_KEY='hecktown2.keys';
+let KEYS=loadKeys();
+function loadKeys(){ const k=JSON.parse(JSON.stringify(DEF_KEYS)); try{ const o=JSON.parse(localStorage.getItem(KEYS_KEY)||'{}'); for(const a in o) if(k[a]) bindKey(k,a,o[a]); }catch(_){ } return k; }
+function bindKey(k,a,code){ for(const b in k) if(b!==a) k[b]=k[b].filter(c=>c!==code); k[a]=[code].concat(k[a].slice(1).filter(c=>c!==code)); }
+function setKey(a,code){ bindKey(KEYS,a,code); try{ const o={}; for(const b in KEYS) if(KEYS[b][0]!==DEF_KEYS[b][0]) o[b]=KEYS[b][0]; localStorage.setItem(KEYS_KEY,JSON.stringify(o)); }catch(_){ } }
+function resetKeys(){ KEYS=JSON.parse(JSON.stringify(DEF_KEYS)); try{ localStorage.removeItem(KEYS_KEY); }catch(_){ } }
+const actionOf=code=>{ for(const a in KEYS) if(KEYS[a].indexOf(code)>=0) return a; return null; }, held=a=>KEYS[a].some(c=>keys[c]);
+const ACTS={jump:1,roll:1,crawl:1,throw:1,read:1,dance:1,clap:1,use:1};
+const EXT={keys:[],after:[],camera:null,ending:null,tick:[]};          // 06b-extras plugs in here
 addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code.startsWith('Arrow')||e.code==='Space'||e.code==='Tab')e.preventDefault(); wake();
   if(e.repeat) return;
+  for(const h of EXT.keys) if(h(e,state)) return;
   if(state==='title'){ if(e.code==='Enter') (loadSave()?$('bContinue'):$('bNew')).click(); return; }
-  if(e.code==='KeyJ'||e.code==='Tab'){ toggleJournal(); return; }
+  const a=actionOf(e.code);
+  if(a==='journal'){ toggleJournal(); return; }
   if(e.code==='Escape'){ if(G&&G.board){ G.board=null; return; } if(state==='journal') toggleJournal(); else if(state==='ending') closeEnding(); return; }
-  if(e.code==='KeyZ'){ $('bZoom').click(); return; } if(e.code==='KeyM'){ $('bSnd').click(); return; }
+  if(a==='zoom'){ $('bZoom').click(); return; } if(a==='sound'){ $('bSnd').click(); return; }
   if(state!=='play') return;
-  if(G.card&&(e.code==='Space'||e.code==='KeyE'||e.code==='Enter')){ queue.push('use'); return; }
-  if(G.dialog){ const dn=['Digit1','Digit2','Digit3','Digit4'].indexOf(e.code); if(dn>=0){ pick(dn); return; } if(e.code==='Space'||e.code==='KeyE'||e.code==='Enter'){ queue.push('use'); } return; }
-  if(actKeys[e.code]) queue.push(actKeys[e.code]); });
+  if(G.card&&(a==='jump'||a==='use')){ queue.push('use'); return; }
+  if(G.dialog){ const dn=['Digit1','Digit2','Digit3','Digit4'].indexOf(e.code); if(dn>=0){ pick(dn); return; } if(a==='jump'||a==='use'){ queue.push('use'); } return; }
+  if(ACTS[a]) queue.push(a); });
 addEventListener('keyup',e=>{ keys[e.code]=false; });
 addEventListener('blur',()=>{ for(const k in keys)keys[k]=false; stick=null; });
 cv.addEventListener('pointerdown',e=>{ wake(); if(e.pointerType==='touch') setTouch(); if(state!=='play') return; if(G.dialog||G.card){ queue.push('use'); return; }
@@ -42,8 +55,8 @@ $('bMore').addEventListener('pointerdown',e=>{ e.preventDefault(); const o=$('pa
 const padMap={0:'use',1:'roll',2:'jump',3:'crawl',4:'read',5:'dance',6:'clap',7:'throw'}, padWas={};
 function readInput(){
   let ix=0, iy=0;
-  if(keys.ArrowRight||keys.KeyD) ix+=1; if(keys.ArrowLeft||keys.KeyA) ix-=1; if(keys.ArrowUp||keys.KeyW) iy-=1; if(keys.ArrowDown||keys.KeyS) iy+=1;
-  if(ix&&(keys.ShiftLeft||keys.ShiftRight)) ix*=0.45;
+  if(held('right')) ix+=1; if(held('left')) ix-=1; if(held('up')) iy-=1; if(held('down')) iy+=1;
+  if(ix&&held('stroll')) ix*=0.45;
   if(stick){ const dx=stick.x-stick.ox, dy=stick.y-stick.oy; if(Math.abs(dx)>10) ix=clamp(dx/52,-1,1); if(Math.abs(dy)>26&&Math.abs(dy)>Math.abs(dx)*0.7){ iy=Math.sign(dy); if(Math.abs(dx)<Math.abs(dy)) ix=0; } }
   const pads=navigator.getGamepads?navigator.getGamepads():[];
   for(const p of pads){ if(!p)continue; const ax=p.axes[0]||0, ay=p.axes[1]||0; if(Math.abs(ax)>0.25) ix=clamp(ax*1.1,-1,1); if(Math.abs(ay)>0.5) iy=Math.sign(ay);
@@ -167,24 +180,28 @@ function frame(now){
     while(queue.length){ const a=queue.shift(); if(a==='use'){ if(G.dialog&&!typingDone()){ typing.n=typing.text.length; $('dtext').textContent=typing.text; } else GM.interact(G); } else GM.command(G,a); }
     acc+=dt; while(acc>=STEP){ GM.update(G,inp[0],inp[1],STEP); acc-=STEP; }
     const hard=!(G.cur.node&&((G.cur.node.id==='ground'&&G.hero.x<548&&G.hero.x>60)||G.cur.node.era)); for(const ev of G.hero.events) footfall(ev,hard); G.hero.events.length=0;
-    for(const ev of G.events){ if(ev.type==='banner'){ toast(ev.text,ev.pts); if(ev.pts) SFX.point(); } else if(ev.type==='hint') toast(ev.text,0,true); else if(ev.type==='sfx'){ if(SFX[ev.name]) SFX[ev.name](); } else if(ev.type==='save') save(); else if(ev.type==='ending') showEnding(); else if(ev.type==='snap') snapCam(); else if(ev.type==='blip'&&AC) blip(ev.who); }
+    for(const ev of G.events){ if(ev.type==='banner'){ toast(ev.text,ev.pts); if(ev.pts) SFX.point(); } else if(ev.type==='hint') toast(ev.text,0,true); else if(ev.type==='sfx'){ if(SFX[ev.name]) SFX[ev.name](); } else if(ev.type==='save') save(); else if(ev.type==='ending'){ if(EXT.ending) EXT.ending(); else showEnding(); } else if(ev.type==='snap') snapCam(); else if(ev.type==='blip'&&AC) blip(ev.who); }
     G.events.length=0;
     autosave+=dt; if(autosave>20){ autosave=0; save(); }
+    for(const f of EXT.tick) f(dt);
     typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); $('bSkip').classList.toggle('hide',!G.p38||G.p38.scene==='visit'); } dialogUI(); document.body.classList.toggle('card',!!(G.card||G.board||G.drive));
   } else { readInput(); queue.length=0; acc=0; }
   if(saveBlip>0){ saveBlip-=dt; if(saveBlip<=0) $('saved').classList.remove('on'); }
   if(AC){ tickMusic(); tickRain(); }
 
   const h=G.hero, w=G.cur.world, target=Math.min(V.H/zoomStops[zi],V.W/250); zoomNow=zoomNow?zoomNow+(target-zoomNow)*(1-Math.exp(-6*dt)):target; V.zoom=zoomNow;
-  if(state==='title'){ const ph=(now/1000)%28, past=ph<14; V.camx=past?-2600+Math.sin(now/7000)*140:1330+Math.sin(now/9000)*160; V.camy=past?-70:-110; V.titleFade=Math.max(0,1-Math.min(ph,Math.abs(ph-14),28-ph)/0.8); }
+  if(EXT.camera&&EXT.camera(state,V,dt)){ }
+  else if(state==='title'){ const ph=(now/1000)%28, past=ph<14; V.camx=past?-2600+Math.sin(now/7000)*140:1330+Math.sin(now/9000)*160; V.camy=past?-70:-110; V.titleFade=Math.max(0,1-Math.min(ph,Math.abs(ph-14),28-ph)/0.8); }
   else{ V.camx+=(h.x+h.facing*24+h.vx*0.25-V.camx)*(1-Math.exp(-3.2*dt)); const standY=w.yAt(h.x)-34; V.camy+=(standY+(Math.min(h.y,standY+3)-standY-3)*0.35-V.camy)*(1-Math.exp(-2.8*dt)); }
-  V.quiet=state==='title'; DRAW.render(ctx,V,G,now,dt);
+  V.quiet=state==='title'||state==='photo'||state==='ending-seq'; DRAW.render(ctx,V,G,now,dt);
   if(state==='title'&&V.titleFade>0){ ctx.setTransform(V.DPR,0,0,V.DPR,0,0); ctx.fillStyle='rgba(11,18,32,'+V.titleFade.toFixed(3)+')'; ctx.fillRect(0,0,V.W,V.H); }
+  for(const f of EXT.after) f(ctx,V,G,state,dt,now);
   if(stick&&state==='play'){ ctx.setTransform(V.DPR,0,0,V.DPR,0,0); const kx=clamp(stick.x-stick.ox,-52,52), ky=clamp(stick.y-stick.oy,-52,52); ctx.lineWidth=2; ctx.strokeStyle='rgba(246,236,216,.5)'; ctx.beginPath(); ctx.arc(stick.ox,stick.oy,52,0,7); ctx.stroke();
     ctx.fillStyle='rgba(242,181,68,.85)'; ctx.beginPath(); ctx.arc(stick.ox+kx,stick.oy+ky,20,0,7); ctx.fill(); }
   requestAnimationFrame(frame);
 }
 G=GM.create(loadSave()||undefined); refreshTitle();
-window.__hecktown={get G(){return G;},V:V,begin:begin};     // for the browser tests
+window.__hecktown={get G(){return G;},V:V,begin:begin,EXT:EXT,get state(){return state;},setState:s=>{ state=s; },showEnding:showEnding,closeEnding:closeEnding,toast:toast,SFX:SFX,hud:()=>hud(),save:save,
+  keys:{get:()=>KEYS,DEF:DEF_KEYS,set:setKey,reset:resetKeys},wake:wake,loadSave:loadSave};     // for the browser tests and 06b-extras
 requestAnimationFrame(frame);
 })();
