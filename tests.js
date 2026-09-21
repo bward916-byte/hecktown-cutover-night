@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -72,6 +72,19 @@ section('1938 prologue');
   skipCards(G); ok(G.cur.node.id==='ground'&&G.S.flags.p38===5&&!G.p38,'arrive in Easton after the young Blaine scene (on '+G.cur.node.id+')');
   ok(/Brian W/.test(JSON.stringify(G.events))||true,'arrival'); const G2=GM.create(); GM.skipPrologue(G2); ok(G2.cur.node.id==='ground','skip works'); }
 
+section('Milo, strays, Chuck, the office dog');
+{ const G=newGame(), S=G.S, L=GM.LIFE;
+  walkTo(G,L.MILO.x+10); ok(G.target&&G.target.kind==='milo','Milo is talkable'); GM.interact(G); ok(G.dialog&&G.dialog.choices.length===3,'Milo offers three choices'); GM.advance(G,0); ok(/taco/i.test(G.dialog.pages[0]),'no taco, no catnip'); closeDialog(G);
+  talkTo(G,'tina'); ok(S.inv.taco,'Tina gives a taco for Milo');
+  walkTo(G,L.MILO.x+10); GM.interact(G); GM.advance(G,0); closeDialog(G); ok(S.inv.catnip===1&&!S.inv.taco&&S.flags.miloTab===1,'bought catnip');
+  for(let k=0;k<2;k++){ talkTo(G,'tina'); walkTo(G,L.MILO.x+10); GM.interact(G); GM.advance(G,0); closeDialog(G); }
+  ok(S.flags.miloTab===2&&S.flags.miloHouse===1&&S.inv.catnip===3,'third bag is on the house (tab '+S.flags.miloTab+', nip '+S.inv.catnip+')');
+  const p0=S.points; walkTo(G,900); ok(GM.command(G,'throw'),'throw catnip'); ok(L.life(G).cats.length===4&&S.eggs.catnip&&S.points===p0+5,'strays come running, morale points');
+  for(let i=0;i<120*12;i++) step(G,0,0); ok(L.life(G).cats.length===0,'strays wander off');
+  walkTo(G,L.CHUCK.x+200); for(let i=0;i<600;i++) step(G,0,0); ok(L.life(G).chuckUp>0.8,'Chuck is up when you are away');
+  walkTo(G,L.CHUCK.x+30); for(let i=0;i<120;i++) step(G,0,0); ok(L.life(G).chuckUp<0.1,'Chuck hides when you come close');
+  walkTo(G,L.DOG.x+6); ok(G.target&&G.target.kind==='odog','office dog pettable'); GM.interact(G); ok(G.dialog&&/sleep/.test(G.dialog.pages[0]),'office dog stays asleep'); closeDialog(G); }
+
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
 for(const L of MAP.links){ const s=L.world.s; for(let i=1;i<s.length;i++) ok(Math.abs(s[i].x0-s[i-1].x1)<1e-6,'contiguous '+L.id);
@@ -111,6 +124,7 @@ section('full playthrough');
   for(const p of GM.PEOPLE) if(!S.met[p.id]) talkTo(G,p.id);
   for(let k=0;k<6&&!S.eggs.jeopardy;k++) talkTo(G,'dave'); ok(S.eggs.jeopardy,'Daily Double won');
   for(const r of MAP.rooms) if(!S.rooms[r.id]) ok(goTo(G,r.node,(r.x0+r.x1)/2),'visit '+r.name);
+  if(!S.eggs.catnip){ walkTo(G,GM.LIFE.MILO.x+10); GM.interact(G); closeDialog(G); talkTo(G,'tina'); walkTo(G,GM.LIFE.MILO.x+10); GM.interact(G); GM.advance(G,0); closeDialog(G); walkTo(G,900); GM.command(G,'throw'); for(let i=0;i<240;i++) step(G,0,0); }
   talkTo(G,'ryan'); GM.command(G,'dance'); for(let i=0;i<240;i++) step(G,0,0); GM.command(G,'dance'); GM.command(G,'clap'); for(let i=0;i<300;i++) step(G,0,0); GM.command(G,'roll'); for(let i=0;i<300;i++) step(G,0,0);
   for(const r of MAP.rooms) ok(S.rooms[r.id],'room found: '+r.name);
   ok(S.points===GM.MAXPTS,'100% reachable: '+S.points+' / '+GM.MAXPTS); ok(GM.rank(S)==='Hecktown Legend','top rank');
