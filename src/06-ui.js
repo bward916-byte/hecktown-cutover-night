@@ -108,7 +108,7 @@ function dialogUI(){
   $('dwho').innerHTML=''; $('dwho').appendChild(document.createTextNode(d.who)); const r=document.createElement('span'); r.textContent=d.role; $('dwho').appendChild(r);
   const pg=d.pages[d.i], m=/^([A-Z][A-Za-z.+ ]{1,18}):\s/.exec(pg); typing={text:pg,n:0,who:m?m[1]:d.who,kid:d.role==='a boy',last:0}; $('dtext').textContent='';
   const fc=$('dface').getContext('2d'); fc.setTransform(1,0,0,1,0,0); fc.clearRect(0,0,112,112);
-  if(d.look) PP.portrait(fc,d.look,112); else { fc.fillStyle=term?'#0a1a0e':'#2c3340'; fc.fillRect(0,0,112,112); fc.fillStyle=term?'#6fe08a':'#f2b544'; fc.font='700 44px "IBM Plex Mono",monospace'; fc.textAlign='center'; fc.textBaseline='middle'; fc.fillText(d.who==='A+'?'A+':(d.who==='Biscuit'?'🐾':(d.who==='Milo'?'🐈':(d.who==='The office dog'?'💤':(d.who==='The Ledger'?'§':'>_')))),56,58); }
+  if(d.look) PP.portrait(fc,d.look,112); else if(d.who==='A+'&&DRAW.aplusFace&&GM.STORY) DRAW.aplusFace(fc,0,0,112,112,GM.STORY.aplusMood(d.pages[d.i]),1,false,0); else { fc.fillStyle=term?'#0a1a0e':'#2c3340'; fc.fillRect(0,0,112,112); fc.fillStyle=term?'#6fe08a':'#f2b544'; fc.font='700 44px "IBM Plex Mono",monospace'; fc.textAlign='center'; fc.textBaseline='middle'; fc.fillText(d.who==='A+'?'A+':(d.who==='Biscuit'?'🐾':(d.who==='Milo'?'🐈':(d.who==='The office dog'?'💤':(d.who==='The Ledger'?'§':'>_')))),56,58); }
   const last=d.i>=d.pages.length-1, ch=$('dchoices'); ch.innerHTML='';
   if(last&&d.choices) d.choices.forEach((c,i)=>{ const b=document.createElement('button'); b.textContent=(V.touch?'':(i+1)+'  ')+c.label; b.addEventListener('click',e=>{ e.stopPropagation(); pick(i); }); ch.appendChild(b); });
   $('dmore').textContent=last&&d.choices?'':(V.touch?'Tap to continue':'E or Space to continue')+(d.pages.length>1?'   '+(d.i+1)+' / '+d.pages.length:'');
@@ -162,7 +162,7 @@ function frame(now){
     while(queue.length){ const a=queue.shift(); if(a==='use'){ if(G.dialog&&!typingDone()){ typing.n=typing.text.length; $('dtext').textContent=typing.text; } else GM.interact(G); } else GM.command(G,a); }
     acc+=dt; while(acc>=STEP){ GM.update(G,inp[0],inp[1],STEP); acc-=STEP; }
     const hard=!(G.cur.node&&((G.cur.node.id==='ground'&&G.hero.x<548&&G.hero.x>60)||G.cur.node.era)); for(const ev of G.hero.events) footfall(ev,hard); G.hero.events.length=0;
-    for(const ev of G.events){ if(ev.type==='banner'){ toast(ev.text,ev.pts); if(ev.pts) SFX.point(); } else if(ev.type==='hint') toast(ev.text,0,true); else if(ev.type==='sfx'){ if(SFX[ev.name]) SFX[ev.name](); } else if(ev.type==='save') save(); else if(ev.type==='ending') showEnding(); else if(ev.type==='snap') snapCam(); }
+    for(const ev of G.events){ if(ev.type==='banner'){ toast(ev.text,ev.pts); if(ev.pts) SFX.point(); } else if(ev.type==='hint') toast(ev.text,0,true); else if(ev.type==='sfx'){ if(SFX[ev.name]) SFX[ev.name](); } else if(ev.type==='save') save(); else if(ev.type==='ending') showEnding(); else if(ev.type==='snap') snapCam(); else if(ev.type==='blip'&&AC) blip(ev.who); }
     G.events.length=0;
     autosave+=dt; if(autosave>20){ autosave=0; save(); }
     typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); $('bSkip').classList.toggle('hide',!G.p38); } dialogUI(); document.body.classList.toggle('card',!!G.card);
