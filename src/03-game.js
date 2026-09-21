@@ -47,6 +47,12 @@ const PEOPLE=[
  P('marisol','Marisol','Yard Jockey',['#c9906a','#3a2c22','ponytail','#f2b544','#2b2f3a','vest'],'ground',3290,{lines:['I move trailers to doors all night. Tonight the doors finally hold still.']}),
  P('walt','Walt','Canal Mule Driver',['#eec2a0','#8e8e8e','cap','#7a5a3a','#3a2a1a','none'],'ground',3440,{lines:['Mules walked this towpath before the trucks. The trucks are faster. The mule has never once been locked out of anything.']}),
 ];
+/* what people wear; anything not listed here is picked from a hash of their look (04-draw-people) */
+const WARDROBE={rianan:{top:'blazer'},brians:{top:'polo'},ryan:{top:'tee'},ash:{top:'sweater'},umesh:{top:'sweatervest'},jose:{top:'button'},andrew:{top:'polo'},aaron:{top:'hoodie',bottom:'jeans'},
+  dave:{top:'flannel',bottom:'jeans'},john:{top:'button',bottom:'slacks'},greg:{top:'cardigan',bottom:'slacks'},pam:{top:'sweater'},melissa:{top:'button'},cathy:{top:'tee',bottom:'jeans'},bret:{top:'polo',bottom:'work',shoe:'boot'},
+  blaine:{top:'blazer'},nick:{top:'blazer'},kim:{top:'cardigan'},ashley:{top:'button'},jessica:{top:'blazer'},jennifer:{top:'sweater'},josh:{top:'polo'},stephanie:{top:'polo'},wendy:{top:'polo'},marc:{top:'button'},
+  dee:{top:'button',bottom:'slacks'},lou:{top:'tee',bottom:'work',shoe:'boot'},ben:{top:'tee',bottom:'work',shoe:'boot'},priya:{top:'tee',shoe:'sneaker'},frank:{top:'flannel',bottom:'work'},walt:{top:'button',bottom:'work',shoe:'boot'}};
+for(const p of PEOPLE) if(WARDROBE[p.id]) Object.assign(p.look,WARDROBE[p.id]);
 const BISCUIT={id:'biscuit',name:'Biscuit',node:'ground',x:340,homeX:2740};
 
 /* ---------------- things to pick up or use ---------------- */
