@@ -26,11 +26,12 @@ addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code.startsWith('Arrow')
   if(e.code==='Escape'){ if(state==='journal') toggleJournal(); else if(state==='ending') closeEnding(); return; }
   if(e.code==='KeyZ'){ $('bZoom').click(); return; } if(e.code==='KeyM'){ $('bSnd').click(); return; }
   if(state!=='play') return;
+  if(G.card&&(e.code==='Space'||e.code==='KeyE'||e.code==='Enter')){ queue.push('use'); return; }
   if(G.dialog){ if(e.code==='Digit1'||e.code==='Digit2'){ pick(e.code==='Digit1'?0:1); return; } if(e.code==='Space'||e.code==='KeyE'||e.code==='Enter'){ queue.push('use'); } return; }
   if(actKeys[e.code]) queue.push(actKeys[e.code]); });
 addEventListener('keyup',e=>{ keys[e.code]=false; });
 addEventListener('blur',()=>{ for(const k in keys)keys[k]=false; stick=null; });
-cv.addEventListener('pointerdown',e=>{ wake(); if(e.pointerType==='touch') setTouch(); if(state!=='play') return; if(G.dialog){ queue.push('use'); return; }
+cv.addEventListener('pointerdown',e=>{ wake(); if(e.pointerType==='touch') setTouch(); if(state!=='play') return; if(G.dialog||G.card){ queue.push('use'); return; }
   if(!stick){ stick={id:e.pointerId,ox:e.clientX,oy:e.clientY,x:e.clientX,y:e.clientY}; try{cv.setPointerCapture(e.pointerId);}catch(_){} } });
 cv.addEventListener('pointermove',e=>{ if(stick&&e.pointerId===stick.id){ stick.x=e.clientX; stick.y=e.clientY; } });
 const endStick=e=>{ if(stick&&e.pointerId===stick.id) stick=null; }; cv.addEventListener('pointerup',endStick); cv.addEventListener('pointercancel',endStick);
@@ -113,7 +114,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 function statsHTML(S){ const st=(n,l)=>'<div class="stat"><b>'+n+'</b><span>'+l+'</span></div>', m=Math.floor(S.time/60);
   return '<div class="stats">'+st(S.points+' / '+GM.MAXPTS,'points, '+GM.percent(S)+'%')+st(GM.count(S.signoffs)+' / 6','sign-offs')+st(GM.count(S.rooms)+' / '+MAP.rooms.length,'places found')+st(GM.count(S.met)+' / '+GM.PEOPLE.length,'people met')+st(GM.count(S.pages)+' / '+GM.PAGES.length,'ledger pages')+st((m>=60?Math.floor(m/60)+'h ':'')+(m%60)+'m','on the clock')+'</div>'; }
 function journalHTML(){
-  const S=G.S; let h='<button class="btn ghost close" id="jClose">Close</button><h1>Journal</h1><div class="sub">'+esc(GM.rank(S))+'  ·  '+esc(GM.clock(S))+'  ·  progress saves on its own</div>'+statsHTML(S);
+  const S=G.S; let h='<button class="btn ghost close" id="jClose">Close</button><h1>Journal</h1><div class="sub">'+esc(GM.HERO.name+', '+GM.HERO.role)+'  ·  '+esc(GM.rank(S))+'  ·  '+esc(GM.clock(S))+'  ·  progress saves on its own</div>'+statsHTML(S);
   h+='<h3>Cutover checklist</h3>'; for(const t of GM.tasks(S)) h+='<div class="task '+t.status+'"><span class="mark">'+(t.status==='done'?'[x]':(t.status==='active'?'[>]':'[ ]'))+'</span><div>'+esc(t.title)+'<small>'+esc(t.note)+'</small></div></div>';
   h+='<h3>Places</h3><div class="places">'; const groups=[['Outside',r=>r.node==='ground'&&(r.x1<=1100||(r.x0>=1900&&r.x1<=2200)||r.x0>=3200)],['Phillips HQ',r=>r.node.indexOf('hq_')===0&&!r.dark||(r.node==='ground'&&r.x0>=1100&&r.x1<=1900)],['Lou\'s Garage',r=>r.node==='gar_loft'],['Easton DC',r=>r.node.indexOf('wh_')===0||(r.node==='ground'&&r.x0>=2200&&r.x1<=3160)],['Underneath',r=>!!r.dark]];
   for(const g of groups){ const rs=MAP.rooms.filter(g[1]); if(!rs.length) continue; h+='<div><b>'+esc(g[0])+'  '+rs.filter(r=>S.rooms[r.id]).length+'/'+rs.length+'</b>'+rs.map(r=>S.rooms[r.id]?'<div>'+esc(r.name)+'</div>':'<div class="un">? ? ?</div>').join('')+'</div>'; } h+='</div>';
@@ -131,12 +132,14 @@ function showEnding(){ state='ending'; const S=G.S;
 function closeEnding(){ state='play'; $('ending').classList.add('hide'); }
 
 /* ---------------- title ---------------- */
+function snapCam(){ V.camx=G.hero.x; V.camy=G.cur.world.yAt(G.hero.x)-34; }
 function begin(saveData){ G=GM.create(saveData||undefined); state='play'; document.body.classList.add('play'); $('title').classList.add('hide'); $('hud').classList.remove('hide'); $('tools').classList.remove('hide');
-  V.camx=G.hero.x; V.camy=G.cur.world.yAt(G.hero.x)-34; hud(); if(!saveData) toast('Cutover night. 6:00 PM. Rianan wants you upstairs.'); save(); }
+  V.camx=G.hero.x; V.camy=G.cur.world.yAt(G.hero.x)-34; hud(); save(); }
 function refreshTitle(){ const s=loadSave(); $('bContinue').classList.toggle('hide',!s); $('bNew').classList.toggle('ghost',!!s);
   $('resume').textContent=s?('Saved game: '+GM.percent(s)+'%, '+GM.rank(s)+', '+GM.clock(s)+' on cutover night.'):''; $('keysHelp').innerHTML=keysHTML(); }
 $('bContinue').onclick=()=>{ wake(); begin(loadSave()); };
 let armNew=false; $('bNew').onclick=()=>{ wake(); if(loadSave()&&!armNew){ armNew=true; $('bNew').textContent='Erase the save and start over?'; return; } wipe(); begin(null); };
+$('bSkip').onclick=()=>{ if(G&&G.p38){ GM.skipPrologue(G); } };
 $('score').onclick=toggleJournal; $('bJournal').onclick=toggleJournal;
 $('bZoom').onclick=()=>{ zi=(zi+1)%zoomStops.length; };
 $('bSnd').onclick=function(){ soundOn=!soundOn; this.textContent=soundOn?'Sound on':'Sound off'; wake(); if(master) master.gain.value=soundOn?1:0; };
@@ -151,19 +154,20 @@ function frame(now){
     const inp=readInput();
     while(queue.length){ const a=queue.shift(); if(a==='use') GM.interact(G); else GM.command(G,a); }
     acc+=dt; while(acc>=STEP){ GM.update(G,inp[0],inp[1],STEP); acc-=STEP; }
-    const hard=!(G.cur.node&&G.cur.node.id==='ground'&&G.hero.x<548); for(const ev of G.hero.events) footfall(ev,hard); G.hero.events.length=0;
-    for(const ev of G.events){ if(ev.type==='banner'){ toast(ev.text,ev.pts); if(ev.pts) SFX.point(); } else if(ev.type==='hint') toast(ev.text,0,true); else if(ev.type==='sfx'){ if(SFX[ev.name]) SFX[ev.name](); } else if(ev.type==='save') save(); else if(ev.type==='ending') showEnding(); }
+    const hard=!(G.cur.node&&((G.cur.node.id==='ground'&&G.hero.x<548)||G.cur.node.era)); for(const ev of G.hero.events) footfall(ev,hard); G.hero.events.length=0;
+    for(const ev of G.events){ if(ev.type==='banner'){ toast(ev.text,ev.pts); if(ev.pts) SFX.point(); } else if(ev.type==='hint') toast(ev.text,0,true); else if(ev.type==='sfx'){ if(SFX[ev.name]) SFX[ev.name](); } else if(ev.type==='save') save(); else if(ev.type==='ending') showEnding(); else if(ev.type==='snap') snapCam(); }
     G.events.length=0;
     autosave+=dt; if(autosave>20){ autosave=0; save(); }
-    hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); } dialogUI();
+    hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); $('bSkip').classList.toggle('hide',!G.p38); } dialogUI(); document.body.classList.toggle('card',!!G.card);
   } else { readInput(); queue.length=0; acc=0; }
   if(saveBlip>0){ saveBlip-=dt; if(saveBlip<=0) $('saved').classList.remove('on'); }
   if(AC) tickMusic();
 
   const h=G.hero, w=G.cur.world, target=Math.min(V.H/zoomStops[zi],V.W/250); zoomNow=zoomNow?zoomNow+(target-zoomNow)*(1-Math.exp(-6*dt)):target; V.zoom=zoomNow;
-  if(state==='title'){ V.camx=1330+Math.sin(now/9000)*160; V.camy=-110; }
+  if(state==='title'){ const ph=(now/1000)%28, past=ph<14; V.camx=past?-2600+Math.sin(now/7000)*140:1330+Math.sin(now/9000)*160; V.camy=past?-70:-110; V.titleFade=Math.max(0,1-Math.min(ph,Math.abs(ph-14),28-ph)/0.8); }
   else{ V.camx+=(h.x+h.facing*24+h.vx*0.25-V.camx)*(1-Math.exp(-3.2*dt)); const standY=w.yAt(h.x)-34; V.camy+=(standY+(Math.min(h.y,standY+3)-standY-3)*0.35-V.camy)*(1-Math.exp(-2.8*dt)); }
   V.quiet=state==='title'; DRAW.render(ctx,V,G,now,dt);
+  if(state==='title'&&V.titleFade>0){ ctx.setTransform(V.DPR,0,0,V.DPR,0,0); ctx.fillStyle='rgba(11,18,32,'+V.titleFade.toFixed(3)+')'; ctx.fillRect(0,0,V.W,V.H); }
   if(stick&&state==='play'){ ctx.setTransform(V.DPR,0,0,V.DPR,0,0); const kx=clamp(stick.x-stick.ox,-52,52), ky=clamp(stick.y-stick.oy,-52,52); ctx.lineWidth=2; ctx.strokeStyle='rgba(246,236,216,.5)'; ctx.beginPath(); ctx.arc(stick.ox,stick.oy,52,0,7); ctx.stroke();
     ctx.fillStyle='rgba(242,181,68,.85)'; ctx.beginPath(); ctx.arc(stick.ox+kx,stick.oy+ky,20,0,7); ctx.fill(); }
   requestAnimationFrame(frame);
