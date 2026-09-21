@@ -5,7 +5,7 @@ const CFG=root.WalkEngine.CFG, INK='#151a22';
 function hex(h){ return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]; }
 function shade(h,k){ const c=hex(h); return 'rgb('+(c[0]*k|0)+','+(c[1]*k|0)+','+(c[2]*k|0)+')'; }
 const cache={};
-function colours(look){ const key=look.shirt+look.pants+look.skin; return cache[key]||(cache[key]={shirt:look.shirt,shirtFar:shade(look.shirt,0.74),pants:look.pants,pantsFar:shade(look.pants,0.72),skin:look.skin,skinFar:shade(look.skin,0.84)}); }
+function colours(look,o){ const pants=o?o.pants:look.pants, sl=o?o.sleeve:look.shirt, key=look.shirt+pants+look.skin+sl; return cache[key]||(cache[key]={shirt:look.shirt,shirtFar:shade(look.shirt,0.74),pants:pants,pantsFar:shade(pants,0.72),skin:look.skin,skinFar:shade(look.skin,0.84),sleeve:sl,sleeveFar:shade(sl,0.74)}); }
 
 function stroke(ctx,pts,w,col){ ctx.lineCap='round'; ctx.lineJoin='round'; ctx.beginPath(); ctx.moveTo(pts[0],pts[1]); for(let i=2;i<pts.length;i+=2)ctx.lineTo(pts[i],pts[i+1]);
   ctx.lineWidth=w+1.5; ctx.strokeStyle=INK; ctx.stroke(); ctx.lineWidth=w; ctx.strokeStyle=col; ctx.stroke(); }
@@ -84,24 +84,93 @@ function hand(ctx,A,F,skin,shirt,curl,flat){
 }
 
 /* P: pose from the engine. look: colours and style. opt: {scarf:[points], ground:fn(x)->y, mode} */
+/* ---------------- wardrobe and build ----------------
+   Every look gets an outfit and a build: a top (tee, polo, button-up, sweater, hoodie, flannel, cardigan, blazer, sweater vest,
+   hi-vis over a tee), trousers (jeans, slacks, khakis, work pants), shoes (sneakers, dress shoes, boots), and a body that is a
+   little taller or shorter, slimmer or broader. People can set any of it (look.top, look.bottom, look.shoe, look.build);
+   the rest comes from a hash of the look, so it never changes between frames or saves. */
+const TOPS=['tee','polo','button','sweater','hoodie'], SNEAKS=['#e8e4dc','#8a8f98','#2f3a5a','#c0392b','#2f6f4f'];
+function outfit(look){ if(look._o) return look._o;
+  let h=7; const key=look.skin+look.hair+look.shirt+look.style+look.acc+(look.pants||''); for(let i=0;i<key.length;i++) h=(h*31+key.charCodeAt(i))>>>0; const r=k=>((h>>>k)%100)/100;
+  const top=look.top||(look.acc==='flannel'?'flannel':look.acc==='cardigan'?'cardigan':look.acc==='vest'?'hivis':look.style==='hoodie'?'hoodie':TOPS[h%5]);
+  const bottom=look.bottom||(top==='blazer'?'slacks':top==='hivis'?'work':['jeans','slacks','khakis','jeans'][(h>>>5)%4]);
+  const pants=look.pantsCol||(bottom==='jeans'?['#3a5378','#2f4466','#4a5f82'][(h>>>3)%3]:bottom==='khakis'?'#9a8664':bottom==='work'?'#5a5040':(top==='blazer'?shade(look.shirt,0.8):look.pants));
+  const shoe=look.shoe||(top==='blazer'||top==='button'||top==='cardigan'||top==='sweatervest'?'dress':(top==='hivis'||bottom==='work'?'boot':'sneaker'));
+  const b=look.build||{}, build={h:b.h||0.95+r(7)*0.1,d:b.d||0.9+r(11)*0.26,belly:b.belly!=null?b.belly:(r(15)<0.3?0.3+r(19)*0.6:0)};
+  const under=top==='hivis'?'#5a6068':(top==='sweatervest'?'#c8d8e8':(top==='blazer'||top==='cardigan'?'#ece8de':null));
+  const long=!(top==='tee'||top==='polo'||top==='hivis'), sleeve=(top==='hivis'||top==='sweatervest')?under:look.shirt;
+  return look._o={top:top,bottom:bottom,pants:pants,shoe:shoe,sneak:SNEAKS[(h>>>9)%SNEAKS.length],build:build,under:under,long:long,sleeve:sleeve,tucked:top==='button'||top==='sweatervest'}; }
+function shoeKind(ctx,L,F,o){ const c=Math.cos(L.pitch), sn=Math.sin(L.pitch), P=(lx,ly)=>[L.ax+F*(lx*c-ly*sn),L.ay+lx*sn+ly*c];
+  if(o.shoe==='boot'){ const a=P(-2.4,-4.6), b=P(2.4,-4.2), d=P(2.2,0), e=P(-2.4,0); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(d[0],d[1]); ctx.lineTo(e[0],e[1]); ctx.closePath(); ctx.fillStyle='#6a4a2a'; ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=0.9; ctx.stroke(); }
+  shoe(ctx,L,F,o.shoe==='dress'?'#2a1e18':(o.shoe==='boot'?'#7a5634':o.sneak));
+  const h=P(-CFG.footBack+0.3,CFG.ankleH-0.4), t=P(CFG.footToe-0.2,CFG.ankleH-0.4);
+  if(o.shoe==='sneaker'){ ctx.lineCap='round'; ctx.strokeStyle='#f2efe8'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(h[0],h[1]); ctx.lineTo(t[0],t[1]); ctx.stroke(); const l=P(1,-1.2); ctx.fillStyle='#f2efe8'; ctx.fillRect(l[0]-0.5,l[1]-0.5,1,1); }
+  else if(o.shoe==='boot'){ ctx.lineCap='butt'; ctx.strokeStyle='#2a2018'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(h[0],h[1]); ctx.lineTo(t[0],t[1]); ctx.stroke(); }
+  else { const g1=P(1.5,-0.6), g2=P(3.6,0.4); ctx.strokeStyle='rgba(255,255,255,.28)'; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(g1[0],g1[1]); ctx.lineTo(g2[0],g2[1]); ctx.stroke(); } }
+/* the torso, in profile: a straight back, the chest and (sometimes) a belly out front */
+function torsoPath(ctx,at,D,bel){ const p=(k,d)=>at(k,d);
+  const hb=p(-0.04,-5*D), hf=p(-0.04,5*D), bl=p(0.3,(5+bel*1.8)*D), ch=p(0.7,5.3*D), sf=p(0.93,4.1*D), nf=p(1.0,2.3), nb=p(1.0,-2.4), sb=p(0.9,-5*D), mb=p(0.5,-4.6*D);
+  ctx.beginPath(); ctx.moveTo(hb[0],hb[1]); ctx.lineTo(hf[0],hf[1]); ctx.quadraticCurveTo(bl[0],bl[1],ch[0],ch[1]); ctx.quadraticCurveTo(sf[0],sf[1],nf[0],nf[1]); ctx.lineTo(nb[0],nb[1]); ctx.quadraticCurveTo(sb[0],sb[1],mb[0],mb[1]); ctx.closePath(); }
+function dot(ctx,p,col,r){ ctx.fillStyle=col; ctx.beginPath(); ctx.arc(p[0],p[1],r||0.45,0,7); ctx.fill(); }
+function line(ctx,a,b,col,w){ ctx.strokeStyle=col; ctx.lineWidth=w||0.6; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }
+function top(ctx,P,F,look,o,at,C){
+  const D=o.build.d, bel=o.build.belly, T=o.top, col=look.shirt, dk=shade(col,0.66), lt=shade(col,1.18>1?1:1);
+  const fill=c=>{ torsoPath(ctx,at,D,bel); ctx.fillStyle=c; ctx.fill(); };
+  if(o.under){ fill(o.under); }
+  // the garment itself
+  if(T==='cardigan'||T==='blazer'){ torsoPath(ctx,at,D,bel); ctx.save(); ctx.clip(); ctx.fillStyle=col; const a=at(-0.1,-8), b=at(1.1,-8), c=at(1.1,3.3*D), d=at(-0.1,4.1*D);
+      if(T==='blazer'){ const v=at(0.52,5.2*D); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(at(1.1,1.6)[0],at(1.1,1.6)[1]); ctx.lineTo(v[0],v[1]); ctx.lineTo(at(-0.1,5.6*D)[0],at(-0.1,5.6*D)[1]); ctx.lineTo(at(-0.1,-8)[0],at(-0.1,-8)[1]); ctx.fill();
+        const n0=at(0.99,2.4), t1=at(0.62,4.2*D), t2=at(0.9,3.0); ctx.fillStyle='#8a2a2a'; ctx.beginPath(); ctx.moveTo(n0[0],n0[1]); ctx.lineTo(t2[0],t2[1]); ctx.lineTo(t1[0],t1[1]); ctx.closePath(); ctx.fill(); }
+      else { ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(c[0],c[1]); ctx.lineTo(d[0],d[1]); ctx.closePath(); ctx.fill(); }
+      ctx.restore(); }
+  else if(T==='hivis'||T==='sweatervest'){ torsoPath(ctx,at,D,bel); ctx.save(); ctx.clip(); ctx.fillStyle=col; const a=at(-0.1,-8), b=at(0.86,-8), c=at(0.86,2.2), v=at(T==='sweatervest'?0.66:0.9,4.6*D), d=at(-0.1,8);
+      ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(c[0],c[1]); ctx.lineTo(v[0],v[1]); ctx.lineTo(d[0],d[1]); ctx.closePath(); ctx.fill();
+      if(T==='hivis'){ ctx.lineCap='butt'; for(const k of [0.28,0.56]) line(ctx,at(k,-6),at(k,6),'#e8e8e8',1.5); }
+      else { ctx.lineCap='butt'; for(let k=0;k<4;k++) line(ctx,at(0.02,-3.5+k*2.4),at(0.1,-3.5+k*2.4),dk,0.5); }
+      ctx.restore(); }
+  else fill(col);
+  if(T==='flannel'){ torsoPath(ctx,at,D,bel); ctx.save(); ctx.clip(); ctx.lineCap='butt'; for(let k=-0.1;k<1.1;k+=0.16) line(ctx,at(k,-8),at(k,8),dk,1); for(let d=-7;d<8;d+=3.2) line(ctx,at(-0.1,d),at(1.1,d),dk,1); for(let k=-0.02;k<1.1;k+=0.16) line(ctx,at(k,-8),at(k,8),'rgba(255,240,200,.35)',0.35); ctx.restore(); }
+  torsoPath(ctx,at,D,bel); ctx.strokeStyle=INK; ctx.lineWidth=1.1; ctx.lineJoin='round'; ctx.stroke();
+  // details: collars, buttons, pockets, hems
+  ctx.lineCap='round';
+  if(T==='tee'||T==='sweater'){ const a=at(0.985,2.2), b=at(0.94,0.2); ctx.strokeStyle=dk; ctx.lineWidth=0.8; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.quadraticCurveTo(at(0.93,1.6)[0],at(0.93,1.6)[1],b[0],b[1]); ctx.stroke(); }
+  if(T==='sweater'){ for(let d=-4;d<=4.5;d+=1.6) line(ctx,at(-0.03,d*D),at(0.07,d*D),dk,0.5); }
+  if(T==='polo'||T==='button'||T==='flannel'){ const c1=at(1.0,2.2), c2=at(0.86,3.9), c3=at(0.93,1.3); ctx.fillStyle=T==='button'?shade(col,1)===col?col:col:col; ctx.beginPath(); ctx.moveTo(c1[0],c1[1]); ctx.lineTo(c2[0],c2[1]); ctx.lineTo(c3[0],c3[1]); ctx.closePath(); ctx.fillStyle=T==='flannel'?dk:shade(col,0.85); ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=0.6; ctx.stroke();
+    const n=T==='polo'?2:5; for(let i=0;i<n;i++) dot(ctx,at(0.84-i*(T==='polo'?0.08:0.16),4.6*D),'#f2efe8',0.42); }
+  if(T==='hoodie'){ const hb=at(0.98,-3.6); ctx.fillStyle=dk; ctx.beginPath(); ctx.ellipse(hb[0],hb[1],2.6,3.4,Math.atan2(P.neck.y-P.hip.y,P.neck.x-P.hip.x),0,7); ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=0.7; ctx.stroke();
+    const p1=at(0.1,1.2*D), p2=at(0.34,1.2*D), p3=at(0.34,(4.8+bel*1.4)*D), p4=at(0.1,(4.9+bel*1.2)*D); ctx.strokeStyle=dk; ctx.lineWidth=0.7; ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.lineTo(p3[0],p3[1]); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p4[0],p4[1]); ctx.stroke();
+    line(ctx,at(0.97,2.0),at(0.82,2.4),'#f2efe8',0.5); line(ctx,at(0.97,1.2),at(0.84,1.5),'#f2efe8',0.5); for(let d=-4;d<=4.5;d+=1.8) line(ctx,at(-0.03,d*D),at(0.05,d*D),dk,0.5); }
+  if(T==='cardigan'){ for(let i=0;i<4;i++) dot(ctx,at(0.2+i*0.18,3.4*D),'#d8d2c0',0.5); }
+  if(T==='blazer'){ const l1=at(0.96,3.0), l2=at(0.55,4.7*D); line(ctx,l1,l2,shade(col,0.6),0.7); dot(ctx,at(0.38,4.9*D),'#c9a56a',0.55); const pk=at(0.72,-2); line(ctx,at(0.72,1.6*D),at(0.72,3.4*D),shade(col,0.6),0.6); }
+  if(T==='sweatervest'){ const c1=at(1.0,2.2), c2=at(0.86,3.6); line(ctx,c1,c2,'#f2efe8',0.8); }
+}
 function person(ctx,P,look,opt){
-  opt=opt||{}; const F=P.face, C=colours(look);
+  opt=opt||{}; const F=P.face, o=outfit(look), C=colours(look,o), B=o.build;
   if(opt.ground){ const spots=(opt.mode==='crawl'||opt.mode==='roll')?[[P.hip.x,P.hip.y+6],[P.sh.x,P.sh.y+8]]:P.legs.map(L=>[L.ax+F*2,L.ay+CFG.ankleH]);
     for(const sp of spots){ const gy=opt.ground(sp[0]), h=Math.max(0,gy-sp[1]); if(h>26) continue;
       ctx.fillStyle='rgba(8,10,16,'+Math.max(0.05,0.3-h*0.01).toFixed(3)+')'; ctx.beginPath(); ctx.ellipse(sp[0],gy+0.4,Math.max(2.2,6.2-h*0.15),1.5,0,0,7); ctx.fill(); } }
+  // a slightly different body for everyone: scale about the ground under the hips
+  const gY=Math.max(P.legs[0].ay,P.legs[1].ay)+CFG.ankleH; ctx.save(); ctx.translate(P.hip.x,gY); ctx.scale(B.h,B.h); ctx.translate(-P.hip.x,-gY);
   const w=opt.w||{}, act=w.act&&w.act.name, flat=opt.mode==='crawl';
   const curl=i=>flat?0:(opt.mode==='roll'?1.2:(act==='clap'||opt.mode==='air'?0.08:(i===1&&P.prop?1.0:(w.reading?0.9:(w.dancing?0.2:0.4)))));
-  const arm=(i,far)=>{ const A=P.arms[i]; stroke(ctx,[P.sh.x,P.sh.y,A.ex,A.ey,A.hx,A.hy],3.9,far?C.shirtFar:C.shirt); hand(ctx,A,F,far?C.skinFar:C.skin,far?C.shirtFar:C.shirt,curl(i),flat); };
-  const leg=(i,far)=>{ const L=P.legs[i], col=far?C.pantsFar:C.pants; stroke(ctx,[P.hip.x,P.hip.y,L.kx,L.ky,L.ax,L.ay],5.2,col); stroke(ctx,[L.kx,L.ky,L.ax,L.ay],4.3,col); shoe(ctx,L,L.face,look.shoe||'#23201e'); };
+  const armW=3.7*(0.85+0.15*B.d), legW=5.0*Math.sqrt(B.d);
+  const arm=(i,far)=>{ const A=P.arms[i], sc=far?C.sleeveFar:C.sleeve, sk=far?C.skinFar:C.skin;
+    if(o.long){ stroke(ctx,[P.sh.x,P.sh.y,A.ex,A.ey,A.hx,A.hy],armW,sc); const cx=A.ex+(A.hx-A.ex)*0.86, cy=A.ey+(A.hy-A.ey)*0.86; stroke(ctx,[cx,cy,A.hx+(A.hx-A.ex)*0.02,A.hy+(A.hy-A.ey)*0.02],armW+0.5,o.top==='blazer'?'#ece8de':shade(o.sleeve,far?0.55:0.75)); }
+    else { const sx=P.sh.x+(A.ex-P.sh.x)*0.62, sy=P.sh.y+(A.ey-P.sh.y)*0.62; stroke(ctx,[sx,sy,A.ex,A.ey,A.hx,A.hy],armW*0.82,sk); stroke(ctx,[P.sh.x,P.sh.y,sx,sy],armW+0.7,sc); }
+    hand(ctx,A,F,sk,sc,curl(i),flat); };
+  const leg=(i,far)=>{ const L=P.legs[i], col=far?C.pantsFar:C.pants; stroke(ctx,[P.hip.x,P.hip.y,L.kx,L.ky,L.ax,L.ay],legW,col); stroke(ctx,[L.kx,L.ky,L.ax,L.ay],legW*0.83,col);
+    ctx.lineCap='round'; if(o.bottom==='jeans') line(ctx,[P.hip.x+(L.kx-P.hip.x)*0.15,P.hip.y+(L.ky-P.hip.y)*0.15],[L.kx+(L.ax-L.kx)*0.8,L.ky+(L.ay-L.ky)*0.8],'rgba(210,160,90,.45)',0.4);
+    else if(o.bottom==='slacks') line(ctx,[P.hip.x+(L.kx-P.hip.x)*0.2+L.face*0.8,P.hip.y+(L.ky-P.hip.y)*0.2],[L.ax+L.face*0.8,L.ay-1.4],'rgba(255,255,255,.14)',0.45);
+    else if(o.bottom==='work'){ const mx=P.hip.x+(L.kx-P.hip.x)*0.55, my=P.hip.y+(L.ky-P.hip.y)*0.55; ctx.fillStyle=shade(o.pants,0.8); ctx.fillRect(mx-1.6,my-1.2,3.2,2.6); }
+    shoeKind(ctx,L,L.face,o); };
   arm(0,true); leg(0,true); leg(1,false);
-  const tl=Math.hypot(P.neck.x-P.hip.x,P.neck.y-P.hip.y)||1, ux=(P.neck.x-P.hip.x)/tl, uy=(P.neck.y-P.hip.y)/tl;
+  const tl=Math.hypot(P.neck.x-P.hip.x,P.neck.y-P.hip.y)||1, ux=(P.neck.x-P.hip.x)/tl, uy=(P.neck.y-P.hip.y)/tl, nx=-uy*F, ny=ux*F;
+  const at=(k,d)=>[P.hip.x+ux*tl*k+nx*d,P.hip.y+uy*tl*k+ny*d];
   if(look.acc==='backpack') stroke(ctx,[P.hip.x-F*5+ux*7,P.hip.y+uy*7,P.neck.x-F*5.5-ux*5,P.neck.y-uy*5],7,'#3a4a5a');
-  stroke(ctx,[P.hip.x-ux*2.4,P.hip.y-uy*2.4,P.hip.x,P.hip.y],10.4,C.pants);
-  stroke(ctx,[P.hip.x+ux*1.5,P.hip.y+uy*1.5,P.neck.x-ux*2.6,P.neck.y-uy*2.6],10,C.shirt);
-  if(look.acc==='vest'){ ctx.lineCap='butt'; ctx.strokeStyle='#e8e8e8'; ctx.lineWidth=1.6; for(const k of [0.35,0.62]){ const cx=P.hip.x+ux*tl*k, cy=P.hip.y+uy*tl*k; ctx.beginPath(); ctx.moveTo(cx+uy*5,cy-ux*5); ctx.lineTo(cx-uy*5,cy+ux*5); ctx.stroke(); } }
-  if(look.acc==='cardigan'||look.acc==='flannel'){ ctx.lineCap='butt'; ctx.strokeStyle=shade(look.shirt,0.6); ctx.lineWidth=1.3; ctx.beginPath(); ctx.moveTo(P.hip.x+F*2.2+ux*2,P.hip.y+uy*2); ctx.lineTo(P.neck.x+F*2.2-ux*4,P.neck.y-uy*4); ctx.stroke(); }
+  stroke(ctx,[P.hip.x-ux*2.4,P.hip.y-uy*2.4,P.hip.x,P.hip.y],9.6*B.d,C.pants);
+  top(ctx,P,F,look,o,at,C);
+  if(o.tucked){ ctx.lineCap='butt'; const b1=at(0.02,-5*B.d), b2=at(0.02,5*B.d); line(ctx,b1,b2,'#1b1712',1.6); const bk=at(0.02,4.2*B.d); ctx.fillStyle='#c9a56a'; ctx.fillRect(bk[0]-0.9,bk[1]-0.9,1.8,1.8); }
   if(look.acc==='lanyard'||look.acc==='keys'){ const bx=P.neck.x+F*2.4-ux*9, by=P.neck.y-uy*9+1; ctx.strokeStyle='#d8d2c0'; ctx.lineWidth=0.8; ctx.beginPath(); ctx.moveTo(P.neck.x+F*1.5-ux*3,P.neck.y-uy*3); ctx.lineTo(bx,by); ctx.stroke(); ctx.fillStyle='#f6ecd8'; ctx.fillRect(bx-1.6,by,3.2,4.2); }
-  ctx.lineCap='butt'; ctx.strokeStyle='#1b1712'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(P.hip.x+uy*5.2+ux*1.2,P.hip.y-ux*5.2+uy*1.2); ctx.lineTo(P.hip.x-uy*5.2+ux*1.2,P.hip.y+ux*5.2+uy*1.2); ctx.stroke();
   if(opt.scarf){ const pts=[]; for(const p of opt.scarf) pts.push(p.x,p.y); stroke(ctx,pts,2.6,'#f2b544'); }
   stroke(ctx,[P.neck.x-ux*1.5,P.neck.y-uy*1.5,P.neck.x+(P.head.x-P.neck.x)*0.55,P.neck.y+(P.head.y-P.neck.y)*0.55],3.4,C.skin);
   head(ctx,P,look,C,{t:opt.t,talk:opt.talk,happy:opt.happy||w.dancing||act==='clap',lookDown:w.reading||flat});
@@ -111,6 +180,7 @@ function person(ctx,P,look,opt){
     ctx.fillStyle='#f6ecd8'; ctx.fillRect(-4.4,-3.6,8.8,6.2); ctx.lineWidth=0.6; ctx.beginPath(); ctx.moveTo(0,-3.6); ctx.lineTo(0,2.6); ctx.stroke(); ctx.restore(); }
   if(P.prop==='stone') treat(ctx,H.hx+F*1.2,H.hy+0.6,0,1);
   arm(1,false);
+  ctx.restore();
 }
 function treat(ctx,x,y,a,alpha){ ctx.save(); ctx.globalAlpha*=alpha; ctx.translate(x,y); ctx.rotate(a); ctx.fillStyle='#c98b4a'; ctx.strokeStyle=INK; ctx.lineWidth=0.8;
   ctx.beginPath(); ctx.ellipse(0,0,2.4,1.2,0,0,7); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(-2.2,0,1.1,0,7); ctx.arc(2.2,0,1.1,0,7); ctx.fill(); ctx.restore(); }
