@@ -69,7 +69,7 @@ function renderDC(c,V,G,now,dt){
   for(const q of n.locals.concat(G.npcs.filter(q=>q.node===G.cur.node))) if(q.pose&&Math.abs(q.w.x-G.hero.x)<130&&!(G.target&&G.target.q===q)) tag(q.def.name,q.w.x,q.pose.head.y-16,'rgba(16,26,46,.6)','#f6ecd8');
   if(G.target&&!G.dialog&&!G.card){ const T=G.target, y=(T.q&&T.q.pose?T.q.pose.head.y:-70)-18; tag((V.touch?'':'E  ')+T.label+'  ·  '+T.name,T.x,y,'#f2b544','#101a2e',true); }
 }
-D.ALTS.push({test:(V,G)=>V.camx>6000&&!G.drive,render:renderDC});
+D.ALTS.push({test:(V,G)=>V.camx>6000&&V.camx<36000&&!G.drive,render:renderDC});
 
 /* ---------------- the truck at home ---------------- */
 D.HOOKS.push(function(c,G,now,V){ if(!G.S.flags.network) return; const x=NET.TRUCK_E; if(x<V.x0-60||x>V.x1+60) return; truck(c,x,MAP.nodes.ground.world.yAt(x),1,now/1000); });
