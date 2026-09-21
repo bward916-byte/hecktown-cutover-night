@@ -18,8 +18,8 @@ function card(title,sub,dur){ return {card:title,sub:sub||'',dur:dur||4}; }
 function dlg(who,pages){ return {dlg:who,pages:pages}; }
 function runCine(G,dt){
   while(G.cine&&G.cine.length){ const s=G.cine[0];
-    if(s.card!==undefined){ if(!G.card) G.card={title:s.card,sub:s.sub,t:0,dur:s.dur}; G.card.t+=dt; if(G.card.t<G.card.dur) return; G.card=null; G.cine.shift(); return; }
-    if(s.dlg){ if(!s.started){ s.started=true; const p=s.dlg; G.dialog={who:p.name,role:p.role,look:p.look,pages:s.pages,i:0}; G.events.push({type:'sfx',name:'talk'}); return; } if(G.dialog) return; G.cine.shift(); continue; }
+    if(s.card!==undefined){ if(!G.card) G.card={title:s.card,sub:s.sub,t:0,dur:s.dur,style:s.style,panels:s.panels}; G.card.t+=dt; if(G.card.t<G.card.dur) return; G.card=null; G.cine.shift(); return; }
+    if(s.dlg){ if(!s.started){ s.started=true; const p=s.dlg; G.dialog={who:p.name,role:p.role,look:p.look,pages:s.pages,i:0,cine:true}; G.events.push({type:'sfx',name:'talk'}); return; } if(G.dialog) return; G.cine.shift(); continue; }
     if(s.fn){ G.cine.shift(); s.fn(G); continue; }
     G.cine.shift(); }
 }
