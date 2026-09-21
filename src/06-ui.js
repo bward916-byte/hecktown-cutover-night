@@ -23,7 +23,7 @@ addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code.startsWith('Arrow')
   if(e.repeat) return;
   if(state==='title'){ if(e.code==='Enter') (loadSave()?$('bContinue'):$('bNew')).click(); return; }
   if(e.code==='KeyJ'||e.code==='Tab'){ toggleJournal(); return; }
-  if(e.code==='Escape'){ if(state==='journal') toggleJournal(); else if(state==='ending') closeEnding(); return; }
+  if(e.code==='Escape'){ if(G&&G.board){ G.board=null; return; } if(state==='journal') toggleJournal(); else if(state==='ending') closeEnding(); return; }
   if(e.code==='KeyZ'){ $('bZoom').click(); return; } if(e.code==='KeyM'){ $('bSnd').click(); return; }
   if(state!=='play') return;
   if(G.card&&(e.code==='Space'||e.code==='KeyE'||e.code==='Enter')){ queue.push('use'); return; }
@@ -73,7 +73,7 @@ function footfall(ev,hard){
 const SFX={ talk:()=>tone(520+Math.random()*120,0.07,0.05,'triangle'), pick:()=>{ tone(660,0.09,0.07,'triangle'); tone(990,0.14,0.07,'triangle',null,0.08); },
   good:()=>[523,659,784,1047].forEach((f,i)=>tone(f,0.22,0.07,'triangle',null,i*0.09)), door:()=>{ burst(240,0.7,0.16,0.18,90); tone(180,0.2,0.05,'square',90); },
   deny:()=>{ tone(196,0.12,0.06,'square'); tone(155,0.2,0.06,'square',null,0.13); }, bark:()=>{ tone(420,0.09,0.10,'sawtooth',250); tone(460,0.1,0.10,'sawtooth',260,0.16); },
-  point:()=>tone(880,0.12,0.04,'sine',1320), purr:()=>{ for(let i=0;i<6;i++) burst(120,0.5,0.05,0.09,90); tone(60,0.5,0.03,'sine'); }, beep:()=>{ tone(1180,0.09,0.04,'square'); }, meow:()=>{ tone(700,0.22,0.05,'triangle',950); tone(980,0.25,0.04,'triangle',620,0.12); } };
+  point:()=>tone(880,0.12,0.04,'sine',1320), purr:()=>{ for(let i=0;i<6;i++) burst(120,0.5,0.05,0.09,90); tone(60,0.5,0.03,'sine'); }, honk:()=>{ tone(330,0.28,0.06,'sawtooth'); tone(415,0.28,0.05,'sawtooth'); }, beep:()=>{ tone(1180,0.09,0.04,'square'); }, meow:()=>{ tone(700,0.22,0.05,'triangle',950); tone(980,0.25,0.04,'triangle',620,0.12); } };
 /* Voices: a pitched blip per character as their words type out. */
 const VOICE={Rianan:520,Aaron:300,Bret:340,'Brian S':280,'Brian W':320,Umesh:380,Dave:250,John:270,Greg:240,Ryan:360,Jose:330,Ash:540,Andrew:350,Blaine:260,'The Founder':220,Pam:500,Melissa:480,Cathy:510,Milo:600,Rosa:460,'Mrs. Miller':470,Kim:490,Ashley:500,Nick:290,Tina:470,Frank:230,Lou:250,'A+':150,Terminal:170};
 function voiceOf(name){ if(VOICE[name]) return VOICE[name]; let h=7; for(let i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))>>>0; return 260+h%240; }
@@ -129,6 +129,7 @@ function journalHTML(){
   h+='<h3>Cutover checklist</h3>'; for(const t of GM.tasks(S)) h+='<div class="task '+t.status+'"><span class="mark">'+(t.status==='done'?'[x]':(t.status==='active'?'[>]':'[ ]'))+'</span><div>'+esc(t.title)+'<small>'+esc(t.note)+'</small></div></div>';
   h+='<h3>Places</h3><div class="places">'; const groups=[['Outside',r=>r.node==='ground'&&(r.x1<=1100||(r.x0>=1900&&r.x1<=2200)||r.x0>=3200)],['Phillips HQ',r=>r.node.indexOf('hq_')===0&&!r.dark||(r.node==='ground'&&r.x0>=1100&&r.x1<=1900)],['Lou\'s Garage',r=>r.node==='gar_loft'],['Easton DC',r=>r.node.indexOf('wh_')===0||(r.node==='ground'&&r.x0>=2200&&r.x1<=3160)],['Underneath',r=>!!r.dark]];
   for(const g of groups){ const rs=MAP.rooms.filter(g[1]); if(!rs.length) continue; h+='<div><b>'+esc(g[0])+'  '+rs.filter(r=>S.rooms[r.id]).length+'/'+rs.length+'</b>'+rs.map(r=>S.rooms[r.id]?'<div>'+esc(r.name)+'</div>':'<div class="un">? ? ?</div>').join('')+'</div>'; } h+='</div>';
+  if(S.flags.network){ h+='<h3>The network</h3><div class="places"><div>'+GM.NET.DCS.map(d=>(S.flags['dc_'+d.id]?'<div>':'<div class="un">')+esc(d.name)+(S.flags['dc_'+d.id]?'  ✓':'  · needs '+esc(GM.PEOPLE.find(p=>p.id===d.needs[0]).name))+'</div>').join('')+'</div></div>'; const cr=(S.crew||[]).map(id=>GM.PEOPLE.find(p=>p.id===id).name); h+='<div class="sub" style="margin-top:8px">Crew: '+(cr.length?esc(cr.join(', ')):'just you')+'. Talk to a teammate to bring them along; the truck is in The Yard.</div>'; }
   h+='<h3>The ledger</h3>'; let any=false; GM.PAGES.forEach((p,i)=>{ if(S.pages[i]){ any=true; h+='<div class="page">'+esc(p[2])+'</div>'; } }); if(!any) h+='<div class="sub">No pages yet. They turn up in corners, lofts and places you have to crawl into.</div>';
   h+='<h3>Controls</h3><div class="keys">'+keysHTML()+'</div>'; return h;
 }
@@ -169,7 +170,7 @@ function frame(now){
     for(const ev of G.events){ if(ev.type==='banner'){ toast(ev.text,ev.pts); if(ev.pts) SFX.point(); } else if(ev.type==='hint') toast(ev.text,0,true); else if(ev.type==='sfx'){ if(SFX[ev.name]) SFX[ev.name](); } else if(ev.type==='save') save(); else if(ev.type==='ending') showEnding(); else if(ev.type==='snap') snapCam(); else if(ev.type==='blip'&&AC) blip(ev.who); }
     G.events.length=0;
     autosave+=dt; if(autosave>20){ autosave=0; save(); }
-    typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); $('bSkip').classList.toggle('hide',!G.p38||G.p38.scene==='visit'); } dialogUI(); document.body.classList.toggle('card',!!G.card);
+    typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); $('bSkip').classList.toggle('hide',!G.p38||G.p38.scene==='visit'); } dialogUI(); document.body.classList.toggle('card',!!(G.card||G.board||G.drive));
   } else { readInput(); queue.length=0; acc=0; }
   if(saveBlip>0){ saveBlip-=dt; if(saveBlip<=0) $('saved').classList.remove('on'); }
   if(AC){ tickMusic(); tickRain(); }
