@@ -102,6 +102,8 @@ function drawCard(c,view,G){
 }
 
 const baseRender=D.render;
-D.render=function(c,view,G,now,dt){ if(view.camx<ERA_X) render38(c,view,G,now,dt); else baseRender(c,view,G,now,dt); drawCard(c,view,G); };
+const ALTS=[];                                            // other stages add whole scenes here (the DCs, the drive)
+D.render=function(c,view,G,now,dt){ const alt=ALTS.find(a=>a.test(view,G)); if(alt) alt.render(c,view,G,now,dt); else if(view.camx<ERA_X) render38(c,view,G,now,dt); else baseRender(c,view,G,now,dt); drawCard(c,view,G); };
+D.ALTS=ALTS;
 D.ERA_X=ERA_X; D.ERA_HOOKS=ERA_HOOKS; D.ERA_POST=ERA_POST;
 })(typeof globalThis!=='undefined'?globalThis:this);
