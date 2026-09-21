@@ -73,7 +73,7 @@ const ITEMS=[
 ];
 const TERMS=[{id:'t_dock',node:'ground',x:2260,where:'Receiving Dock'},{id:'t_roof',node:'hq_roof',x:1840,where:'Roof Garden'},{id:'t_gate',node:'ground',x:1010,where:'Security Gate'}];
 
-const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg*3+PTS.duct+PTS.jeopardy;
+const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg*4+PTS.duct+PTS.jeopardy;
 const RANKS=[[0,'New Badge'],[12,'Ticket Closer'],[30,'On-Call'],[50,'Change Approver'],[72,'Cutover Lead'],[95,'Hecktown Legend']];
 
 function freshSave(){ return {v:1,flags:{},inv:{},met:{},rooms:{},pages:{},eggs:{},signoffs:{},terms:{},gates:{},points:0,time:0,done:false,pos:{node:'ground',x:1150}}; }
@@ -134,7 +134,7 @@ function talkLines(G,p){
    case 'rianan':
      if(!F.started){ F.started=1; award(G,PTS.start,'Cutover checklist received'); return ['There you are, Brian. A+ gets archived at midnight and I am not doing it on vibes.','Six system owners, six sign-offs: Network, Backup, Catalog, EDI, Storefront, Jobs. Walk the campus and get them.','Start with Andrew downstairs. Half the doors in this company want a Level 2 badge.']; }
      if(S.done) return ['It went quietly. After forty years, it went quietly. Go home. Or finish your lap, I know you.'];
-     return ['That alley cat has a business plan. I respect it. I also want to pet it.',count(S.signoffs)+' of 6 sign-offs. The Journal has the list if you lose track.'];
+     return ['That alley cat by Tina\'s truck has a business plan. I respect it. I also want to pet it.',count(S.signoffs)+' of 6 sign-offs. The Journal has the list if you lose track.'];
    case 'andrew':
      if(!F.started) return ['Head of IT Support. If it\'s broken, it\'s a ticket. Rianan is looking for you: War Room, second floor. Stairs are in the core, hold Up on the landing.'];
      if(I.badge) return ['Change freeze starts at midnight. Everything before that needs a signature, and you\'re the one collecting them.','Thursday RFC meeting stands. Even tonight. Especially tonight.'];
@@ -170,6 +170,7 @@ function talkLines(G,p){
      F.sfAsked=1; return ['I have been staring at this flow since lunch. I will sign Storefront the second there is coffee in my hand.','Tina\'s truck is still open tonight. West lot, past the garage.'];
    case 'tina':
      if(F.sfAsked&&!I.coffee&&!S.signoffs.Storefront){ I.coffee=1; G.events.push({type:'banner',text:'Got a coffee for Ash'}); return ['For Ash? Large, no room. On the house, it\'s cutover night.']; }
+     if(F.miloAsked&&!I.taco){ I.taco=1; G.events.push({type:'banner',text:'Got a taco for Milo'}); return ['A taco for the cat? He tips better than you do.']; }
      return ['Eleven to two, usually. Tonight I stay till the lights go out upstairs.','The gray guy comes by. Never orders. Always tips.'];
    case 'john':
      if(S.signoffs.Jobs) return ['Old-school RPG. Not the elves. The report program generator.','Nothing runs at midnight tonight unless we say so.'];
