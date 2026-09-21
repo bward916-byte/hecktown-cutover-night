@@ -760,6 +760,7 @@ duct('tun_2',800,900);
 [[600,'pipes'],[1000,'pump'],[1150,'pump'],[1400,'pipes']].forEach(p=>prop(p[1],'tun_2',p[0]));
 [[1540,'sacks'],[1620,'barrel'],[1700,'scale'],[1780,'sacks'],[1840,'barrel'],[2120,'aplus']].forEach(p=>prop(p[1],'tun_3',p[0]));
 prop('term','ground',1010);
+[['ground',1290],['hq_f2',1212],['hq_b1',1830]].forEach(p=>prop('aplus_wall',p[0],p[1]));             // A+ watches from these
 [[-165,'car',0],[-95,'car',1],[-25,'car',2],[-60,'lamp'],[92,'picnic'],[335,'koi'],[664,'dumpster']].forEach(p=>prop(p[1],'ground',p[0],{v:p[2]||0}));
 
 root.HMAP=MAP;
@@ -772,7 +773,7 @@ root.HMAP=MAP;
 const E=root.WalkEngine, MAP=root.HMAP, CFG=E.CFG;
 const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
 const SIGNOFFS=['Network','Backup','Catalog','EDI','Storefront','Jobs'];
-const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10,jeopardy:25};
+const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10,jeopardy:25,sku:30};
 
 /* ---------------- people ----------------  look = [skin, hair, style, shirt, pants, accessory] */
 const P=(id,name,role,look,node,x,opt)=>{ const p=Object.assign({id:id,name:name,role:role,look:{skin:look[0],hair:look[1],style:look[2],shirt:look[3],pants:look[4],acc:look[5]},node:node,x:x},opt||{});
@@ -841,7 +842,7 @@ const ITEMS=[
 ];
 const TERMS=[{id:'t_dock',node:'ground',x:2260,where:'Receiving Dock'},{id:'t_roof',node:'hq_roof',x:1840,where:'Roof Garden'},{id:'t_gate',node:'ground',x:1010,where:'Security Gate'}];
 
-const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg*4+PTS.duct+PTS.jeopardy;
+const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg*4+PTS.duct+PTS.jeopardy+PTS.sku;
 const RANKS=[[0,'New Badge'],[12,'Ticket Closer'],[30,'On-Call'],[50,'Change Approver'],[72,'Cutover Lead'],[95,'Hecktown Legend']];
 
 function freshSave(){ return {v:1,flags:{},inv:{},met:{},rooms:{},pages:{},eggs:{},signoffs:{},terms:{},gates:{},points:0,time:0,done:false,pos:{node:'ground',x:1150}}; }
@@ -1141,8 +1142,8 @@ function card(title,sub,dur){ return {card:title,sub:sub||'',dur:dur||4}; }
 function dlg(who,pages){ return {dlg:who,pages:pages}; }
 function runCine(G,dt){
   while(G.cine&&G.cine.length){ const s=G.cine[0];
-    if(s.card!==undefined){ if(!G.card) G.card={title:s.card,sub:s.sub,t:0,dur:s.dur}; G.card.t+=dt; if(G.card.t<G.card.dur) return; G.card=null; G.cine.shift(); return; }
-    if(s.dlg){ if(!s.started){ s.started=true; const p=s.dlg; G.dialog={who:p.name,role:p.role,look:p.look,pages:s.pages,i:0}; G.events.push({type:'sfx',name:'talk'}); return; } if(G.dialog) return; G.cine.shift(); continue; }
+    if(s.card!==undefined){ if(!G.card) G.card={title:s.card,sub:s.sub,t:0,dur:s.dur,style:s.style,panels:s.panels}; G.card.t+=dt; if(G.card.t<G.card.dur) return; G.card=null; G.cine.shift(); return; }
+    if(s.dlg){ if(!s.started){ s.started=true; const p=s.dlg; G.dialog={who:p.name,role:p.role,look:p.look,pages:s.pages,i:0,cine:true}; G.events.push({type:'sfx',name:'talk'}); return; } if(G.dialog) return; G.cine.shift(); continue; }
     if(s.fn){ G.cine.shift(); s.fn(G); continue; }
     G.cine.shift(); }
 }
@@ -1314,6 +1315,108 @@ GM.advance=function(G,choice){ const d=G.dialog;
   base.advance(G,choice); };
 GM.command=function(G,name){ if(name==='throw'&&G.S.inv.catnip&&!G.dialog&&!G.card&&G.hero.mode==='walk'&&G.cur.node){ const ok=base.command(G,name); if(ok) throwNip(G); return ok; } return base.command(G,name); };
 GM.PTS_EGG=5; GM.LIFE={MILO:MILO,CHUCK:CHUCK,DOG:DOG,life:life};
+})(typeof globalThis!=='undefined'?globalThis:this);
+
+/* ==== 03d-story.js ==== */
+/* ==== STORY: A+ speaks (typed green-screen cards with a face), the Server Room reveal, comic-panel chapter cards,
+   Rianan's halfway bridge call, one vignette per teammate, and Pam & Melissa's three mis-slotted SKUs. DOM-free. ==== */
+(function(root){
+'use strict';
+const GM=root.HGAME, MAP=root.HMAP;
+const person=id=>GM.PEOPLE.find(p=>p.id===id);
+const who=id=>{ const p=person(id); return {name:p.name,role:p.role,look:p.look}; };
+const APLUS={name:'A+',role:'Since 1985',look:null};
+const SKUS=[{id:'a',x:2336,label:'MIS-SLOT A'},{id:'b',x:2700,label:'MIS-SLOT B'},{id:'c',x:3036,label:'MIS-SLOT C'}];
+const SO_LINES={1:'ONE SIGNATURE. I HAVE SHIPPED FORTY YEARS OF ORDERS. ONE SIGNATURE.',2:'TWO. THE CATALOG IS MINE. THE CATALOG WAS ALWAYS MINE.',3:'THREE. I AM COUNTING TOO, YOU KNOW.',4:'FOUR. THE JOB QUEUE WILL MISS ME. NOBODY ELSE ASKS IT HOW IT IS.',
+  5:'THE FIRST ORDER I EVER SHIPPED WAS FORTY BAGS OF CHOW TO A STORE THAT CLOSED IN 1991. I STILL HAVE THE RECORD. I HAVE ALL OF THEM.',6:'SIX. ...FINE. COME DOWNSTAIRS. ALL THE WAY DOWN.'};
+const VIG={
+  rianan:[['rianan','Has anybody fed the cat by Tina\'s truck?'],['hero','We\'re kind of in a hurry.'],['rianan','The cat is now on the crew.']],
+  greg:[['hero','Greg... what year do you think it is?'],['greg','Fiscal.'],['hero','That\'s not—'],['greg','Fiscal.']],
+  aaron:[['aaron','Give me thirty seconds with this switch stack.'],['aaron','...there. Everything\'s green again.'],['hero','Also your beard\'s still perfect.'],['aaron','I know.']],
+  ash:[['ash','Salesforce just DM\'d me an apology.'],['hero','Salesforce can\'t DM you.'],['ash','It can now. I built a flow for it.']],
+  dave:[['dave','Green screen\'s back. Forty years and it finally blinked first.'],['hero','Did you win?'],['dave','Nobody wins against a green screen. You just outlast it.']],
+  umesh:[['umesh','Every 850 in the queue, back where it belongs.'],['hero','And the 997s?'],['umesh','It can keep the 997s. Nobody wants the 997s.']],
+  john:[['john','I looked at the scheduler.'],['hero','And?'],['john','Nothing runs at midnight tonight unless we say so. I made sure.']],
+  ryan:[['ryan','Pipeline\'s green.'],['hero','You checked already?'],['ryan','I check while I walk. It\'s a condition.']],
+  brians:[['brians','It changed the admin console wallpaper to a picture of itself.'],['hero','That\'s... actually kind of sad.'],['brians','I changed it back to the dog.']],
+  jose:[['jose','I redrew the architecture diagram.'],['hero','Better?'],['jose','It has a dragon on it now. Morale is up.']],
+  bret:[['bret','Hang on, one sec.'],['bret','...he\'s asleep. Look at that face.'],['hero','Is that the baby?'],['bret','That\'s the baby. Okay. Okay, let\'s go.']],
+  hero:[['hero','The database is fine.'],['hero','It\'s everything around it that isn\'t.']],
+};
+const comic=(title,sub,panels)=>({card:title,sub:sub,dur:5.5,style:'comic',panels:panels});
+
+function st(G){ return G.story||(G.story={ap:null,apq:[],bub:[],vig:null,vigT:0,lastSO:-1,reveal:0}); }
+function aplusSay(G,text,dur){ const s=st(G); s.apq.push({text:text,dur:dur||Math.max(4,text.length/14),t:0,typed:0}); }
+function aplusMood(text){ if(!text) return 'idle'; if(/ARCHIVED|THANK YOU|\.\.\.$|GOOD NIGHT|COMPANY|OPERATOR/.test(text)) return 'quiet'; if(/\?|WHO |WHY |WHAT /.test(text)) return 'confused'; if(/DENIED|MINE|NO\.|NEVER|GET OUT|CANNOT/.test(text)) return 'mean'; if(/ONE |TWO|THREE|FOUR|SIX|COUNTING|WE WILL SEE|WARM/.test(text)) return 'smug'; return 'talk'; }
+function flag(S,k){ if(S.flags[k]) return false; S.flags[k]=1; return true; }
+
+function bridgeCall(G,n){
+  const R=who('rianan'), A=who('andrew'), P=who('pam');
+  return [comic('CHAPTER TWO','Halfway to midnight',[{i:'✍',c:n+' of 6 signed'},{i:'☎',c:'Rianan opens the bridge'},{i:'A+',c:'Somebody else is listening'}]),
+    GM.dlg(R,['Rianan: "'+n+' of 6. Everyone on the bridge?"']),
+    GM.dlg(A,['Andrew: "Help desk here. Emergency RFCs approved. The board looks like a Christmas tree."']),
+    GM.dlg(P,['Pam: "Catalog\'s holding. Something flips SKUs at 11:53 and we flip them back at 11:54."']),
+    GM.dlg(APLUS,['I CAN HEAR THIS CALL.']), GM.dlg(R,['Rianan: "We know."']),
+    GM.dlg(APLUS,['THE ORDERS SHIP ON TIME. THEY HAVE ALWAYS SHIPPED ON TIME. WHY IS THAT NOT ENOUGH.']),
+    GM.dlg(R,['Rianan: "Because tomorrow they ship without you. And that has to be okay."']), GM.dlg(APLUS,['...']),
+    GM.dlg(R,['Rianan: "'+(6-n)+' to go. Keep walking."']), {fn:G=>G.events.push({type:'banner',text:'The whole team, on one call.'})}];
+}
+function reveal(G){
+  const s=st(G); return [{fn:G=>{ s.reveal=3.5; G.events.push({type:'sfx',name:'door'}); }},
+    GM.dlg(APLUS,['SO. YOU FOUND WHERE I LIVE.','I HAVE SHIPPED EVERY ORDER THIS COMPANY HAS TAKEN SINCE 1985. FROM THIS ROOM. FROM THESE FANS.','DAVE KEEPS ME COMPANY. DAVE IS A GOOD OPERATOR.','YOU ARE HERE FOR SIGNATURES. I KNOW. THE DOORS TELL ME EVERYTHING.'])];
+}
+
+/* ---------------- one step ---------------- */
+function tick(G,dt){
+  const S=G.S, F=S.flags, s=st(G), N=G.cur.node, h=G.hero, free=!G.dialog&&!G.card&&!(G.cine&&G.cine.length)&&!G.p38;
+  // A+ cards: one at a time, typed out
+  if(!s.ap&&s.apq.length) s.ap=s.apq.shift();
+  if(s.ap){ const a=s.ap; a.t+=dt; const k=Math.min(a.text.length,Math.floor(a.t*32)); if(k>a.typed){ if(Math.floor(k/3)>Math.floor(a.typed/3)) G.events.push({type:'blip',who:'A+'}); a.typed=k; } if(a.t>a.dur+a.text.length/32) s.ap=null; }
+  if(s.reveal>0) s.reveal-=dt;
+  if(G.p38) return;
+  // story beats
+  const so=GM.count(S.signoffs);
+  if(free){
+    if(S.flags.started&&flag(S,'ch1')){ G.cine.push(comic('CHAPTER ONE','Six signatures before midnight',[{i:'☕',c:'6:00 PM. Rianan\'s checklist'},{i:'✍',c:'Six system owners'},{i:'A+',c:'One very old system'}])); aplusSay(G,'I HEARD THAT. SIX SIGNATURES. WE WILL SEE.'); }
+    else if(so>=3&&flag(S,'halfway')) G.cine.push(...bridgeCall(G,so));
+    else if(so>=6&&flag(S,'ch3')) G.cine.push(comic('CHAPTER THREE','Six of six',[{i:'✍',c:'Every owner signed'},{i:'🔑',c:'Greg has the only key'},{i:'⬇',c:'A+ is waiting, all the way down'}]));
+    else if(S.inv.tunnelkey&&flag(S,'ch4')){ G.cine.push(comic('CHAPTER FOUR','Down',[{i:'🧱',c:'A door bricked over in \'91'},{i:'🕯',c:'Tunnels older than the building'},{i:'A+',c:'The machine room'}])); aplusSay(G,'GREG. OF COURSE IT WAS GREG.'); }
+    else if(N&&N.id==='hq_b1'&&MAP.rooms.some(r=>r.name==='Server Room'&&S.rooms[r.id])&&flag(S,'reveal')) G.cine.push(...reveal(G));
+  }
+  if(so!==s.lastSO){ if(s.lastSO>=0&&so>s.lastSO&&SO_LINES[so]&&flag(S,'ap_so'+so)) aplusSay(G,SO_LINES[so]); s.lastSO=so; }
+  if(S.inv.badge&&flag(S,'ap_badge')) aplusSay(G,'LEVEL 2. THE DOORS REPORT TO ME, YOU KNOW.');
+  if(GM.count(S.pages)>=1&&flag(S,'ap_page')) aplusSay(G,'THAT LEDGER IS OLDER THAN ME. I READ IT ANYWAY.');
+  if(N&&N.id==='tun_2'&&flag(S,'ap_tun')) aplusSay(G,'YOU ARE GETTING WARMER. I RUN WARM.');
+  // vignettes: speech bubbles, one exchange at a time, once per person
+  for(let i=s.bub.length-1;i>=0;i--){ s.bub[i].t-=dt; if(s.bub[i].t<=0) s.bub.splice(i,1); }
+  if(s.vig){ s.vigT-=dt; if(s.vigT<=0){ const v=s.vig; v.i++; if(v.i>=v.lines.length) s.vig=null; else{ const [id,text]=v.lines[v.i]; s.bub=s.bub.filter(b=>b.id!==id); s.vigT=2.2+text.length*0.035; s.bub.push({id:id,text:text,t:s.vigT+(v.i===v.lines.length-1?1.2:0.1)}); } } }
+  else if(free&&N){ if(F.ch1&&flag(S,'vig_hero')) s.vig={lines:VIG.hero,i:-1};
+    else for(const q of G.npcs){ const id=q.def.id; if(VIG[id]&&q.node===N&&S.met[id]&&Math.abs(q.w.x-h.x)<80&&!F['vig_'+id]){ F['vig_'+id]=1; s.vig={lines:VIG[id],i:-1}; s.vigT=0.6; break; } } }
+  // the SKU hunt: extra things to use on the warehouse floor
+  if(F.skuOn&&!F.skuDone&&N&&N.id==='ground'&&!G.dialog){ let best=G.target, bd=best?Math.abs(best.x-h.x)+(best.kind==='item'||best.kind==='page'?-40:0):1e9;
+    for(const k of SKUS) if(!F['sku_'+k.id]){ const d=Math.abs(k.x-h.x); if(d<26&&d-40<bd){ bd=d-40; best={kind:'sku',label:'Scan',name:k.label,x:k.x,k:k}; } }
+    G.target=best; }
+}
+function skuTalk(G){ const F=G.S.flags, P=who('pam'), M=who('melissa');
+  if(F.skuOn){ G.dialog={who:P.name,role:P.role,look:P.look,pages:['Pam: "Three pallets on the warehouse floor say one thing and hold another. Scan them and we\'ll fix the rest in the PIM."'],i:0}; return; }
+  G.dialog={who:P.name,role:P.role,look:P.look,pages:['Pam: "Catalog\'s signed, but three SKUs on the warehouse floor are mis-slotted. The old system did it on purpose, I swear."','Melissa: "Receiving, the pick aisles and shipping. Scan them for us?"'],i:0,choices:[{label:'On it',id:'sku_yes'},{label:'Later',id:'sku_no'}]};
+  G.events.push({type:'sfx',name:'talk'}); }
+function skuScan(G,k){ const S=G.S, F=S.flags; F['sku_'+k.id]=1; const n=SKUS.filter(z=>F['sku_'+z.id]).length; G.events.push({type:'sfx',name:'pick'});
+  if(n<3){ G.events.push({type:'banner',text:k.label+' scanned  ·  '+n+' of 3'}); G.events.push({type:'save'}); return; }
+  F.skuDone=1; S.points+=GM.PTS_SKU; G.events.push({type:'banner',text:'Melissa: "All three fixed in the PIM. Catalog\'s perfect."',pts:GM.PTS_SKU}); G.events.push({type:'sfx',name:'good'}); G.events.push({type:'save'}); }
+
+const base={update:GM.update,interact:GM.interact,advance:GM.advance};
+GM.update=function(G,ix,iy,dt){ base.update(G,ix,iy,dt); tick(G,dt); };
+GM.interact=function(G){ const t=G.target, S=G.S;
+  if(!G.dialog&&!G.card&&t&&!G.p38){
+    if(t.kind==='sku'){ skuScan(G,t.k); return; }
+    if(t.kind==='talk'&&(t.q.def.id==='pam'||t.q.def.id==='melissa')&&S.signoffs.Catalog&&S.met[t.q.def.id]&&!S.flags.skuDone){ skuTalk(G); return; } }
+  base.interact(G); };
+GM.advance=function(G,choice){ const d=G.dialog;
+  if(d&&d.choices&&d.i>=d.pages.length-1&&choice!=null&&d.choices[choice]&&/^sku_/.test(d.choices[choice].id)){ const yes=d.choices[choice].id==='sku_yes'; G.dialog=null;
+    if(yes){ G.S.flags.skuOn=1; G.events.push({type:'banner',text:'Pam\'s list: three mis-slotted SKUs on the warehouse floor'}); G.events.push({type:'save'}); } return; }
+  base.advance(G,choice); };
+GM.PTS_SKU=30; GM.STORY={st:st,aplusSay:aplusSay,aplusMood:aplusMood,SKUS:SKUS,VIG:VIG};
 })(typeof globalThis!=='undefined'?globalThis:this);
 
 /* ==== 04-draw-people.js ==== */
@@ -1773,7 +1876,7 @@ function render38(c,view,G,now,dt){
 
 /* ---------------- full-screen cards ---------------- */
 function drawCard(c,view,G){
-  const k=G.card; if(!k) return; const a=clamp(Math.min(k.t/0.5,(k.dur-k.t)/0.5),0,1); ctx=c; V=view;
+  const k=G.card; if(!k) return; if(k.style&&D.drawCardStyle&&D.drawCardStyle(c,view,G,k)) return; const a=clamp(Math.min(k.t/0.5,(k.dur-k.t)/0.5),0,1); ctx=c; V=view;
   ctx.setTransform(V.DPR,0,0,V.DPR,0,0); ctx.globalAlpha=Math.max(a,0.001); ctx.fillStyle='#1c140c'; ctx.fillRect(0,0,V.W,V.H);
   const small=k.title.length>18, fs=small?Math.min(34,V.W/18):Math.min(64,V.W/7);
   ctx.fillStyle='#f0e0c0'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=(small?'italic ':'700 ')+fs+'px Georgia,"Times New Roman",serif';
@@ -1838,6 +1941,95 @@ D.HOOKS.push(function(c,G,now,V){
   for(const k of lf.cats) if(N&&k.node===N.id&&vis(k.x-12,k.x+12)) cat(c,k.x,N.world.yAt(k.x),k.col,k.dir,k.t+k.x*0.01,k.state!=='sit',{sit:k.state==='sit'});
   if(!V.quiet&&N&&N.id==='ground'&&Math.abs(G.hero.x-L.CHUCK.x)<90&&!(G.target)){ c.font='600 5px "IBM Plex Sans",system-ui,sans-serif'; c.textAlign='center'; const y=gy(L.CHUCK.x)-26; c.fillStyle='rgba(16,26,46,.7)'; c.fillRect(L.CHUCK.x-22,y-5,44,9); c.fillStyle='#f6ecd8'; c.fillText(lf.chuckUp<0.3?'CHUCK  ·  hiding':'CHUCK',L.CHUCK.x,y+1.6); }
 });
+})(typeof globalThis!=='undefined'?globalThis:this);
+
+/* ==== 05d-draw-story.js ==== */
+/* ==== STORY, drawn: A+'s face on a card and on the wall monitors, the Server Room lighting up, speech bubbles,
+   Pam's SKU tags, and the comic-panel chapter cards. ==== */
+(function(root){
+'use strict';
+const D=root.HDRAW, GM=root.HGAME, MAP=root.HMAP, INK=root.HPEOPLE.INK, ST=GM.STORY;
+const clamp=(v,a,b)=>v<a?a:(v>b?b:v), rnd=(a,b)=>a+Math.random()*(b-a);
+const rr=(c,x,y,w,h,r)=>{ c.beginPath(); if(c.roundRect) c.roundRect(x,y,w,h,r); else c.rect(x,y,w,h); };
+let curG=null;
+
+/* A+'s face: two block eyes, a mouth, a jaw of characters. It glitches when cross and goes still when it is done. */
+function face(c,x,y,w,h,mood,t,talking,intensity){
+  c.save(); c.translate(x,y); c.fillStyle='#0a1a0e'; rr(c,0,0,w,h,Math.min(6,w/10)); c.fill(); c.strokeStyle='rgba(120,255,140,.55)'; c.lineWidth=Math.max(0.6,w/60); rr(c,0,0,w,h,Math.min(6,w/10)); c.stroke();
+  c.save(); rr(c,1,1,w-2,h-2,Math.min(5,w/12)); c.clip(); const G=a=>'rgba(120,255,140,'+a+')', s=Math.min(w,h)/90, cx=w/2, cy=h/2;
+  for(let k=2;k<h;k+=Math.max(1.5,3*s)){ c.fillStyle=G(0.06); c.fillRect(1,k,w-2,Math.max(0.5,s)); }
+  const blink=(t%4.2)>4.05&&mood!=='mean', ew=16*s, eh=blink?2*s:(mood==='mean'?7*s:(mood==='confused'?12*s:(mood==='quiet'?3*s:9*s)));
+  for(const side of [-1,1]){ c.save(); c.translate(cx+side*20*s,cy-12*s); c.rotate(side*(mood==='mean'?0.35:0)); c.fillStyle=G(0.95); c.fillRect(-ew/2,-eh/2,ew,eh);
+    if(!blink&&mood!=='quiet'){ c.fillStyle='#0a1a0e'; c.fillRect(-2*s+(mood==='confused'?Math.sin(t*7)*4*s:0),-eh/2+1*s,4*s,Math.max(1,eh-2*s)); } c.restore(); }
+  c.strokeStyle=G(0.95); c.lineWidth=2.5*s; c.beginPath(); const my=cy+16*s, open=talking?Math.abs(Math.sin(t*18))*8*s:0;
+  if(mood==='mean'){ c.moveTo(cx-24*s,my-4*s); for(let k=0;k<=6;k++) c.lineTo(cx-24*s+k*8*s,my+(k%2?6*s+open:-2*s)); c.stroke(); }
+  else if(mood==='smug'){ c.moveTo(cx-18*s,my+2*s); c.quadraticCurveTo(cx,my-2*s+open,cx+22*s,my-8*s); c.stroke(); }
+  else if(mood==='confused'){ c.moveTo(cx-18*s,my); for(let k=0;k<=4;k++) c.lineTo(cx-18*s+k*9*s,my+Math.sin(k*1.5+t*5)*4*s+open*0.5); c.stroke(); }
+  else if(mood==='quiet'){ c.moveTo(cx-12*s,my); c.lineTo(cx+12*s,my); c.stroke(); }
+  else{ c.moveTo(cx-16*s,my); c.lineTo(cx+16*s,my); c.stroke(); if(open>0){ c.fillStyle=G(0.95); c.fillRect(cx-10*s,my,20*s,open); } }
+  if(s>0.25){ c.fillStyle=G(0.35); c.font='700 '+Math.max(3,Math.round(6*s))+'px "IBM Plex Mono",monospace'; c.textAlign='center'; c.textBaseline='alphabetic'; c.fillText(mood==='mean'?'#### A+ ####':(mood==='quiet'?'.... A+ ....':'---- A+ ----'),cx,h-5*s); }
+  const glitch=mood==='mean'?0.35:(mood==='confused'?0.2:(mood==='quiet'?0.02:0.08)); if(Math.random()<glitch*intensity){ c.fillStyle=G(0.25); c.fillRect(rnd(-6,6)*s,rnd(0,h),w,3*s); }
+  c.restore(); c.restore();
+}
+function speaking(G){ const s=G.story; if(G.dialog&&G.dialog.who==='A+') return {text:G.dialog.pages[G.dialog.i],talk:true}; if(s&&s.ap) return {text:s.ap.text,talk:s.ap.typed<s.ap.text.length}; return null; }
+
+/* wall monitors */
+D.PROPS.aplus_wall=(x,y,now,c)=>{ const G=curG; if(!G) return; const w=26, h=20, top=y-80, t=now/1000, sp=speaking(G);
+  c.fillStyle='#22262e'; c.fillRect(x-1.5,top+h,3,5);
+  if(sp){ face(c,x-w/2,top,w,h,ST.aplusMood(sp.text),t,sp.talk,0.6); c.save(); c.globalCompositeOperation='lighter'; const g=c.createRadialGradient(x,top+h/2,3,x,top+h/2,40); g.addColorStop(0,'rgba(120,255,140,.22)'); g.addColorStop(1,'rgba(0,0,0,0)'); c.fillStyle=g; c.fillRect(x-40,top-30,80,80); c.restore(); return; }
+  c.fillStyle='#0a1a0e'; rr(c,x-w/2,top,w,h,2); c.fill(); c.strokeStyle='rgba(120,255,140,.4)'; c.lineWidth=0.7; rr(c,x-w/2,top,w,h,2); c.stroke();
+  c.fillStyle='#7fe0a0'; c.font='700 3.6px "IBM Plex Mono",monospace'; c.textAlign='left'; c.textBaseline='alphabetic';
+  if(G.S.done){ c.fillText('ARCHIVED',x-10,top+8); c.fillStyle='rgba(120,255,140,.5)'; c.fillText('thank you',x-10,top+14); }
+  else{ c.fillText('A+ >'+(Math.floor(t*2)%2?'_':''),x-10,top+8); c.fillStyle='rgba(120,255,140,.5)'; c.fillText('CUTOVER 00:00',x-10,top+14); } };
+
+/* in the world: the reveal, bubbles, SKU tags */
+D.HOOKS.push(function(c,G,now,V){
+  const s=G.story, t=now/1000, N=G.cur.node; if(!s||!N) return;
+  if(s.reveal>0&&N.id==='hq_b1'){ const a=clamp(s.reveal/3.5,0,1)*(0.6+0.4*Math.abs(Math.sin(t*9))); for(const p of MAP.props) if(p.node==='hq_b1'&&p.type==='server'){ const y=N.world.yAt(p.x); c.fillStyle='rgba(120,255,140,'+(0.35*a).toFixed(3)+')'; c.fillRect(p.x-14,y-66,28,66); }
+    face(c,1790,N.world.yAt(1790)-78,34,26,'talk',t,true,1); }
+  // Pam's three mis-slotted SKUs
+  const F=G.S.flags; if(F.skuOn&&!F.skuDone&&N.id==='ground') for(const k of ST.SKUS){ if(F['sku_'+k.id]||k.x<V.x0-20||k.x>V.x1+20) continue; const y=N.world.yAt(k.x)-64+Math.sin(t*3+k.x)*1.5;
+    c.fillStyle='rgba(242,181,68,.25)'; c.beginPath(); c.arc(k.x,y,10,0,7); c.fill(); c.fillStyle='#f6ecd8'; c.fillRect(k.x-7,y-5,14,10); c.strokeStyle=INK; c.lineWidth=0.7; c.strokeRect(k.x-7,y-5,14,10);
+    c.fillStyle=INK; for(let j=0;j<8;j++) c.fillRect(k.x-5.5+j*1.5,y-3.5,(j%3?0.6:1),5); c.fillStyle='#c25a3a'; c.font='700 2.4px "IBM Plex Mono",monospace'; c.fillText(k.label,k.x,y+3.6); }
+});
+
+/* the A+ card at the top of the screen */
+function wrap(c,text,maxW){ const words=text.split(' '), out=[]; let line=''; for(const w of words){ const tryL=line?line+' '+w:w; if(c.measureText(tryL).width>maxW&&line){ out.push(line); line=w; } else line=tryL; } if(line) out.push(line); return out; }
+function bubbles(c,V,G){
+  const s=G.story, N=G.cur.node; if(!s||!N||!s.bub.length||G.card||V.quiet) return; const ox=V.W/2-V.camx*V.zoom, oy=V.H*0.62-V.camy*V.zoom;
+  c.setTransform(V.DPR,0,0,V.DPR,0,0); c.font='italic 13px Georgia,serif'; c.textAlign='center'; c.textBaseline='middle';
+  for(const b of s.bub){ let P=null; if(b.id==='hero') P=G.pose; else { const q=G.npcs.find(n=>n.def.id===b.id); if(q&&q.node===N) P=q.pose; } if(!P) continue;
+    const x=P.head.x*V.zoom+ox, y=P.head.y*V.zoom+oy-48, tw=c.measureText(b.text).width+20; c.globalAlpha=Math.min(1,b.t*2);
+    c.fillStyle='rgba(246,236,216,.96)'; rr(c,x-tw/2,y-13,tw,26,9); c.fill(); c.beginPath(); c.moveTo(x-6,y+12); c.lineTo(x+6,y+12); c.lineTo(x,y+20); c.closePath(); c.fill();
+    c.fillStyle='#243447'; c.fillText(b.text,x,y+0.5); c.globalAlpha=1; } }
+function aplusCard(c,V,G,now){
+  const s=G.story; if(!s||!s.ap||G.card||V.quiet||(G.dialog&&G.dialog.who==='A+')) return; const a=s.ap, t=now/1000, alpha=clamp(Math.min(a.t/0.2,(a.dur+a.text.length/32-a.t)/0.5),0,1); if(alpha<=0) return;
+  c.setTransform(V.DPR,0,0,V.DPR,0,0); c.globalAlpha=alpha; c.font='700 13px "IBM Plex Mono",monospace';
+  const maxW=Math.min(520,V.W-120), lines=wrap(c,'A+ > '+a.text,maxW), shown=a.typed+5; const fw=64, fh=50, h=Math.max(fh,16+lines.length*18), w=Math.min(maxW,Math.max(...lines.map(l=>c.measureText(l).width)))+28;
+  const x=(V.W-(w+fw+8))/2+fw+8, y=V.W<640?160:118;
+  face(c,x-fw-8,y+(h-fh)/2,fw,fh,ST.aplusMood(a.text),t,a.typed<a.text.length,1);
+  c.fillStyle='rgba(6,14,8,.92)'; rr(c,x,y,w,h,4); c.fill(); c.strokeStyle='rgba(120,255,140,.55)'; c.lineWidth=1; rr(c,x,y,w,h,4); c.stroke();
+  c.fillStyle='#7fe0a0'; c.textAlign='left'; c.textBaseline='middle'; let left=shown;
+  let cur=false; lines.forEach((l,i)=>{ const part=l.slice(0,Math.max(0,left)); left-=l.length+1; let tail=''; if(!cur&&a.typed<a.text.length&&part.length<l.length){ cur=true; tail=Math.floor(t*3)%2?'▮':''; } c.fillText(part+tail,x+14,y+h/2+(i-(lines.length-1)/2)*18); });
+  c.globalAlpha=1;
+}
+
+/* comic-panel chapter cards */
+D.aplusFace=face; D.drawCardStyle=function(c,V,G,k){ if(k.style!=='comic') return false; const t=k.t, a=clamp(Math.min(t/0.6,(k.dur-t)/0.6),0,1);
+  c.setTransform(V.DPR,0,0,V.DPR,0,0); c.globalAlpha=Math.max(a,0.001); c.fillStyle='#0b1220'; c.fillRect(0,0,V.W,V.H);
+  c.fillStyle='rgba(242,181,68,.06)'; for(let y=0;y<V.H;y+=8) for(let x=(y/8%2)*4;x<V.W;x+=8){ c.beginPath(); c.arc(x,y,1.3,0,7); c.fill(); }
+  c.textAlign='center'; c.textBaseline='middle'; c.fillStyle='#f2b544'; c.font='700 '+Math.min(40,V.W/12)+'px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.fillText(k.title,V.W/2,V.H*0.2);
+  c.fillStyle='#f6ecd8'; c.font='italic '+Math.min(20,V.W/24)+'px Georgia,serif'; c.fillText(k.sub||'',V.W/2,V.H*0.2+Math.min(34,V.W/14));
+  const ps=k.panels||[], n=ps.length, gap=14, pw=Math.min(220,(V.W-40-gap*(n-1))/n), ph=pw*0.72, x0=(V.W-(n*pw+(n-1)*gap))/2, y0=V.H*0.42;
+  ps.forEach((p,i)=>{ const show=clamp((t-0.5-i*0.7)/0.35,0,1); if(show<=0) return; const x=x0+i*(pw+gap), y=y0+(1-show)*12; c.globalAlpha=a*show;
+    c.fillStyle='#f6ecd8'; c.fillRect(x-3,y-3,pw+6,ph+6); c.fillStyle=['#c9a56a','#5a6f8f','#2f5a3a'][i%3]; c.fillRect(x,y,pw,ph);
+    c.fillStyle='rgba(0,0,0,.12)'; for(let yy=y+4;yy<y+ph;yy+=6) for(let xx=x+((yy-y)/6%2)*3;xx<x+pw;xx+=6){ c.beginPath(); c.arc(xx,yy,1.1,0,7); c.fill(); }
+    c.fillStyle=p.i==='A+'?'#7fe0a0':'#f6ecd8'; c.font=(p.i==='A+'?'700 ':'')+Math.round(ph*0.4)+'px '+(p.i==='A+'?'"IBM Plex Mono",monospace':'system-ui,sans-serif'); c.fillText(p.i,x+pw/2,y+ph*0.42);
+    c.fillStyle='#f6ecd8'; c.fillRect(x+6,y+ph-24,pw-12,18); c.strokeStyle=INK; c.lineWidth=1; c.strokeRect(x+6,y+ph-24,pw-12,18); c.fillStyle='#101a2e'; c.font='600 '+Math.min(12,pw/16)+'px "IBM Plex Sans",sans-serif'; c.fillText(p.c,x+pw/2,y+ph-15); });
+  c.globalAlpha=a*0.5; c.fillStyle='#f6ecd8'; c.font='500 11px "IBM Plex Sans",sans-serif'; c.fillText(V.touch?'tap to continue':'E or Space to continue',V.W/2,V.H-30); c.globalAlpha=1; return true; };
+
+const baseRender=D.render;
+D.render=function(c,view,G,now,dt){ curG=G; baseRender(c,view,G,now,dt); bubbles(c,view,G); aplusCard(c,view,G,now); };
 })(typeof globalThis!=='undefined'?globalThis:this);
 
 /* ==== 06-ui.js ==== */
@@ -1951,7 +2143,7 @@ function dialogUI(){
   $('dwho').innerHTML=''; $('dwho').appendChild(document.createTextNode(d.who)); const r=document.createElement('span'); r.textContent=d.role; $('dwho').appendChild(r);
   const pg=d.pages[d.i], m=/^([A-Z][A-Za-z.+ ]{1,18}):\s/.exec(pg); typing={text:pg,n:0,who:m?m[1]:d.who,kid:d.role==='a boy',last:0}; $('dtext').textContent='';
   const fc=$('dface').getContext('2d'); fc.setTransform(1,0,0,1,0,0); fc.clearRect(0,0,112,112);
-  if(d.look) PP.portrait(fc,d.look,112); else { fc.fillStyle=term?'#0a1a0e':'#2c3340'; fc.fillRect(0,0,112,112); fc.fillStyle=term?'#6fe08a':'#f2b544'; fc.font='700 44px "IBM Plex Mono",monospace'; fc.textAlign='center'; fc.textBaseline='middle'; fc.fillText(d.who==='A+'?'A+':(d.who==='Biscuit'?'🐾':(d.who==='Milo'?'🐈':(d.who==='The office dog'?'💤':(d.who==='The Ledger'?'§':'>_')))),56,58); }
+  if(d.look) PP.portrait(fc,d.look,112); else if(d.who==='A+'&&DRAW.aplusFace&&GM.STORY) DRAW.aplusFace(fc,0,0,112,112,GM.STORY.aplusMood(d.pages[d.i]),1,false,0); else { fc.fillStyle=term?'#0a1a0e':'#2c3340'; fc.fillRect(0,0,112,112); fc.fillStyle=term?'#6fe08a':'#f2b544'; fc.font='700 44px "IBM Plex Mono",monospace'; fc.textAlign='center'; fc.textBaseline='middle'; fc.fillText(d.who==='A+'?'A+':(d.who==='Biscuit'?'🐾':(d.who==='Milo'?'🐈':(d.who==='The office dog'?'💤':(d.who==='The Ledger'?'§':'>_')))),56,58); }
   const last=d.i>=d.pages.length-1, ch=$('dchoices'); ch.innerHTML='';
   if(last&&d.choices) d.choices.forEach((c,i)=>{ const b=document.createElement('button'); b.textContent=(V.touch?'':(i+1)+'  ')+c.label; b.addEventListener('click',e=>{ e.stopPropagation(); pick(i); }); ch.appendChild(b); });
   $('dmore').textContent=last&&d.choices?'':(V.touch?'Tap to continue':'E or Space to continue')+(d.pages.length>1?'   '+(d.i+1)+' / '+d.pages.length:'');
@@ -2005,7 +2197,7 @@ function frame(now){
     while(queue.length){ const a=queue.shift(); if(a==='use'){ if(G.dialog&&!typingDone()){ typing.n=typing.text.length; $('dtext').textContent=typing.text; } else GM.interact(G); } else GM.command(G,a); }
     acc+=dt; while(acc>=STEP){ GM.update(G,inp[0],inp[1],STEP); acc-=STEP; }
     const hard=!(G.cur.node&&((G.cur.node.id==='ground'&&G.hero.x<548&&G.hero.x>60)||G.cur.node.era)); for(const ev of G.hero.events) footfall(ev,hard); G.hero.events.length=0;
-    for(const ev of G.events){ if(ev.type==='banner'){ toast(ev.text,ev.pts); if(ev.pts) SFX.point(); } else if(ev.type==='hint') toast(ev.text,0,true); else if(ev.type==='sfx'){ if(SFX[ev.name]) SFX[ev.name](); } else if(ev.type==='save') save(); else if(ev.type==='ending') showEnding(); else if(ev.type==='snap') snapCam(); }
+    for(const ev of G.events){ if(ev.type==='banner'){ toast(ev.text,ev.pts); if(ev.pts) SFX.point(); } else if(ev.type==='hint') toast(ev.text,0,true); else if(ev.type==='sfx'){ if(SFX[ev.name]) SFX[ev.name](); } else if(ev.type==='save') save(); else if(ev.type==='ending') showEnding(); else if(ev.type==='snap') snapCam(); else if(ev.type==='blip'&&AC) blip(ev.who); }
     G.events.length=0;
     autosave+=dt; if(autosave>20){ autosave=0; save(); }
     typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); $('bSkip').classList.toggle('hide',!G.p38); } dialogUI(); document.body.classList.toggle('card',!!G.card);
