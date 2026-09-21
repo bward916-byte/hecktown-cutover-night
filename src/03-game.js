@@ -4,7 +4,7 @@
 const E=root.WalkEngine, MAP=root.HMAP, CFG=E.CFG;
 const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
 const SIGNOFFS=['Network','Backup','Catalog','EDI','Storefront','Jobs'];
-const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10,jeopardy:25,sku:30,portal:20};
+const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10,jeopardy:25,sku:30,portal:20,dc:25};
 
 /* ---------------- people ----------------  look = [skin, hair, style, shirt, pants, accessory] */
 const P=(id,name,role,look,node,x,opt)=>{ const p=Object.assign({id:id,name:name,role:role,look:{skin:look[0],hair:look[1],style:look[2],shirt:look[3],pants:look[4],acc:look[5]},node:node,x:x},opt||{});
@@ -39,7 +39,7 @@ const PEOPLE=[
  P('tina','Tina','Tina\'s Tacos',['#d9a77c','#1a1410','bun','#e63946','#2b2f3a','none'],'ground',560),
  P('lou','Lou','Fleet Mechanic',['#c48a62','#3a2c22','cap','#4a5060','#2b2f3a','none'],'ground',830,{wander:[760,890]}),
  P('ben','Ben','Landscaping',['#f1c9a5','#a8632c','short','#2f7f4f','#2b2f3a','none'],'ground',280,{lines:['Dog park\'s mine. The koi are mine. The groundhog is not mine.','Sprinklers at six. Set your watch.','That dog up the steps won\'t come to anybody without a treat. Customer Care keeps a jar.']}),
- P('priya','Priya','Runner',['#c9906a','#1a1410','ponytail','#7fd0ff','#2b2f3a','none'],'ground',1980,{wander:[1920,2110],lines:['Two laps of the lot is a mile. Three if the deer\'s out.']}),
+ P('priya','Priya','Runner',['#c9906a','#1a1410','ponytail','#7fd0ff','#2b2f3a','none'],'ground',1960,{wander:[1925,2010],lines:['Two laps of the lot is a mile. Three if the deer\'s out.']}),
  P('rosa','Rosa','Dock Lead',['#c48a62','#1a1410','cap','#f2b544','#2b2f3a','vest'],'ground',2330),
  P('frank','Frank','Nights, since 1995',['#e8b48e','#8e8e8e','cap','#4a5060','#2b2f3a','keys'],'ground',2560,{wander:[2500,2660],lines:['Nights since 1995. I know every corner of this building, including the corners it doesn\'t have anymore.','There\'s a door in the Legacy Archive that was bricked over in \'91. Greg has the only key. Just saying.','Top rack catwalk has a duct at the west end. You\'d have to crawl. I\'m not saying there\'s anything in it.']}),
  P('dot','Dot','Forklift',['#f1c9a5','#7a6a5c','cap','#f2b544','#2b2f3a','vest'],'ground',2850,{lines:['Stairs to the mezzanine are against the back wall, left of the racks. Second flight goes up to the catwalk. Mind your head.']}),
@@ -73,7 +73,7 @@ const ITEMS=[
 ];
 const TERMS=[{id:'t_dock',node:'ground',x:2260,where:'Receiving Dock'},{id:'t_roof',node:'hq_roof',x:1840,where:'Roof Garden'},{id:'t_gate',node:'ground',x:1010,where:'Security Gate'}];
 
-const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg*4+PTS.duct+PTS.jeopardy+PTS.sku+PTS.portal;
+const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg*4+PTS.duct+PTS.jeopardy+PTS.sku+PTS.portal+PTS.dc*9;
 const RANKS=[[0,'New Badge'],[12,'Ticket Closer'],[30,'On-Call'],[50,'Change Approver'],[72,'Cutover Lead'],[95,'Hecktown Legend']];
 
 function freshSave(){ return {v:1,flags:{},inv:{},met:{},rooms:{},pages:{},eggs:{},signoffs:{},terms:{},gates:{},points:0,time:0,done:false,pos:{node:'ground',x:1150}}; }
@@ -227,7 +227,7 @@ function advance(G,choice){
 }
 
 /* ---------------- what can be used from here ---------------- */
-function needMet(S,g){ return g.needs==='badge'?!!S.inv.badge:(g.needs==='tunnelkey'?!!S.inv.tunnelkey:count(S.signoffs)>=6); }
+function needMet(S,g){ if(g.needs==='dc') return !!S.flags['dc_'+g.dc]; return g.needs==='badge'?!!S.inv.badge:(g.needs==='tunnelkey'?!!S.inv.tunnelkey:count(S.signoffs)>=6); }
 function findTarget(G){
   const h=G.hero, S=G.S, N=G.cur.node; if(!N||h.mode==='air'||h.mode==='roll') return null;
   let best=null, bd=1e9; const take=(d,t)=>{ if(d<bd){bd=d;best=t;} };
@@ -254,7 +254,7 @@ function interact(G){
       else if(S.terms[t.t.id]) say(G,{name:'Terminal',role:'green screen'},['QBATCH   HELD']);
       else{ S.terms[t.t.id]=1; G.events.push({type:'sfx',name:'good'}); say(G,{name:'Terminal',role:'green screen'},['HLDJOBQ QBATCH','Job queue held. '+count(S.terms)+' of 3.']); G.events.push({type:'save'}); } break;
     case 'gate': if(needMet(S,t.g)) openGate(G,t.g); else { G.events.push({type:'sfx',name:'deny'});
-      say(G,{name:t.g.label,role:'locked'},[t.g.needs==='badge'?'The reader blinks red. Level 2 badge required. Andrew at the Help Desk issues those.':(t.g.needs==='tunnelkey'?'Fresh mortar dust on the floor, an old iron lock in the door. Frank says Greg has the only key.':'A green-screen panel by the door: SIGN-OFFS '+count(S.signoffs)+'/6. It will not open for less.')]); } break;
+      say(G,{name:t.g.label,role:'locked'},[t.g.needs==='badge'?'The reader blinks red. Level 2 badge required. Andrew at the Help Desk issues those.':t.g.needs==='dc'?'A+ has this door. The terminal beside it is the way in.':(t.g.needs==='tunnelkey'?'Fresh mortar dust on the floor, an old iron lock in the door. Frank says Greg has the only key.':'A green-screen panel by the door: SIGN-OFFS '+count(S.signoffs)+'/6. It will not open for less.')]); } break;
     case 'dog': if(S.inv.treats){ delete S.inv.treats; E.command(h,G.cur.world,'throw'); G.biscuit.run=1; S.flags.biscuitHome=1; G.events.push({type:'banner',text:'Biscuit takes the treat and bolts for the warehouse'}); G.events.push({type:'sfx',name:'bark'}); G.events.push({type:'save'}); }
       else { G.events.push({type:'sfx',name:'bark'}); say(G,{name:'Biscuit',role:'good dog'},[S.flags.biscuitAsked?'Biscuit keeps his distance. He is clearly holding out for a treat.':'A scruffy dog with a Phillips bandana. He wags, but won\'t follow you.']); } break;
     case 'aplus': talkAplus(G); break;
@@ -337,6 +337,7 @@ function update(G,ix,iy,dt){
 
   // people: only those near the player think; the rest hold their pose
   for(const q of G.npcs){
+    if(q.crew) continue;                                   // crew members follow the player instead (03f)
     const near=Math.abs(q.w.x-h.x)<900; q.live=near; if(!near) continue;
     let inp=0; const p=q.def, same=q.node===N, dx=h.x-q.w.x;
     if(q.clap>0){ q.clap-=dt; if(q.clap<=0) E.command(q.w,q.node.world,'clap'); }
