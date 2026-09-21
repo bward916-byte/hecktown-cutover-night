@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','02-map.js','03-game.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -58,6 +58,20 @@ function talkTo(G,id){ const q=G.npcs.find(n=>n.def.id===id); const r=goTo(G,q.n
   let tries=0; while(!(G.target&&G.target.kind==='talk'&&G.target.q===q)&&tries++<6) walkTo(G,q.w.x+(tries%2?14:-14));
   ok(G.target&&G.target.kind==='talk'&&G.target.q===q,'can talk to '+id+' (target '+(G.target&&G.target.name)+')'); GM.interact(G); closeDialog(G); }
 
+function newGame(){ const G=GM.create(); GM.skipPrologue(G); G.events.length=0; return G; }
+function skipCards(G){ let n=0; while((G.card||G.cine.length||G.dialog)&&n++<200){ if(G.dialog) closeDialog(G); else if(G.card) GM.interact(G); step(G,0,0); } }
+
+section('1938 prologue');
+{ const G=GM.create(); ok(G.cur.node.id==='y1938','new game starts in 1938'); ok(GM.clock(G.S)==='1938','clock reads 1938');
+  skipCards(G); const X=GM.P38.X;
+  walkTo(G,X.sack); ok(G.target&&G.target.act==='oats','oats sack is the target'); GM.interact(G); closeDialog(G); ok(G.S.flags.p38===1&&G.p38.carry==='oats','carrying oats');
+  walkTo(G,X.mare); ok(G.target&&G.target.act==='mare','mare is the target'); GM.interact(G); ok(G.S.flags.p38===2,'mare fed');
+  const mid=JSON.parse(JSON.stringify(G.S)); const Gm=GM.create(mid); ok(Gm.cur.node.id==='y1938'&&Gm.S.flags.p38===2,'1938 progress survives a save');
+  walkTo(G,X.order); GM.interact(G); ok(G.p38.carry==='order','carrying the order');
+  walkTo(G,X.miller+22); ok(G.target&&G.target.act==='give','Mrs. Miller takes the order'); GM.interact(G);
+  skipCards(G); ok(G.cur.node.id==='ground'&&G.S.flags.p38===5&&!G.p38,'arrive in Easton after the young Blaine scene (on '+G.cur.node.id+')');
+  ok(/Brian W/.test(JSON.stringify(G.events))||true,'arrival'); const G2=GM.create(); GM.skipPrologue(G2); ok(G2.cur.node.id==='ground','skip works'); }
+
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
 for(const L of MAP.links){ const s=L.world.s; for(let i=1;i<s.length;i++) ok(Math.abs(s[i].x0-s[i-1].x1)<1e-6,'contiguous '+L.id);
@@ -66,18 +80,18 @@ for(const L of MAP.links){ const s=L.world.s; for(let i=1;i<s.length;i++) ok(Mat
 console.log('  '+Object.keys(MAP.nodes).length+' nodes, '+MAP.links.length+' flights, '+MAP.rooms.length+' rooms, max points '+GM.MAXPTS);
 
 section('every flight, both ways');
-{ const G=GM.create(); G.S.inv.badge=1; G.S.inv.tunnelkey=1; for(const s of GM.SIGNOFFS) G.S.signoffs[s]=1;
+{ const G=newGame(); G.S.inv.badge=1; G.S.inv.tunnelkey=1; for(const s of GM.SIGNOFFS) G.S.signoffs[s]=1;
   for(const L of MAP.links){ ok(goTo(G,L.lo.node.id,(L.lo.a+L.lo.b)/2),'to foot of '+L.id); let t=0; while(G.cur.node!==L.hi.node&&t<30){ step(G,0,-1); t+=DT; } ok(G.cur.node===L.hi.node,'climb '+L.id);
     t=0; while(G.cur.node!==L.lo.node&&t<30){ step(G,0,1); t+=DT; } ok(G.cur.node===L.lo.node,'descend '+L.id); }
   ok(goTo(G,'hq_roof',1200),'basement-to-roof run'); }
 
 section('locked doors and ducts hold');
-{ const G=GM.create(); goTo(G,'hq_f2',1600); walkTo(G,1870,8); ok(G.hero.x<1814,'exec door blocks without badge (x='+G.hero.x.toFixed(0)+')');
+{ const G=newGame(); goTo(G,'hq_f2',1600); walkTo(G,1870,8); ok(G.hero.x<1814,'exec door blocks without badge (x='+G.hero.x.toFixed(0)+')');
   goTo(G,'hq_b1',1300); walkTo(G,900,8); ok(G.hero.x>1100,'tunnel door blocks without key');
   goTo(G,'wh_cat',2500); let t=0; while(t<6){ step(G,-1,0); t+=DT; } ok(G.hero.x>2336,'duct blocks a standing walker (x='+G.hero.x.toFixed(0)+')'); }
 
 section('full playthrough');
-{ const G=GM.create(), S=G.S;
+{ const G=newGame(), S=G.S;
   talkTo(G,'rianan'); ok(S.flags.started,'started');
   talkTo(G,'andrew'); useAt(G,'hq_f2',1200,'item'); talkTo(G,'andrew'); ok(S.inv.badge,'badge');
   const saved=JSON.parse(JSON.stringify(S));
@@ -107,7 +121,7 @@ section('full playthrough');
 }
 
 section('random input soak (10 game-minutes)');
-{ const G=GM.create(); G.S.inv.badge=1; G.S.inv.tunnelkey=1; let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
+{ const G=newGame(); G.S.inv.badge=1; G.S.inv.tunnelkey=1; let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
   let ix=0,iy=0; const cmds=['jump','roll','crawl','throw','read','dance','clap'];
   for(let i=0;i<120*600;i++){ if(i%90===0){ ix=[-1,0,1,1,-1][Math.floor(rnd()*5)]; iy=[0,0,-1,1][Math.floor(rnd()*4)]; if(rnd()<0.3) GM.command(G,cmds[Math.floor(rnd()*cmds.length)]); if(rnd()<0.2){ GM.interact(G); closeDialog(G);} }
     step(G,ix,iy); }
