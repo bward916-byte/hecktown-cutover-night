@@ -51,10 +51,10 @@ node('ground','Hecktown Road',0,0,[['flat',140],['stairs',5,26,5],['flat',200],[
 /* ---------------- HQ office, 1100..1900 ---------------- */
 node('hq_b1','HQ Basement',420,FH,[['flat',1480]]);
 node('hq_f2','HQ 2nd Floor',1100,-FH,[['flat',800]]);
-node('hq_f3','HQ 3rd Floor',1100,-2*FH,[['flat',800]]);
-node('hq_roof','HQ Roof',1100,-3*FH,[['flat',800]]);
-core('hq',1560,['hq_b1','ground','hq_f2','hq_f3','hq_roof']);
-MAP.buildings.push({id:'hq',name:'Phillips HQ',x0:1100,x1:1900,top:-3*FH,base:0,floors:[0,-FH,-2*FH],basement:FH,style:'office'});
+node('hq_roof','HQ Roof',1100,-2*FH,[['flat',800]]);
+core('hq',1560,['hq_b1','ground','hq_f2','hq_roof']);
+MAP.buildings.push({id:'hq',name:'Phillips HQ',x0:1100,x1:1900,top:-2*FH,base:0,floors:[0,-FH],basement:FH,style:'office'});
+MAP.HQ_TOP=-2*FH;                                        // roof level; the drawing reads this
 /* ---------------- Lou's garage, 680..900 ---------------- */
 node('gar_loft',"Lou's Loft",680,-FH,[['flat',220]]);
 flight('gar_s',['ground',700],['gar_loft',856]);
@@ -75,13 +75,13 @@ flight('tun_s2',['tun_3',1456],['tun_2',1300]);
 /* ---------------- rooms (each is worth discovery points) ---------------- */
 room('ground',244,444,'Dog Park');                room('ground',520,660,"Tina's Tacos");
 room('ground',680,900,"Lou's Garage");            room('ground',930,1060,'Security Gate');
-room('ground',1100,1330,'HQ Lobby');              room('ground',1330,1556,'Help Desk');
+room('ground',1100,1215,'HQ Lobby');              room('ground',1215,1330,'Accounting');              room('ground',1330,1556,'Help Desk');
 room('ground',1724,1900,'Customer Care');         room('ground',1930,2130,'The Yard');
 room('ground',2200,2480,'Receiving Dock');        room('ground',2480,2900,'Pick Aisles');
 room('ground',2900,3160,'Shipping Dock');         room('ground',3236,3400,'Drop Yard');
 room('ground',3400,3500,'Canal Towpath');
-room('hq_f2',1100,1330,'Dev Bullpen');            room('hq_f2',1330,1556,'War Room');            room('hq_f2',1724,1900,'EDI & Integration');
-room('hq_f3',1100,1330,'Item Maintenance');       room('hq_f3',1330,1556,'Accounting');          room('hq_f3',1724,1900,'Executive Row');
+room('hq_f2',1100,1215,'Dev Bullpen');            room('hq_f2',1215,1330,'PIM Room');            room('hq_f2',1330,1556,'War Room');
+room('hq_f2',1724,1812,'EDI & Integration');      room('hq_f2',1812,1900,'Executive Row');
 room('hq_roof',1100,1556,'Antenna Farm');         room('hq_roof',1724,1900,'Roof Garden');
 room('hq_b1',1724,1900,'Server Room');            room('hq_b1',1330,1556,'Legacy Archive');      room('hq_b1',1110,1330,'Basement Storage');
 room('hq_b1',420,1090,'The Old Tunnel',{dark:true});
@@ -94,7 +94,7 @@ room('tun_3',1380,1880,'1938 Feed Cellar',{dark:true}); room('tun_3',1900,2320,'
 
 /* ---------------- locked doors and crawl-only passages ---------------- */
 gate('g_server','hq_b1',1726,'badge','Server Room');
-gate('g_exec','hq_f3',1726,'badge','Executive Row');
+gate('g_exec','hq_f2',1814,'badge','Executive Row');
 gate('g_cage','wh_mezz',2896,'badge','Cage Office');
 gate('g_tunnel','hq_b1',1100,'tunnelkey','Bricked-over door');
 gate('g_aplus','tun_3',1890,'signoffs','A+ Machine Room');
@@ -103,12 +103,11 @@ duct('tun_2',800,900);
 
 /* ---------------- props: scenery only ---------------- */
 [[300,'bench'],[372,'tree'],[270,'tree'],[430,'lamp'],[590,'tacotruck'],[1000,'booth'],[1060,'lamp'],[1960,'lamp'],[2040,'trailer'],[3300,'trailer'],[3380,'lamp'],[3460,'mule'],
- [1180,'sofa'],[1260,'case'],[1300,'plant'],[1400,'helpdesk'],[1500,'plant'],[1760,'desk'],[1820,'desk'],[1870,'jar'],
+ [1142,'sofa'],[1192,'case'],[1250,'desk'],[1312,'cabinet'],[1400,'helpdesk'],[1500,'plant'],[1760,'desk'],[1820,'desk'],[1870,'jar'],
  [790,'truckcab'],[2260,'term'],[2330,'pallet'],[2400,'pallet'],[2560,'rack'],[2700,'rack'],[2800,'forklift'],[2960,'pallet'],[3040,'conveyor'],[3120,'pallet']
 ].forEach(p=>prop(p[1],'ground',p[0]));
-[[1140,'desk'],[1200,'printer'],[1250,'desk'],[1300,'plant'],[1380,'bigscreen'],[1450,'table'],[1520,'whiteboard'],[1770,'desk'],[1830,'desk'],[1880,'plant']].forEach(p=>prop(p[1],'hq_f2',p[0]));
-[[1150,'desk'],[1210,'desk'],[1290,'cabinet'],[1380,'desk'],[1450,'desk'],[1520,'cabinet'],[1770,'sofa'],[1830,'portrait'],[1870,'desk']].forEach(p=>prop(p[1],'hq_f3',p[0]));
-[[1150,'dish'],[1240,'antenna'],[1340,'antenna'],[1440,'hvac'],[1760,'planter'],[1840,'term'],[1880,'planter']].forEach(p=>prop(p[1],'hq_roof',p[0]));
+[[1135,'desk'],[1193,'printer'],[1250,'pimdesk'],[1300,'pimdesk'],[1380,'bigscreen'],[1450,'table'],[1520,'whiteboard'],[1765,'desk'],[1842,'portrait'],[1872,'sofa']].forEach(p=>prop(p[1],'hq_f2',p[0]));
+[[1150,'dish'],[1240,'antenna'],[1340,'antenna'],[1440,'hvac'],[1508,'raft'],[1760,'planter'],[1840,'term'],[1880,'planter']].forEach(p=>prop(p[1],'hq_roof',p[0]));
 [[1150,'crates'],[1220,'shelf'],[1290,'crates'],[1370,'cabinet'],[1410,'cabinet'],[1500,'cabinet'],[1760,'server'],[1800,'server'],[1860,'server'],[760,'pipes'],[950,'pipes']].forEach(p=>prop(p[1],'hq_b1',p[0]));
 [[720,'crates'],[800,'shelf'],[880,'crates']].forEach(p=>prop(p[1],'gar_loft',p[0]));
 [[2720,'shelf'],[2800,'shelf'],[2960,'desk'],[3040,'cabinet'],[3110,'safe']].forEach(p=>prop(p[1],'wh_mezz',p[0]));
