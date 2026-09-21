@@ -59,7 +59,7 @@ function talkTo(G,id){ const q=G.npcs.find(n=>n.def.id===id); const r=goTo(G,q.n
   ok(G.target&&G.target.kind==='talk'&&G.target.q===q,'can talk to '+id+' (target '+(G.target&&G.target.name)+')'); GM.interact(G); closeDialog(G); }
 
 section('map');
-ok(Object.keys(MAP.nodes).length>=13,'nodes'); ok(MAP.links.length===13,'links '+MAP.links.length);
+ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
 for(const L of MAP.links){ const s=L.world.s; for(let i=1;i<s.length;i++) ok(Math.abs(s[i].x0-s[i-1].x1)<1e-6,'contiguous '+L.id);
   ok(Math.abs(s[L.lo.si].y-L.lo.node.world.yAt((L.lo.a+L.lo.b)/2))<1e-6,'lo flat level '+L.id); ok(Math.abs(s[L.hi.si].y-L.hi.node.world.yAt((L.hi.a+L.hi.b)/2))<1e-6,'hi flat level '+L.id);
   ok(L.lo.b-L.lo.a>=40&&L.hi.b-L.hi.a>=40,'end flats wide enough '+L.id); }
@@ -72,7 +72,7 @@ section('every flight, both ways');
   ok(goTo(G,'hq_roof',1200),'basement-to-roof run'); }
 
 section('locked doors and ducts hold');
-{ const G=GM.create(); goTo(G,'hq_f3',1600); walkTo(G,1850,8); ok(G.hero.x<1726,'exec door blocks without badge (x='+G.hero.x.toFixed(0)+')');
+{ const G=GM.create(); goTo(G,'hq_f2',1600); walkTo(G,1870,8); ok(G.hero.x<1814,'exec door blocks without badge (x='+G.hero.x.toFixed(0)+')');
   goTo(G,'hq_b1',1300); walkTo(G,900,8); ok(G.hero.x>1100,'tunnel door blocks without key');
   goTo(G,'wh_cat',2500); let t=0; while(t<6){ step(G,-1,0); t+=DT; } ok(G.hero.x>2336,'duct blocks a standing walker (x='+G.hero.x.toFixed(0)+')'); }
 
@@ -95,6 +95,7 @@ section('full playthrough');
   // 100%: everything else
   GM.PAGES.forEach((pg,i)=>{ if(!S.pages[i]) useAt(G,pg[0],pg[1],'page'); });
   for(const p of GM.PEOPLE) if(!S.met[p.id]) talkTo(G,p.id);
+  for(let k=0;k<6&&!S.eggs.jeopardy;k++) talkTo(G,'dave'); ok(S.eggs.jeopardy,'Daily Double won');
   for(const r of MAP.rooms) if(!S.rooms[r.id]) ok(goTo(G,r.node,(r.x0+r.x1)/2),'visit '+r.name);
   talkTo(G,'ryan'); GM.command(G,'dance'); for(let i=0;i<240;i++) step(G,0,0); GM.command(G,'dance'); GM.command(G,'clap'); for(let i=0;i<300;i++) step(G,0,0); GM.command(G,'roll'); for(let i=0;i<300;i++) step(G,0,0);
   for(const r of MAP.rooms) ok(S.rooms[r.id],'room found: '+r.name);
