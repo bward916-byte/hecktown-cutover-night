@@ -90,7 +90,7 @@ function render38(c,view,G,now,dt){
 
 /* ---------------- full-screen cards ---------------- */
 function drawCard(c,view,G){
-  const k=G.card; if(!k) return; const a=clamp(Math.min(k.t/0.5,(k.dur-k.t)/0.5),0,1); ctx=c; V=view;
+  const k=G.card; if(!k) return; if(k.style&&D.drawCardStyle&&D.drawCardStyle(c,view,G,k)) return; const a=clamp(Math.min(k.t/0.5,(k.dur-k.t)/0.5),0,1); ctx=c; V=view;
   ctx.setTransform(V.DPR,0,0,V.DPR,0,0); ctx.globalAlpha=Math.max(a,0.001); ctx.fillStyle='#1c140c'; ctx.fillRect(0,0,V.W,V.H);
   const small=k.title.length>18, fs=small?Math.min(34,V.W/18):Math.min(64,V.W/7);
   ctx.fillStyle='#f0e0c0'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=(small?'italic ':'700 ')+fs+'px Georgia,"Times New Roman",serif';
