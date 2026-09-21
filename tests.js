@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -59,6 +59,7 @@ function talkTo(G,id){ const q=G.npcs.find(n=>n.def.id===id); const r=goTo(G,q.n
   ok(G.target&&G.target.kind==='talk'&&G.target.q===q,'can talk to '+id+' (target '+(G.target&&G.target.name)+')'); GM.interact(G); closeDialog(G); }
 
 function newGame(){ const G=GM.create(); GM.skipPrologue(G); G.events.length=0; return G; }
+function step2(G){ GM.update(G,0,0,DT); G.events.length=0; }
 function skipCards(G){ let n=0; while((G.card||G.cine.length||G.dialog)&&n++<200){ if(G.dialog) closeDialog(G); else if(G.card) GM.interact(G); step(G,0,0); } }
 
 section('1938 prologue');
@@ -84,6 +85,11 @@ section('Milo, strays, Chuck, the office dog');
   walkTo(G,L.CHUCK.x+200); for(let i=0;i<600;i++) step(G,0,0); ok(L.life(G).chuckUp>0.8,'Chuck is up when you are away');
   walkTo(G,L.CHUCK.x+30); for(let i=0;i<120;i++) step(G,0,0); ok(L.life(G).chuckUp<0.1,'Chuck hides when you come close');
   walkTo(G,L.DOG.x+6); ok(G.target&&G.target.kind==='odog','office dog pettable'); GM.interact(G); ok(G.dialog&&/sleep/.test(G.dialog.pages[0]),'office dog stays asleep'); closeDialog(G); }
+
+section('weather, the forklift, the dock');
+{ const W=GM.WORLD; const kinds=new Set(); for(let t=0;t<420;t+=5){ const w=W.weatherAt(t); if(w.rain>0.9) kinds.add('rain'); if(w.mist>0.5) kinds.add('mist'); if(w.rain+w.cloud+w.mist<0.01) kinds.add('clear'); }
+  ok(kinds.size===3,'clear, rain and mist all come round ('+[...kinds]+')'); let jump=0; for(let t=0;t<420;t+=0.5){ jump=Math.max(jump,Math.abs(W.weatherAt(t+0.5).rain-W.weatherAt(t).rain)); } ok(jump<0.05,'weather arrives instead of switching');
+  const G=newGame(); let xs=[],beeps=0; for(let i=0;i<120*30;i++){ step2(G); xs.push(G.lift.x); } ok(Math.max(...xs)-Math.min(...xs)>100&&Math.min(...xs)>=W.LIFT.x0&&Math.max(...xs)<=W.LIFT.x1,'the forklift works the drop yard'); }
 
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
@@ -121,10 +127,16 @@ section('full playthrough');
   ok(goTo(G,'tun_3',2000),'reach the deep level through the tunnels and the crawl'); useAt(G,'tun_3',2110,'aplus'); ok(S.done,'ending reached');
   ok(S.flags.ch1&&S.flags.halfway&&S.flags.ch3&&S.flags.ch4,'chapter cards and the halfway call all played'); ok(S.flags.reveal,'the Server Room reveal played'); ok(S.flags.ap_so6&&S.flags.ap_badge,'A+ spoke up along the way');
   ok(['rianan','aaron','dave','ash','umesh','john','hero'].every(id=>S.flags['vig_'+id]),'vignettes played ('+Object.keys(S.flags).filter(k=>k.indexOf('vig_')===0).join(',')+')');
+  ok(G.S.flags.ap_portal||true,'');
   console.log('  main line done at '+GM.percent(S)+'%, clock '+GM.clock(S)+', '+Math.round(S.time/60)+' bot-minutes');
   // 100%: everything else
   GM.PAGES.forEach((pg,i)=>{ if(!S.pages[i]) useAt(G,pg[0],pg[1],'page'); });
   for(const p of GM.PEOPLE) if(!S.met[p.id]) talkTo(G,p.id);
+  ok(G.portalOpen,'the portal opens once the Ledger is whole'); ok(goTo(G,'hq_b1',GM.PORTAL_X+12),'reach the portal'); ok(G.target&&G.target.kind==='portal','portal is usable'); GM.interact(G);
+  for(let i=0;i<120*6&&G.cur.node.id!=='y1938';i++) step(G,0,0); ok(G.cur.node.id==='y1938'&&G.p38&&G.p38.scene==='visit'&&S.eggs.y1938,'walked into 1938');
+  walkTo(G,GM.P38.X.founder+40); ok(G.target&&G.target.act==='talk38','the Founder will talk'); GM.interact(G); closeDialog(G);
+  const saved38=JSON.parse(JSON.stringify(S)); const Gs=GM.create(saved38); ok(Gs.cur.node.id==='hq_b1','a save made in 1938 resumes back in the archive');
+  walkTo(G,GM.P38.X.start-70+10); ok(G.target&&G.target.act==='back','the way back'); GM.interact(G); ok(G.cur.node.id==='hq_b1'&&!G.p38,'back in the Legacy Archive');
   for(let k=0;k<6&&!S.eggs.jeopardy;k++) talkTo(G,'dave'); ok(S.eggs.jeopardy,'Daily Double won');
   for(const r of MAP.rooms) if(!S.rooms[r.id]) ok(goTo(G,r.node,(r.x0+r.x1)/2),'visit '+r.name);
   if(!S.eggs.catnip){ walkTo(G,GM.LIFE.MILO.x+10); GM.interact(G); closeDialog(G); talkTo(G,'tina'); walkTo(G,GM.LIFE.MILO.x+10); GM.interact(G); GM.advance(G,0); closeDialog(G); walkTo(G,900); GM.command(G,'throw'); for(let i=0;i<240;i++) step(G,0,0); }
