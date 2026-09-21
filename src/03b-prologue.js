@@ -5,10 +5,10 @@
 'use strict';
 const E=root.WalkEngine, MAP=root.HMAP, GM=root.HGAME;
 const X={start:-2790,sack:-2640,founder:-2700,mare:-2010,order:-1850,miller:-880,yard:-2600};
-const HAND={skin:'#e8c09a',hair:'#b08850',style:'short',shirt:'#d8ccb0',pants:'#5a4a38',acc:'none'};
-const FOUNDER={skin:'#e6c2a0',hair:'#8a8a8a',style:'cap',shirt:'#2e2a26',pants:'#2a2622',acc:'cardigan'};
-const MILLER={skin:'#f1c9a5',hair:'#6a4a3a',style:'bun',shirt:'#7a5a6a',pants:'#3a2a3a',acc:'none'};
-const KID={skin:'#f1c9a5',hair:'#a8632c',style:'cap',shirt:'#c25a3a',pants:'#2f6f9f',acc:'none'};
+const HAND={skin:'#e8c09a',hair:'#b08850',style:'short',shirt:'#d8ccb0',pants:'#5a4a38',acc:'none',top:'button',bottom:'work',shoe:'boot'};
+const FOUNDER={skin:'#e6c2a0',hair:'#8a8a8a',style:'cap',shirt:'#2e2a26',pants:'#2a2622',acc:'cardigan',top:'blazer',bottom:'slacks'};
+const MILLER={skin:'#f1c9a5',hair:'#6a4a3a',style:'bun',shirt:'#7a5a6a',pants:'#3a2a3a',acc:'none',top:'cardigan',bottom:'slacks',shoe:'dress'};
+const KID={skin:'#f1c9a5',hair:'#a8632c',style:'cap',shirt:'#c25a3a',pants:'#2f6f9f',acc:'none',top:'button',bottom:'work',pantsCol:'#4a5a78',shoe:'boot'};
 const GREG38={id:'greg38',name:'Greg',role:'Number Scientist'};
 const PEOPLE38={founder:{id:'founder',name:'The Founder',role:'1938',look:FOUNDER},miller:{id:'miller',name:'Mrs. Miller',role:'Customer',look:MILLER},kid:{id:'kid',name:'Blaine',role:'a boy',look:KID,kid:true}};
 const OBJ=['1938. Pick up the sack of oats on the porch.','Carry the oats to the mare by the road.','Grab the Millers\' order off the wagon.','Take it to Mrs. Miller, across the fence.','Some years later. The same yard.','1938, in black and white. Look around; the way back is by the porch.'];
