@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -115,6 +115,17 @@ section('the network: crew, truck, a DC');
   const saved=JSON.parse(JSON.stringify(S)); const G2=GM.create(saved); ok(G2.npcs.filter(q=>q.crew).length===2,'crew survives a save');
   recruitP(G,'bret'); ok(goTo(G,'ground',NET.TRUCK_E),'to the truck'); driveTo(G,'taunton'); walkTo(G,d.x0+NET.X.term); GM.interact(G); for(let i=0;i<120*4;i++) step(G,0,0); closeDialog(G); ok(S.flags.dc_taunton,'Bret clears Taunton');
   walkTo(G,d.x0+NET.X.door+100); ok(G.hero.x>d.x0+NET.X.door,'door opens'); }
+
+section('the epilogue: speedrun clock, the Buying Show');
+{ const G=newGame(), S=G.S, EPI=GM.EPI; for(let i=0;i<120*3;i++) step(G,0,0); ok(S.run>2.9&&S.run<3.2,'the run clock counts play time ('+(S.run||0).toFixed(2)+')'); ok(GM.fmtRun(3725)==='1:02:05'&&GM.fmtRun(65)==='1:05','run clock formats');
+  walkTo(G,EPI.SHUTTLE+10); ok(!(G.target&&G.target.kind==='shuttle'),'no shuttle before the night is over');
+  S.done=1; S.crew=[]; for(let i=0;i<30;i++) step(G,0,0); ok(S.runEnd!=null,'the clock stops at the ending'); const r=S.runEnd; for(let i=0;i<120;i++) step(G,0,0); ok(S.runEnd===r,'and stays stopped');
+  walkTo(G,EPI.SHUTTLE+10); ok(G.target&&G.target.kind==='shuttle','the shuttle runs once the night is over'); GM.interact(G); for(let i=0;i<120*5;i++) step(G,0,0);
+  ok(G.cur.node.id==='show'&&EPI.show(G).npcs.length>=GM.PEOPLE.length-2,'everyone is at the Buying Show ('+EPI.show(G).npcs.length+')');
+  walkTo(G,EPI.BX(9)+60); ok(G.target&&G.target.kind==='showaplus','A+ has a place of honor'); GM.interact(G); ok(G.dialog&&/INVITED/.test(G.dialog.pages[1]),'A+ was invited'); closeDialog(G);
+  const q=EPI.show(G).npcs[3]; walkTo(G,q.w.x+8); ok(G.target&&G.target.kind==='showtalk','people to talk to'); GM.interact(G); ok(G.dialog&&G.dialog.pages[0].length>10,'they have something to say'); closeDialog(G);
+  const saved=JSON.parse(JSON.stringify(S)); const G2=GM.create(saved); ok(G2.cur.node.id==='show'&&EPI.show(G2).npcs.length>10,'a save at the show resumes there');
+  walkTo(G,EPI.SX+100); ok(G.target&&G.target.kind==='showexit','the shuttle home'); GM.interact(G); ok(G.cur.node.id==='ground','back in Easton'); }
 
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
