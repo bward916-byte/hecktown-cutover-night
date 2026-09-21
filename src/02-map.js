@@ -72,6 +72,9 @@ node('tun_3','The Deep Level',1380,3*FH,[['flat',940]]);
 flight('tun_s1',['tun_2',484],['hq_b1',640]);
 flight('tun_s2',['tun_3',1456],['tun_2',1300]);
 
+/* ---------------- 1938: the feed store, far west of everything and joined to nothing (see 03b-prologue) ---------------- */
+node('y1938','Phillips Feed · Germansville, PA',-3000,0,[['flat',2600]],{era:true});
+
 /* ---------------- rooms (each is worth discovery points) ---------------- */
 room('ground',244,444,'Dog Park');                room('ground',520,660,"Tina's Tacos");
 room('ground',680,900,"Lou's Garage");            room('ground',930,1060,'Security Gate');
