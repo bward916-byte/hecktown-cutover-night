@@ -4,31 +4,33 @@
 const E=root.WalkEngine, MAP=root.HMAP, CFG=E.CFG;
 const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
 const SIGNOFFS=['Network','Backup','Catalog','EDI','Storefront','Jobs'];
-const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10};
+const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10,jeopardy:25};
 
 /* ---------------- people ----------------  look = [skin, hair, style, shirt, pants, accessory] */
-const P=(id,name,role,look,node,x,opt)=>Object.assign({id:id,name:name,role:role,look:{skin:look[0],hair:look[1],style:look[2],shirt:look[3],pants:look[4],acc:look[5]},node:node,x:x},opt||{});
+const P=(id,name,role,look,node,x,opt)=>{ const p=Object.assign({id:id,name:name,role:role,look:{skin:look[0],hair:look[1],style:look[2],shirt:look[3],pants:look[4],acc:look[5]},node:node,x:x},opt||{});
+  if(p.lk){ Object.assign(p.look,p.lk); delete p.lk; } return p; };   // lk: extra look details (glasses, pony size, mustache)
 const PEOPLE=[
- P('rianan','Rianan','IT Department Head',['#f1c9a5','#3b2418','ponytail','#2f6f9f','#2b2f3a','headset'],'hq_f2',1440),
- P('brians','Brian S','IT Manager',['#f0c7a3','#7a6a5c','short','#3d6b52','#2b2f3a','lanyard'],'hq_f2',1500,{lines:['Admin console\'s ours. A+ changed the wallpaper. Petty.','I build pinball machines. Real ones. Wood, wire, flippers. This building is just a very large one with worse lighting.','World-ranked. I don\'t like to bring it up. I\'m bringing it up.']}),
- P('ryan','Ryan','Dev Manager',['#e4b58f','#2a1e18','short','#c25a3a','#26293a','backpack'],'hq_f2',1140,{wander:[1120,1300],lines:['Pipeline\'s green. Whatever you\'re about to do, I can ship it.','If you need the printer, kick it. Gently. It knows what it did.']}),
- P('ash','Ash','Salesforce Engineer',['#c48a62','#1a1410','bun','#4a6fd8','#26293a','cloud'],'hq_f2',1250),
- P('umesh','Umesh','EDI Specialist',['#b9825a','#151210','short','#9a5a3a','#2b2f3a','vest'],'hq_f2',1790),
- P('jose','Jose','System Architect',['#c9906a','#1a1410','swept','#2f7f8f','#2b2f3a','plans'],'hq_f2',1860,{lines:['Two schemas, one warehouse. I drew the diagram. It has a dragon on it now.','Every stair in this building is on my drawing. The tunnel isn\'t. Draw your own conclusions.']}),
+ P('rianan','Rianan','IT Department Head',['#f1c9a5','#3b2418','ponytail','#2f6f9f','#2b2f3a','headset'],'hq_f2',1400,{lk:{glasses:true,pony:1.8}}),
+ P('brians','Brian S','IT Manager',['#f0c7a3','#7a6a5c','short','#3d6b52','#2b2f3a','lanyard'],'hq_f2',1455,{lk:{stache:true},lines:['Admin console\'s ours. A+ changed the wallpaper. Petty.','I build on all machines. Pinball, arcade cabinets, the render box under my desk, half the racks downstairs. If it has a motor or a motherboard, I\'ve had it open.','This building is just a very large machine with worse lighting. I\'d rewire it if Jose would let me.','World-ranked. I don\'t like to bring it up. I\'m bringing it up.']}),
+ P('ryan','Ryan','Dev Manager',['#e4b58f','#2a1e18','short','#c25a3a','#26293a','backpack'],'hq_f2',1120,{wander:[1110,1150],lines:['Pipeline\'s green. Whatever you\'re about to do, I can ship it.','If you need the printer, kick it. Gently. It knows what it did.']}),
+ P('ash','Ash','Salesforce Engineer',['#c48a62','#1a1410','bun','#4a6fd8','#26293a','cloud'],'hq_f2',1165),
+ P('umesh','Umesh','EDI Specialist',['#b9825a','#151210','short','#9a5a3a','#2b2f3a','vest'],'hq_f2',1748),
+ P('jose','Jose','System Architect',['#c9906a','#1a1410','swept','#2f7f8f','#2b2f3a','plans'],'hq_f2',1790,{lines:['Two schemas, one warehouse. I drew the diagram. It has a dragon on it now.','Every stair in this building is on my drawing. The tunnel isn\'t. Draw your own conclusions.']}),
  P('andrew','Andrew','Head of IT Support',['#eec2a0','#3a2c22','short','#8a4a5a','#2b2f3a','headset'],'ground',1440),
  P('aaron','Aaron','Network Specialist',['#d9a77c','#1f1a17','hoodie','#4a4f6b','#1f2330','cable'],'hq_roof',1300,{wander:[1180,1480]}),
  P('dave','Dave','iSeries Guru',['#eec2a0','#8e8e8e','beard','#8a4a3a','#3a3d47','flannel'],'hq_b1',1820),
- P('john','John','iSeries Manager',['#e9bb95','#3a2c22','short','#2f5f8f','#2b2f3a','keys'],'hq_f3',1440),
+ P('john','John','iSeries Manager',['#e9bb95','#3a2c22','short','#2f5f8f','#2b2f3a','keys'],'hq_f2',1512),
  P('greg','Greg','Number Scientist',['#9a9a9a','#777777','wavy','#8a8a8a','#5a5a5a','cardigan'],'hq_b1',1440,{wander:[1350,1530]}),
- P('pam','Pam','Item Maintenance',['#f1c9a5','#6a4a3a','bun','#7a5a8a','#2b2f3a','lanyard'],'hq_f3',1190),
- P('melissa','Melissa','Item Maintenance',['#e8b48e','#2a1e18','ponytail','#3f7f8f','#2b2f3a','lanyard'],'hq_f3',1228),
+ P('pam','Pam','Item Maintenance (PIM)',['#f1c9a5','#6a4a3a','bun','#7a5a8a','#2b2f3a','lanyard'],'hq_f2',1236,{busy:true}),
+ P('melissa','Melissa','Item Maintenance (PIM)',['#e8b48e','#2a1e18','ponytail','#3f7f8f','#2b2f3a','lanyard'],'hq_f2',1284,{busy:true}),
+ P('cathy','Cathy','PIM Assistant',['#f0c7a3','#b07a4a','wavy','#c25a7a','#2b2f3a','lanyard'],'hq_f2',1320,{lines:['I\'m Pam and Melissa\'s assistant. They\'re in the PIM. They are always in the PIM. I bring them things.','Four hundred attributes on a bag of kibble. I have opinions about every one of them.','If you need them, talk loud. They won\'t look up from the grid, but they\'re listening.']}),
  P('bret','Bret','Infrastructure Manager',['#e8b48e','#5a3a22','cap','#7a4a2a','#3a3d47','belt'],'ground',2700),
- P('blaine','Blaine','Executive Chairman',['#f1c9a5','#8a8a8a','short','#243447','#2b2f3a','lanyard'],'hq_f3',1800,{lines:['My grandfather opened a single feed store in 1938. His goal was to delight our customers and create a great place to work.','Show up for the people who count on you. That was the whole promise. Still is.']}),
- P('nick','Nick','CEO',['#f1c9a5','#6a5a4a','short','#243447','#2b2f3a','lanyard'],'hq_f3',1752,{lines:['First cutover on the job. Good team. I\'m staying till the last sign-off, so don\'t rush it on my account.']}),
- P('kim','Kim','Accounting',['#f0c7a3','#3a2c22','bun','#6b5b8f','#2b2f3a','glasses'],'hq_f3',1380,{lines:['Our financial systems have run since the mainframe days. Tonight is the first night they get to rest.']}),
- P('ashley','Ashley','Finance',['#c48a62','#1a1410','ponytail','#3f7f8f','#2b2f3a','none'],'hq_f3',1510,{lines:['I priced forty years of A+. It came to one very long receipt. A+ kept every line.']}),
- P('jessica','Jessica','Chief Sales & Marketing',['#e8b48e','#a8632c','wavy','#c25a3a','#2b2f3a','none'],'ground',1210,{wander:[1130,1320],lines:['Seventy-five brands at the buying show and every one of them asked if the site would be up tomorrow. It will. Right?']}),
- P('jennifer','Jennifer','Marketing',['#f1c9a5','#8a4a2a','wavy','#e0a030','#2b2f3a','none'],'ground',1290,{lines:['There are tunnels under the warehouse. I\'ve said this for years. Frank backs me up.']}),
+ P('blaine','Blaine','Executive Chairman',['#f1c9a5','#8a8a8a','short','#243447','#2b2f3a','lanyard'],'hq_f2',1880,{lines:['My grandfather opened a single feed store in 1938. His goal was to delight our customers and create a great place to work.','Show up for the people who count on you. That was the whole promise. Still is.']}),
+ P('nick','Nick','CEO',['#f1c9a5','#6a5a4a','short','#243447','#2b2f3a','lanyard'],'hq_f2',1848,{lines:['First cutover on the job. Good team. I\'m staying till the last sign-off, so don\'t rush it on my account.']}),
+ P('kim','Kim','Accounting',['#f0c7a3','#3a2c22','bun','#6b5b8f','#2b2f3a','glasses'],'ground',1238,{lines:['Our financial systems have run since the mainframe days. Tonight is the first night they get to rest.']}),
+ P('ashley','Ashley','Finance',['#c48a62','#1a1410','ponytail','#3f7f8f','#2b2f3a','none'],'ground',1290,{lines:['I priced forty years of A+. It came to one very long receipt. A+ kept every line.']}),
+ P('jessica','Jessica','Chief Sales & Marketing',['#e8b48e','#a8632c','wavy','#c25a3a','#2b2f3a','none'],'ground',1150,{wander:[1112,1170],lines:['Seventy-five brands at the buying show and every one of them asked if the site would be up tomorrow. It will. Right?']}),
+ P('jennifer','Jennifer','Marketing',['#f1c9a5','#8a4a2a','wavy','#e0a030','#2b2f3a','none'],'ground',1196,{lines:['There are tunnels under the warehouse. I\'ve said this for years. Frank backs me up.']}),
  P('josh','Josh','Customer Care',['#d9a77c','#2a1e18','short','#2f6f9f','#2b2f3a','headset'],'ground',1760,{lines:['A thousand calls a day and tonight every one of them is "is the site up?" It\'s up.']}),
  P('stephanie','Stephanie','Customer Care',['#f0c7a3','#5a3a22','ponytail','#2f6f9f','#2b2f3a','headset'],'ground',1822,{lines:['Customer Care is holding the phones all night. We\'d like it noted.','The treat jar by the window is for dogs. Mostly.']}),
  P('wendy','Wendy','Customer Care',['#e8b48e','#1a1410','bun','#2f6f9f','#2b2f3a','headset'],'ground',1740,{wander:[1735,1885],lines:['Every call is a relationship. Even the ones at 11 PM.']}),
@@ -49,11 +51,11 @@ const BISCUIT={id:'biscuit',name:'Biscuit',node:'ground',x:340,homeX:2740};
 
 /* ---------------- things to pick up or use ---------------- */
 const PAGES=[
- ['ground',1262,'1938. Sack of oats for the mare, then the Millers\' order across the road. Paid in eggs. Entered as cash.'],
+ ['ground',1128,'1938. Sack of oats for the mare, then the Millers\' order across the road. Paid in eggs. Entered as cash.'],
  ['hq_roof',1128,'1952. Bought a truck. The mare has opinions about the truck.'],
  ['gar_loft',884,'1967. Second truck. First mechanic. He says the wrench is fine.'],
  ['wh_cat',2284,'1985. A+ goes live. Green screens in every office. Nobody trusts it. It ships forty bags of chow on day one.'],
- ['hq_f3',1862,'1991. Door in the archive bricked over. Nobody wrote down why. I am writing down that nobody wrote it down.'],
+ ['hq_f2',1872,'1991. Door in the archive bricked over. Nobody wrote down why. I am writing down that nobody wrote it down.'],
  ['ground',424,'1994. G. Schreiner logs unusual basement readings. Filed under "unusual".'],
  ['ground',3474,'1995. Frank starts nights. Says he will stay a year.'],
  ['hq_b1',1150,'1999. Y2K readiness binder, 400 pages. A+ needed two lines changed.'],
@@ -71,7 +73,7 @@ const ITEMS=[
 ];
 const TERMS=[{id:'t_dock',node:'ground',x:2260,where:'Receiving Dock'},{id:'t_roof',node:'hq_roof',x:1840,where:'Roof Garden'},{id:'t_gate',node:'ground',x:1010,where:'Security Gate'}];
 
-const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg*3+PTS.duct;
+const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg*3+PTS.duct+PTS.jeopardy;
 const RANKS=[[0,'New Badge'],[12,'Ticket Closer'],[30,'On-Call'],[50,'Change Approver'],[72,'Cutover Lead'],[95,'Hecktown Legend']];
 
 function freshSave(){ return {v:1,flags:{},inv:{},met:{},rooms:{},pages:{},eggs:{},signoffs:{},terms:{},gates:{},points:0,time:0,done:false,pos:{node:'ground',x:1150}}; }
@@ -97,10 +99,10 @@ function tasks(S){
   const so=(name,who,where,asked,note)=>t.push({title:'Sign-off: '+name,status:st(S.signoffs[name],S.flags.started),note:S.signoffs[name]?who+' signed.':(asked?note:who+', '+where+'.')});
   so('Network','Aaron','HQ roof',S.flags.netAsked,S.inv.spool?'Bring the cable spool to Aaron on the roof.':'Aaron lent his cable spool to Lou. Check the loft over the garage.');
   so('Backup','Dave','Server Room, HQ basement (badge)',S.flags.backupAsked,S.inv.tape?'Bring the tape to Dave.':'The SAVLIB tape is in the Cage Office on the warehouse mezzanine (badge).');
-  so('Catalog','Pam and Melissa','Item Maintenance, HQ 3rd floor',S.flags.catalogAsked,S.inv.label?'Bring the label to Pam.':'They need a SKU label sample from the Top Rack Catwalk in the warehouse.');
+  so('Catalog','Pam and Melissa','PIM Room, HQ 2nd floor',S.flags.catalogAsked,S.inv.label?'Bring the label to Pam.':'They need a SKU label sample from the Top Rack Catwalk in the warehouse.');
   so('EDI','Umesh','EDI & Integration, HQ 2nd floor',S.flags.ediAsked,S.inv.bol?'Bring the bill of lading to Umesh.':'Get tonight\'s bill of lading from Rosa at the Receiving Dock.');
   so('Storefront','Ash','Dev Bullpen, HQ 2nd floor',S.flags.sfAsked,S.inv.coffee?'Bring the coffee to Ash.':'Ash needs a coffee from Tina\'s Tacos, out in the west lot.');
-  so('Jobs','John','Accounting, HQ 3rd floor',S.flags.jobsAsked,count(S.terms)>=3?'All three queues held. Tell John.':'Hold the job queue at three green-screen terminals: '+TERMS.map(x=>x.where+(S.terms[x.id]?' (held)':'')).join(', ')+'.');
+  so('Jobs','John','War Room, HQ 2nd floor',S.flags.jobsAsked,count(S.terms)>=3?'All three queues held. Tell John.':'Hold the job queue at three green-screen terminals: '+TERMS.map(x=>x.where+(S.terms[x.id]?' (held)':'')).join(', ')+'.');
   t.push({title:'Bring Biscuit home',status:st(S.flags.biscuitHome,S.flags.biscuitAsked),note:S.flags.biscuitAsked?(S.inv.treats?'Biscuit is up in the Dog Park. Offer a treat.':'Biscuit won\'t come without a treat. Customer Care keeps a jar.'):'Optional. Bret is in the warehouse Pick Aisles.'});
   t.push({title:'The tunnel key',status:st(S.inv.tunnelkey,S.flags.gregAsked),note:'Greg wants 6 ledger pages. Found '+count(S.pages)+' of '+PAGES.length+'.'});
   t.push({title:'Good night, A+',status:st(S.done,S.inv.tunnelkey),note:'All six sign-offs open the last door, three levels down.'});
@@ -139,17 +141,22 @@ function talkLines(G,p){
      if(I.rfc){ delete I.rfc; I.badge=1; award(G,PTS.badge,'Level 2 badge issued'); G.events.push({type:'save'}); return ['An RFC, filled in, legible. I may frame it.','Level 2 badge. Server Room, Executive Row and the warehouse Cage Office will open for you now.']; }
      F.rfcAsked=1; return ['A Level 2 badge is a change. A change needs an RFC. No RFC, no badge.','The form is on the printer in the Dev Bullpen, second floor. Bring it here.'];
    case 'aaron':
-     if(S.signoffs.Network) return ['Racks are humming, switches are green. Class IV rapids on Saturday. Tonight is easier.'];
+     if(S.signoffs.Network){ const L=['Racks are humming, switches are green. Class IV rapids on Saturday. Tonight is easier.','That raft by the HVAC is mine. Don\'t tell Facilities. It dries faster up here.','Whitewater and networks: water finds the path of least resistance. So do packets. So do users.','Swam a rapid once. Lost a paddle, kept the helmet. Priorities.'];
+       F.aaronI=((F.aaronI||0)+1)%L.length; return [L[F.aaronI]]; }
      if(I.spool){ delete I.spool; signoff(G,'Network'); return ['That\'s my spool. Two minutes. ...There. Every DC answers on the new path.','Whitewater rule: pick your line early, commit, keep paddling. Network is signed.']; }
-     F.netAsked=1; return ['I can\'t sign Network until the roof link is re-terminated, and I lent my cable spool to Lou.','He keeps borrowed things in the loft over his garage, out in the west lot.'];
+     F.netAsked=1; return ['Rafting on Saturday, cutover tonight. One of those has a helmet.','I can\'t sign Network until the roof link is re-terminated, and I lent my cable spool to Lou.','He keeps borrowed things in the loft over his garage, out in the west lot.'];
    case 'dave':
-     if(S.signoffs.Backup) return ['Forty years of green screens and tonight is the first one that said thank you.','There are tunnels under this building. Old ones. I have never once been down there and I know exactly what\'s in them.'];
+     if(S.signoffs.Backup&&S.eggs.jeopardy) return ['Forty years of green screens and tonight is the first one that said thank you.','There are tunnels under this building. Old ones. I have never once been down there and I know exactly what\'s in them.','I made it to the final audition round for Jeopardy. Got a call-back. Never got the call. I think about it every time I see a buzzer.'];
      if(I.tape){ delete I.tape; signoff(G,'Backup'); return ['SAVLIB, full system, verified. Forty years on one cartridge. Feels light.','Backup is signed.']; }
-     F.backupAsked=1; return ['No backup, no cutover. The last full SAVLIB tape went to the warehouse for safekeeping.','Cage Office, on the mezzanine. Frank\'s people lock everything, so bring your badge.'];
+     F.backupAsked=1; return ['I once came this close to being a Jeopardy contestant. The backup schedule, though, I got exactly right.','No backup, no cutover. The last full SAVLIB tape went to the warehouse for safekeeping.','Cage Office, on the mezzanine. Frank\'s people lock everything, so bring your badge.'];
    case 'pam': case 'melissa':
-     if(S.signoffs.Catalog) return [p.id==='pam'?'We stay late together. We came in early together. We\'re going to see it off together.':'If you see Pam, I\'m right behind her. I\'m always right behind her.'];
-     if(I.label){ delete I.label; signoff(G,'Catalog'); return ['Pam: That label matches the new catalog character for character.','Melissa: Four hundred SKUs checked. Catalog is signed. By both of us.']; }
-     F.catalogAsked=1; return ['Pam: Melissa and I keep the catalog perfect. We need one real label off a real pallet to prove the new system prints it right.','Melissa: Top rack, up on the warehouse catwalk. The highest one. Obviously.'];
+     if(S.signoffs.Catalog) return [p.id==='pam'?'Catalog\'s signed and I\'m still in the PIM. Somebody added a new flavor of kibble at 11 PM. Of course they did.':'If you see Pam, I\'m right behind her. In the PIM. We\'re always in the PIM.'];
+     if(I.label){ delete I.label; signoff(G,'Catalog'); return ['Pam: That label matches the PIM character for character.','Melissa: Four hundred SKUs checked against the grid. Catalog is signed. By both of us.','Cathy: I\'ll get the coffee.']; }
+     F.catalogAsked=1; return ['Pam: Sorry, I won\'t look up, I\'m mid-edit in the PIM. Melissa and I keep the catalog perfect.','Melissa: We need one real label off a real pallet to prove the new system prints what the PIM says.','Pam: Top rack, up on the warehouse catwalk. The highest one. Obviously.'];
+   case 'cathy':
+     if(S.signoffs.Catalog) return ['They signed! They didn\'t stop typing, but they signed.'];
+     if(F.catalogAsked&&!I.label) return ['The label\'s on the Top Rack Catwalk in the warehouse. I\'d go, but somebody has to bring them things.'];
+     break;
    case 'umesh':
      if(S.signoffs.EDI) return ['OMS is the order\'s whole life: entered, allocated, picked, shipped, invoiced. I don\'t skip steps.'];
      if(I.bol){ delete I.bol; signoff(G,'EDI'); return ['Bill of lading matches the 856 line for line. Every 850 in the queue is mine again.','EDI is signed.']; }
@@ -183,9 +190,19 @@ function talkLines(G,p){
 function talk(G,q){
   const p=q.def, S=G.S;
   if(!S.met[p.id]){ S.met[p.id]=1; award(G,PTS.meet,'Met '+p.name); }
+  if(p.id==='dave'&&S.signoffs.Backup&&!S.eggs.jeopardy){ daveQuiz(G,p); return; }
   const lines=talkLines(G,p);
   say(G,p,lines);
 }
+/* Dave nearly made it onto Jeopardy. Once Backup is signed he has a Daily Double for you; every answer is somewhere in Hecktown. */
+const CLUES=[
+ ['PHILLIPS HISTORY for 800: The year a single feed store opened on this road.',['What is 1938?','What is 1952?','What is 1985?'],0],
+ ['MIDRANGE for 1000: The command that put forty years of this company on one tape tonight.',['What is ENDSBS?','What is SAVLIB?','What is HLDJOBQ?'],1],
+ ['OUR SYSTEMS for 600: The year A+ went live and shipped forty bags of chow on day one.',['What is 1991?','What is 2008?','What is 1985?'],2],
+ ['PEOPLE YOU KNOW for 400: Greg\'s job title, and it is not a joke.',['What is number scientist?','What is data wizard?','What is night manager?'],0],
+];
+function daveQuiz(G,p){ const F=G.S.flags, c=CLUES[(F.ddQ||0)%CLUES.length];
+  say(G,p,['Hold on. I nearly made it onto Jeopardy, and I have been waiting all night to do this. Daily Double.',c[0]],{choices:c[1].map((l,i)=>({label:l,id:i===c[2]?'dd_ok':'dd_no'}))}); }
 function talkAplus(G){
   const S=G.S, A={name:'A+',role:'Since 1985'};
   if(S.done){ say(G,A,['...']); return; }
@@ -194,6 +211,10 @@ function talkAplus(G){
 }
 function choose(G,id){
   G.dialog=null;
+  if(id==='dd_ok'||id==='dd_no'){ const S=G.S, dave=PEOPLE.find(p=>p.id==='dave'), c=CLUES[(S.flags.ddQ||0)%CLUES.length];
+    if(id==='dd_ok'){ S.eggs.jeopardy=1; award(G,PTS.jeopardy,'Daily Double!'); G.events.push({type:'sfx',name:'good'}); G.events.push({type:'save'}); say(G,dave,['Correct! Phrased as a question and everything. You\'d have done better than I did in the audition.']); }
+    else{ S.flags.ddQ=(S.flags.ddQ||0)+1; say(G,dave,['Ooh. No. We were looking for "'+c[1][c[2]]+'"','Come back. I have more categories than I have backup tapes.']); }
+    return; }
   if(id==='end'){ const S=G.S; S.done=true; award(G,PTS.finale,'A+ archived, with honors');
     say(G,{name:'A+',role:'Since 1985'},['THEN I AM DONE.','ENDSBS *ALL.','GOOD NIGHT, EASTON.'],{onEnd:'ending'}); G.events.push({type:'save'}); }
 }
@@ -318,7 +339,7 @@ function update(G,ix,iy,dt){
     const near=Math.abs(q.w.x-h.x)<900; q.live=near; if(!near) continue;
     let inp=0; const p=q.def, same=q.node===N, dx=h.x-q.w.x;
     if(q.clap>0){ q.clap-=dt; if(q.clap<=0) E.command(q.w,q.node.world,'clap'); }
-    if(same&&Math.abs(dx)<70){ if(Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); q.wait=Math.max(q.wait,1.5); }
+    if(same&&Math.abs(dx)<70){ if(!p.busy&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); q.wait=Math.max(q.wait,1.5); }   // busy people keep their eyes on the screen
     else if(p.wander){ q.wait-=dt; if(q.wait<=0){ if(Math.abs(q.goal-q.w.x)<6){ q.goal=p.wander[0]+Math.random()*(p.wander[1]-p.wander[0]); q.wait=2+Math.random()*7; } else inp=Math.sign(q.goal-q.w.x)*0.5; } }
     q.pose=E.updateWalker(q.w,q.node.world,inp,dt); q.w.events.length=0;
   }
