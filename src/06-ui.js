@@ -73,12 +73,16 @@ function footfall(ev,hard){
 const SFX={ talk:()=>tone(520+Math.random()*120,0.07,0.05,'triangle'), pick:()=>{ tone(660,0.09,0.07,'triangle'); tone(990,0.14,0.07,'triangle',null,0.08); },
   good:()=>[523,659,784,1047].forEach((f,i)=>tone(f,0.22,0.07,'triangle',null,i*0.09)), door:()=>{ burst(240,0.7,0.16,0.18,90); tone(180,0.2,0.05,'square',90); },
   deny:()=>{ tone(196,0.12,0.06,'square'); tone(155,0.2,0.06,'square',null,0.13); }, bark:()=>{ tone(420,0.09,0.10,'sawtooth',250); tone(460,0.1,0.10,'sawtooth',260,0.16); },
-  point:()=>tone(880,0.12,0.04,'sine',1320), purr:()=>{ for(let i=0;i<6;i++) burst(120,0.5,0.05,0.09,90); tone(60,0.5,0.03,'sine'); }, meow:()=>{ tone(700,0.22,0.05,'triangle',950); tone(980,0.25,0.04,'triangle',620,0.12); } };
+  point:()=>tone(880,0.12,0.04,'sine',1320), purr:()=>{ for(let i=0;i<6;i++) burst(120,0.5,0.05,0.09,90); tone(60,0.5,0.03,'sine'); }, beep:()=>{ tone(1180,0.09,0.04,'square'); }, meow:()=>{ tone(700,0.22,0.05,'triangle',950); tone(980,0.25,0.04,'triangle',620,0.12); } };
 /* Voices: a pitched blip per character as their words type out. */
 const VOICE={Rianan:520,Aaron:300,Bret:340,'Brian S':280,'Brian W':320,Umesh:380,Dave:250,John:270,Greg:240,Ryan:360,Jose:330,Ash:540,Andrew:350,Blaine:260,'The Founder':220,Pam:500,Melissa:480,Cathy:510,Milo:600,Rosa:460,'Mrs. Miller':470,Kim:490,Ashley:500,Nick:290,Tina:470,Frank:230,Lou:250,'A+':150,Terminal:170};
 function voiceOf(name){ if(VOICE[name]) return VOICE[name]; let h=7; for(let i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))>>>0; return 260+h%240; }
 function blip(name,kid){ const f=voiceOf(name)*(kid?1.35:1)*(0.92+Math.random()*0.16), mech=name==='A+'||name==='Terminal'; tone(f,0.05,mech?0.03:0.035,mech?'square':'triangle',f*(0.94+Math.random()*0.1)); }
 /* A quiet night-shift bed: two drifting drones and the occasional plucked note, re-rooted by where you are. */
+let rainG=null;
+function tickRain(){ if(!G) return; if(!rainG){ const s=AC.createBufferSource(), b=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; s.buffer=b; s.loop=true; const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1400; f.Q.value=0.4; rainG=AC.createGain(); rainG.gain.value=0; s.connect(f); f.connect(rainG); rainG.connect(master); s.start(); }
+  const N=G.cur.node, id=N?N.id:'', indoor=N&&(['hq_f2','hq_b1','tun_2','tun_3','wh_mezz','wh_cat','gar_loft'].indexOf(id)>=0||(id==='ground'&&((G.hero.x>1100&&G.hero.x<1900)||(G.hero.x>2200&&G.hero.x<3160)))), era=G.p38&&G.p38.scene==='yard'&&(G.S.flags.p38|0)>=2&&(G.S.flags.p38|0)<4;
+  const want=state==='play'?(era?0.07:(G.p38?0:((G.wx&&G.wx.rain)||0)*(indoor?0.025:0.08))):0; rainG.gain.setTargetAtTime(want,AC.currentTime,0.6); }
 function startMusic(){ const g=AC.createGain(); g.gain.value=0.0; g.connect(master); const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=700; f.connect(g);
   const o1=AC.createOscillator(), o2=AC.createOscillator(); o1.type='sawtooth'; o2.type='triangle'; o1.connect(f); o2.connect(f); o1.start(); o2.start(); music={g:g,o1:o1,o2:o2,root:0,next:0}; }
 function tickMusic(){ if(!music||!G) return; const t=AC.currentTime, n=G.cur.node?G.cur.node.id:(G.cur.link.id.indexOf('tun')===0?'tun_2':'hq'); 
@@ -165,10 +169,10 @@ function frame(now){
     for(const ev of G.events){ if(ev.type==='banner'){ toast(ev.text,ev.pts); if(ev.pts) SFX.point(); } else if(ev.type==='hint') toast(ev.text,0,true); else if(ev.type==='sfx'){ if(SFX[ev.name]) SFX[ev.name](); } else if(ev.type==='save') save(); else if(ev.type==='ending') showEnding(); else if(ev.type==='snap') snapCam(); else if(ev.type==='blip'&&AC) blip(ev.who); }
     G.events.length=0;
     autosave+=dt; if(autosave>20){ autosave=0; save(); }
-    typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); $('bSkip').classList.toggle('hide',!G.p38); } dialogUI(); document.body.classList.toggle('card',!!G.card);
+    typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); $('bSkip').classList.toggle('hide',!G.p38||G.p38.scene==='visit'); } dialogUI(); document.body.classList.toggle('card',!!G.card);
   } else { readInput(); queue.length=0; acc=0; }
   if(saveBlip>0){ saveBlip-=dt; if(saveBlip<=0) $('saved').classList.remove('on'); }
-  if(AC) tickMusic();
+  if(AC){ tickMusic(); tickRain(); }
 
   const h=G.hero, w=G.cur.world, target=Math.min(V.H/zoomStops[zi],V.W/250); zoomNow=zoomNow?zoomNow+(target-zoomNow)*(1-Math.exp(-6*dt)):target; V.zoom=zoomNow;
   if(state==='title'){ const ph=(now/1000)%28, past=ph<14; V.camx=past?-2600+Math.sin(now/7000)*140:1330+Math.sin(now/9000)*160; V.camy=past?-70:-110; V.titleFade=Math.max(0,1-Math.min(ph,Math.abs(ph-14),28-ph)/0.8); }
