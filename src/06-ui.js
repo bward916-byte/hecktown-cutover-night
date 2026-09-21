@@ -27,7 +27,7 @@ addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code.startsWith('Arrow')
   if(e.code==='KeyZ'){ $('bZoom').click(); return; } if(e.code==='KeyM'){ $('bSnd').click(); return; }
   if(state!=='play') return;
   if(G.card&&(e.code==='Space'||e.code==='KeyE'||e.code==='Enter')){ queue.push('use'); return; }
-  if(G.dialog){ if(e.code==='Digit1'||e.code==='Digit2'){ pick(e.code==='Digit1'?0:1); return; } if(e.code==='Space'||e.code==='KeyE'||e.code==='Enter'){ queue.push('use'); } return; }
+  if(G.dialog){ const dn=['Digit1','Digit2','Digit3','Digit4'].indexOf(e.code); if(dn>=0){ pick(dn); return; } if(e.code==='Space'||e.code==='KeyE'||e.code==='Enter'){ queue.push('use'); } return; }
   if(actKeys[e.code]) queue.push(actKeys[e.code]); });
 addEventListener('keyup',e=>{ keys[e.code]=false; });
 addEventListener('blur',()=>{ for(const k in keys)keys[k]=false; stick=null; });
@@ -73,7 +73,11 @@ function footfall(ev,hard){
 const SFX={ talk:()=>tone(520+Math.random()*120,0.07,0.05,'triangle'), pick:()=>{ tone(660,0.09,0.07,'triangle'); tone(990,0.14,0.07,'triangle',null,0.08); },
   good:()=>[523,659,784,1047].forEach((f,i)=>tone(f,0.22,0.07,'triangle',null,i*0.09)), door:()=>{ burst(240,0.7,0.16,0.18,90); tone(180,0.2,0.05,'square',90); },
   deny:()=>{ tone(196,0.12,0.06,'square'); tone(155,0.2,0.06,'square',null,0.13); }, bark:()=>{ tone(420,0.09,0.10,'sawtooth',250); tone(460,0.1,0.10,'sawtooth',260,0.16); },
-  point:()=>tone(880,0.12,0.04,'sine',1320) };
+  point:()=>tone(880,0.12,0.04,'sine',1320), purr:()=>{ for(let i=0;i<6;i++) burst(120,0.5,0.05,0.09,90); tone(60,0.5,0.03,'sine'); }, meow:()=>{ tone(700,0.22,0.05,'triangle',950); tone(980,0.25,0.04,'triangle',620,0.12); } };
+/* Voices: a pitched blip per character as their words type out. */
+const VOICE={Rianan:520,Aaron:300,Bret:340,'Brian S':280,'Brian W':320,Umesh:380,Dave:250,John:270,Greg:240,Ryan:360,Jose:330,Ash:540,Andrew:350,Blaine:260,'The Founder':220,Pam:500,Melissa:480,Cathy:510,Milo:600,Rosa:460,'Mrs. Miller':470,Kim:490,Ashley:500,Nick:290,Tina:470,Frank:230,Lou:250,'A+':150,Terminal:170};
+function voiceOf(name){ if(VOICE[name]) return VOICE[name]; let h=7; for(let i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))>>>0; return 260+h%240; }
+function blip(name,kid){ const f=voiceOf(name)*(kid?1.35:1)*(0.92+Math.random()*0.16), mech=name==='A+'||name==='Terminal'; tone(f,0.05,mech?0.03:0.035,mech?'square':'triangle',f*(0.94+Math.random()*0.1)); }
 /* A quiet night-shift bed: two drifting drones and the occasional plucked note, re-rooted by where you are. */
 function startMusic(){ const g=AC.createGain(); g.gain.value=0.0; g.connect(master); const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=700; f.connect(g);
   const o1=AC.createOscillator(), o2=AC.createOscillator(); o1.type='sawtooth'; o2.type='triangle'; o1.connect(f); o2.connect(f); o1.start(); o2.start(); music={g:g,o1:o1,o2:o2,root:0,next:0}; }
@@ -86,7 +90,10 @@ function tickMusic(){ if(!music||!G) return; const t=AC.currentTime, n=G.cur.nod
 /* ---------------- HUD, toasts, dialog ---------------- */
 function toast(text,pts,hint){ const d=document.createElement('div'); d.className='toast'+(hint?' hint':''); if(pts){ const b=document.createElement('b'); b.textContent='+'+pts; d.appendChild(b); } d.appendChild(document.createTextNode(text));
   const box=$('toasts'); box.appendChild(d); while(box.children.length>4) box.removeChild(box.firstChild); setTimeout(()=>{ if(d.parentNode) d.parentNode.removeChild(d); },hint?2600:3400); }
-let hudT=0, shownDialog=null, shownPage=-1;
+let hudT=0, shownDialog=null, shownPage=-1, typing=null;
+function typeTick(dt){ if(!typing||!G.dialog) return; const T=typing, L=T.text.length; if(T.n>=L) return; T.n=Math.min(L,T.n+dt*60); const k=Math.floor(T.n);
+  if(k-T.last>=3){ T.last=k; if(/\S/.test(T.text[k-1]||'')) blip(T.who,T.kid); } $('dtext').textContent=T.text.slice(0,k); }
+function typingDone(){ return !typing||!G.dialog||typing.n>=typing.text.length; }
 function hud(){
   const S=G.S; $('hClock').textContent=GM.clock(S); $('hPlace').textContent=G.room?G.room.name:(G.cur.link||(G.cur.node&&G.cur.node.mid)?'On the stairs':G.cur.node.label);
   $('hGoal').textContent=GM.objective(S); $('hPts').textContent=S.points+' / '+GM.MAXPTS; $('hRank').textContent=GM.percent(S)+'%  ·  '+GM.rank(S); $('hBar').style.width=GM.percent(S)+'%';
@@ -99,9 +106,9 @@ function dialogUI(){
   if(shownDialog===d&&shownPage===d.i) return; shownDialog=d; shownPage=d.i; box.classList.remove('hide');
   const term=d.who==='A+'||d.who==='Terminal'; box.classList.toggle('term',term);
   $('dwho').innerHTML=''; $('dwho').appendChild(document.createTextNode(d.who)); const r=document.createElement('span'); r.textContent=d.role; $('dwho').appendChild(r);
-  $('dtext').textContent=d.pages[d.i];
+  const pg=d.pages[d.i], m=/^([A-Z][A-Za-z.+ ]{1,18}):\s/.exec(pg); typing={text:pg,n:0,who:m?m[1]:d.who,kid:d.role==='a boy',last:0}; $('dtext').textContent='';
   const fc=$('dface').getContext('2d'); fc.setTransform(1,0,0,1,0,0); fc.clearRect(0,0,112,112);
-  if(d.look) PP.portrait(fc,d.look,112); else { fc.fillStyle=term?'#0a1a0e':'#2c3340'; fc.fillRect(0,0,112,112); fc.fillStyle=term?'#6fe08a':'#f2b544'; fc.font='700 44px "IBM Plex Mono",monospace'; fc.textAlign='center'; fc.textBaseline='middle'; fc.fillText(d.who==='A+'?'A+':(d.who==='Biscuit'?'🐾':(d.who==='The Ledger'?'§':'>_')),56,58); }
+  if(d.look) PP.portrait(fc,d.look,112); else { fc.fillStyle=term?'#0a1a0e':'#2c3340'; fc.fillRect(0,0,112,112); fc.fillStyle=term?'#6fe08a':'#f2b544'; fc.font='700 44px "IBM Plex Mono",monospace'; fc.textAlign='center'; fc.textBaseline='middle'; fc.fillText(d.who==='A+'?'A+':(d.who==='Biscuit'?'🐾':(d.who==='Milo'?'🐈':(d.who==='The office dog'?'💤':(d.who==='The Ledger'?'§':'>_')))),56,58); }
   const last=d.i>=d.pages.length-1, ch=$('dchoices'); ch.innerHTML='';
   if(last&&d.choices) d.choices.forEach((c,i)=>{ const b=document.createElement('button'); b.textContent=(V.touch?'':(i+1)+'  ')+c.label; b.addEventListener('click',e=>{ e.stopPropagation(); pick(i); }); ch.appendChild(b); });
   $('dmore').textContent=last&&d.choices?'':(V.touch?'Tap to continue':'E or Space to continue')+(d.pages.length>1?'   '+(d.i+1)+' / '+d.pages.length:'');
@@ -152,13 +159,13 @@ function frame(now){
   const dt=Math.min((now-last)/1000,0.1); last=now;
   if(state==='play'){
     const inp=readInput();
-    while(queue.length){ const a=queue.shift(); if(a==='use') GM.interact(G); else GM.command(G,a); }
+    while(queue.length){ const a=queue.shift(); if(a==='use'){ if(G.dialog&&!typingDone()){ typing.n=typing.text.length; $('dtext').textContent=typing.text; } else GM.interact(G); } else GM.command(G,a); }
     acc+=dt; while(acc>=STEP){ GM.update(G,inp[0],inp[1],STEP); acc-=STEP; }
-    const hard=!(G.cur.node&&((G.cur.node.id==='ground'&&G.hero.x<548)||G.cur.node.era)); for(const ev of G.hero.events) footfall(ev,hard); G.hero.events.length=0;
+    const hard=!(G.cur.node&&((G.cur.node.id==='ground'&&G.hero.x<548&&G.hero.x>60)||G.cur.node.era)); for(const ev of G.hero.events) footfall(ev,hard); G.hero.events.length=0;
     for(const ev of G.events){ if(ev.type==='banner'){ toast(ev.text,ev.pts); if(ev.pts) SFX.point(); } else if(ev.type==='hint') toast(ev.text,0,true); else if(ev.type==='sfx'){ if(SFX[ev.name]) SFX[ev.name](); } else if(ev.type==='save') save(); else if(ev.type==='ending') showEnding(); else if(ev.type==='snap') snapCam(); }
     G.events.length=0;
     autosave+=dt; if(autosave>20){ autosave=0; save(); }
-    hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); $('bSkip').classList.toggle('hide',!G.p38); } dialogUI(); document.body.classList.toggle('card',!!G.card);
+    typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); $('bSkip').classList.toggle('hide',!G.p38); } dialogUI(); document.body.classList.toggle('card',!!G.card);
   } else { readInput(); queue.length=0; acc=0; }
   if(saveBlip>0){ saveBlip-=dt; if(saveBlip<=0) $('saved').classList.remove('on'); }
   if(AC) tickMusic();
