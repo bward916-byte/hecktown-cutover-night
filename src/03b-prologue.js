@@ -9,8 +9,9 @@ const HAND={skin:'#e8c09a',hair:'#b08850',style:'short',shirt:'#d8ccb0',pants:'#
 const FOUNDER={skin:'#e6c2a0',hair:'#8a8a8a',style:'cap',shirt:'#2e2a26',pants:'#2a2622',acc:'cardigan'};
 const MILLER={skin:'#f1c9a5',hair:'#6a4a3a',style:'bun',shirt:'#7a5a6a',pants:'#3a2a3a',acc:'none'};
 const KID={skin:'#f1c9a5',hair:'#a8632c',style:'cap',shirt:'#c25a3a',pants:'#2f6f9f',acc:'none'};
+const GREG38={id:'greg38',name:'Greg',role:'Number Scientist'};
 const PEOPLE38={founder:{id:'founder',name:'The Founder',role:'1938',look:FOUNDER},miller:{id:'miller',name:'Mrs. Miller',role:'Customer',look:MILLER},kid:{id:'kid',name:'Blaine',role:'a boy',look:KID,kid:true}};
-const OBJ=['1938. Pick up the sack of oats on the porch.','Carry the oats to the mare by the road.','Grab the Millers\' order off the wagon.','Take it to Mrs. Miller, across the fence.','Some years later. The same yard.',''];
+const OBJ=['1938. Pick up the sack of oats on the porch.','Carry the oats to the mare by the road.','Grab the Millers\' order off the wagon.','Take it to Mrs. Miller, across the fence.','Some years later. The same yard.','1938, in black and white. Look around; the way back is by the porch.'];
 const ARRIVE='You are Brian W, web developer. Cutover night, 6:00 PM. Rianan wants you upstairs.';
 
 /* ---------------- cards and cutscenes ---------------- */
@@ -55,8 +56,26 @@ function finish38(G){
     card('TONIGHT','Easton, Pennsylvania  ·  6:00 PM  ·  cutover night',4),{fn:arrive}];
   G.S.flags.p38=4;
 }
+/* ---------------- the portal: once the Ledger is whole, you can walk back into 1938 as yourself ---------------- */
+const PORTAL_BACK=X.start-70, REMARKS=[['founder','"Hmm. That fellow sure is interesting."'],['miller','"Does he work here?"'],['founder','"He was here yesterday, too. And the day before."'],['miller','"I don\'t remember hiring him."'],['founder','"He says he counts things. What things?"']];
+function visit38(G){
+  const W=world38(), S=G.S; G.cur={node:MAP.nodes.y1938,world:W}; G.hero=E.createWalker(W,PORTAL_BACK+50); G.pose=E.poseOf(G.hero);
+  G.p38={carry:null,npcs:[],scene:'visit',hideHero:false,remark:0,remT:6};
+  addNpc(G,'founder',X.founder+30,1); addNpc(G,'miller',X.miller,-1);
+  const g=GM.PEOPLE.find(p=>p.id==='greg'); PEOPLE38.greg38=Object.assign({},GREG38,{look:g.look}); const q=addNpc(G,'greg38',X.start+200,1); q.walkTo=X.miller-160; q.slow=0.35;
+  S.pos={node:'y1938',x:G.hero.x}; G.events.push({type:'snap'});
+  if(!S.eggs.y1938){ S.eggs.y1938=1; S.points+=GM.PTS_1938; G.events.push({type:'banner',text:'1938, in black and white',pts:GM.PTS_1938}); }
+  G.events.push({type:'save'});
+}
+function leave38(G){ const n=MAP.nodes.hq_b1; G.p38=null; G.cur={node:n,world:n.world}; G.hero=E.createWalker(n.world,GM.PORTAL_X+26); G.pose=E.poseOf(G.hero); G.S.pos={node:'hq_b1',x:G.hero.x}; G.events.push({type:'snap'}); G.events.push({type:'save'}); }
+GM.enter1938=function(G){ G.cine=[card('1938','something is wrong with the light',3.5),{fn:visit38}]; };
 function target38(G){
-  const h=G.hero, P=G.p38, st=G.S.flags.p38|0; if(!P||P.scene!=='yard'||G.cine.length) return null;
+  const h=G.hero, P=G.p38, st=G.S.flags.p38|0; if(!P||G.cine.length) return null;
+  if(P.scene==='visit'){ let best=null,bd=1e9; const take=(d,t)=>{ if(d<bd){bd=d;best=t;} };
+    const dp=Math.abs(PORTAL_BACK-h.x); if(dp<30) take(dp-40,{kind:'p38',label:'Step through',name:'back to tonight',x:PORTAL_BACK,act:'back'});
+    for(const q of P.npcs){ const d=Math.abs(q.w.x-h.x); if(d<44) take(d,{kind:'p38',label:'Talk',name:q.def.name,x:q.w.x,act:'talk38',q:q}); }
+    return best; }
+  if(P.scene!=='yard') return null;
   let best=null,bd=1e9; const take=(d,t)=>{ if(d<bd){bd=d;best=t;} };
   if(st===0){ const d=Math.abs(X.sack-h.x); if(d<26) take(d-40,{kind:'p38',label:'Take',name:'sack of oats',x:X.sack,act:'oats'}); }
   if(st===1){ const d=Math.abs(X.mare-h.x); if(d<44) take(d-40,{kind:'p38',label:'Feed',name:'the mare',x:X.mare,act:'mare'}); }
@@ -73,6 +92,11 @@ function interact38(G,t){
       say38(G,PEOPLE38.founder,['"Sack of oats for the mare, then the Millers\' order across the road."','"Farmers are counting on that feed. Rain or no rain, it goes today. That\'s the whole business."']); break;
     case 'mare': S.flags.p38=2; P.carry=null; G.events.push({type:'sfx',name:'good'}); G.events.push({type:'banner',text:'The mare eats. It starts to rain.'}); G.events.push({type:'save'}); break;
     case 'order': S.flags.p38=3; P.carry='order'; G.events.push({type:'sfx',name:'pick'}); G.events.push({type:'save'}); break;
+    case 'back': leave38(G); break;
+    case 'talk38': { const id=t.q.def.id;
+      if(id==='founder') say38(G,PEOPLE38.founder,['"You\'re not from around here. That\'s all right. Showing up is the business, wherever you\'re from."']);
+      else if(id==='miller') say38(G,PEOPLE38.miller,['Mrs. Miller: "The Phillips order came through the rain again. It always does."']);
+      else say38(G,PEOPLE38.greg38,['Greg: "Counting."','Greg: "Sacks, mostly. The mare is not in the ledger. I checked."']); break; }
     case 'give': P.carry=null; G.events.push({type:'sfx',name:'good'}); finish38(G); break;
     case 'talk': { const id=t.q.def.id, st=S.flags.p38|0;
       if(id==='founder') say38(G,PEOPLE38.founder,[st<2?'"A store\'s just a building. Showing up is the business."':'"Rain\'s coming down. The Millers are still waiting on that order."']);
@@ -82,9 +106,13 @@ function interact38(G,t){
 function tick38(G,dt){
   const P=G.p38, h=G.hero;
   for(const q of P.npcs){ let inp=0;
-    if(q.walkTo!=null){ const d=q.walkTo-q.w.x; if(Math.abs(d)>4) inp=Math.sign(d)*0.5; else q.walkTo=null; }
-    else if(P.scene==='yard'&&Math.abs(h.x-q.w.x)<70&&Math.sign(h.x-q.w.x)!==q.w.facing&&Math.abs(h.x-q.w.x)>8) inp=0.09*Math.sign(h.x-q.w.x);
+    if(q.def.id==='greg38'&&q.walkTo==null) q.walkTo=q.w.x<-1800?X.miller-160:X.start+200;
+    if(q.walkTo!=null){ const d=q.walkTo-q.w.x; if(Math.abs(d)>4) inp=Math.sign(d)*(q.slow||0.5); else q.walkTo=null; }
+    else if(P.scene!=='later'&&Math.abs(h.x-q.w.x)<70&&Math.sign(h.x-q.w.x)!==q.w.facing&&Math.abs(h.x-q.w.x)>8) inp=0.09*Math.sign(h.x-q.w.x);
     q.pose=E.updateWalker(q.w,world38(),inp,dt); q.w.events.length=0; }
+  if(P.scene==='visit'){ P.remT-=dt; const g=P.npcs.find(q=>q.def.id==='greg38');
+    if(g&&P.remT<=0) for(const q of P.npcs){ if(q===g||Math.abs(q.w.x-g.w.x)>70) continue; const r=REMARKS[P.remark%REMARKS.length]; P.remark++; P.remT=9;
+      G.events.push({type:'hint',text:(r[0]==='founder'?'The Founder':'Mrs. Miller')+': '+r[1]}); break; } }
   G.target=target38(G);
 }
 
@@ -94,7 +122,8 @@ GM.freshSave=function(){ const s=base.freshSave(); s.flags.p38=0; s.pos={node:'y
 GM.create=function(save){
   const G=base.create(save||GM.freshSave()); G.cine=[]; G.card=null; G.p38=null;
   if(G.cur.node&&G.cur.node.id==='y1938'){ const st=G.S.flags.p38|0;
-    if(st>=4){ arrive(G); G.events.length=0; }                         // saved mid-cutscene: carry on to Easton
+    if(st>=5){ leave38(G); G.events.length=0; }                         // saved during a portal visit: come back through
+    else if(st>=4){ arrive(G); G.events.length=0; }                         // saved mid-cutscene: carry on to Easton
     else{ setup38(G); if(st===0) G.cine.push(card('1938','Germansville, Pennsylvania',4)); } }
   return G;
 };
