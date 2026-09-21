@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -33,7 +33,7 @@ function walkTo(G,x,limit){
     let needCrawl=false; if(N) for(const d of MAP.ducts) if(d.node===N.id){ const lo=Math.min(h.x,x), hi=Math.max(h.x,x); if(hi>d.x0-8&&lo<d.x1+8&&h.x>d.x0-40&&h.x<d.x1+40) needCrawl=true; }
     if(needCrawl&&h.mode==='walk') GM.command(G,'crawl');
     if(!needCrawl&&h.mode==='crawl') GM.command(G,'crawl');
-    step(G,dir,0); t+=DT;
+    step(G,dir*Math.min(1,Math.max(0.3,Math.abs(x-h.x)/40)),0); t+=DT;   // ease in, like a player would
   }
   if(G.hero.mode==='crawl'){ GM.command(G,'crawl'); }
   for(let i=0;i<90;i++) step(G,0,0);
@@ -53,7 +53,7 @@ function goTo(G,nodeId,x){
 }
 function useAt(G,nodeId,x,kind){ const r=goTo(G,nodeId,x); ok(r,'reach '+nodeId+' x='+x); ok(G.target&&(!kind||G.target.kind===kind),'target '+kind+' at '+nodeId+' '+x+' (got '+(G.target&&G.target.kind)+')'); GM.interact(G); closeDialog(G); }
 const person=id=>GM.PEOPLE.find(p=>p.id===id);
-function talkTo(G,id){ const q=G.npcs.find(n=>n.def.id===id); const r=goTo(G,q.node.id,q.w.x); ok(r,'reach '+id);
+function talkTo(G,id){ const q=G.npcs.find(n=>n.def.id===id); const r=goTo(G,q.node.id,q.w.x); ok(r,'reach '+id+(r?'':' (hero '+G.hero.x.toFixed(0)+' on '+(G.cur.node?G.cur.node.id:'link')+', want '+q.w.x.toFixed(0)+' on '+q.node.id+', dialog '+!!G.dialog+', board '+!!G.board+', drive '+!!G.drive+', card '+!!G.card+')'));
   if(!(G.target&&G.target.kind==='talk'&&G.target.q===q)){ walkTo(G,q.w.x+10); }
   let tries=0; while(!(G.target&&G.target.kind==='talk'&&G.target.q===q)&&tries++<6) walkTo(G,q.w.x+(tries%2?14:-14));
   ok(G.target&&G.target.kind==='talk'&&G.target.q===q,'can talk to '+id+' (target '+(G.target&&G.target.name)+')'); GM.interact(G); closeDialog(G); }
@@ -90,6 +90,31 @@ section('weather, the forklift, the dock');
 { const W=GM.WORLD; const kinds=new Set(); for(let t=0;t<420;t+=5){ const w=W.weatherAt(t); if(w.rain>0.9) kinds.add('rain'); if(w.mist>0.5) kinds.add('mist'); if(w.rain+w.cloud+w.mist<0.01) kinds.add('clear'); }
   ok(kinds.size===3,'clear, rain and mist all come round ('+[...kinds]+')'); let jump=0; for(let t=0;t<420;t+=0.5){ jump=Math.max(jump,Math.abs(W.weatherAt(t+0.5).rain-W.weatherAt(t).rain)); } ok(jump<0.05,'weather arrives instead of switching');
   const G=newGame(); let xs=[],beeps=0; for(let i=0;i<120*30;i++){ step2(G); xs.push(G.lift.x); } ok(Math.max(...xs)-Math.min(...xs)>100&&Math.min(...xs)>=W.LIFT.x0&&Math.max(...xs)<=W.LIFT.x1,'the forklift works the drop yard'); }
+
+/* the network: recruit, drive, do the job, clear the lockout, drive home */
+function driveTo(G,id){ const NET=GM.NET, d=GM.NET.dcOf(G); const tx=d?d.x0+NET.X.truck:NET.TRUCK_E; ok(walkTo(G,tx+10),'reach the truck'); ok(G.target&&G.target.kind==='truck','truck is usable'+(G.target&&G.target.kind!=='truck'?' (target '+G.target.kind+' '+G.target.name+' hero '+G.hero.x.toFixed(0)+' '+G.cur.node.id+')':(G.target?'':' (no target; hero '+G.hero.x.toFixed(0)+' '+G.cur.node.id+' dialog '+!!G.dialog+')'))); GM.interact(G); ok(!!G.board,'route board opens');
+  ok(NET.pick(G,id),'pick '+id); let t=0; const want=id==='easton'?'ground':'dc_'+id; while(G.cur.node.id!==want&&t<30){ step(G,0,0); t+=DT; } for(let i=0;i<120*4;i++) step(G,0,0); ok(G.cur.node.id===want,'arrive at '+id); }
+function recruitP(G,id){ const q=G.npcs.find(n=>n.def.id===id); if(q.crew) return; ok(goTo(G,q.node.id,q.w.x),'reach '+id); let tries=0; while(!(G.target&&G.target.q===q)&&tries++<6) walkTo(G,q.w.x+(tries%2?14:-14));
+  GM.interact(G); ok(G.dialog&&G.dialog.choices,'offer to '+id); GM.advance(G,1); ok(q.crew&&G.S.crew.indexOf(id)>=0,id+' joins the crew'); }
+function runNetwork(G){ const NET=GM.NET, S=G.S;
+  for(const d of NET.DCS){ if(S.flags['dc_'+d.id]) continue; recruitP(G,d.needs[0]); ok(goTo(G,'ground',NET.TRUCK_E),'back to the yard'); driveTo(G,d.id);
+    ok(NET.crewList(G).some(q=>q.node===G.cur.node),'crew rode along to '+d.id);
+    if(d.task==='readers') for(let k=0;k<3;k++){ walkTo(G,d.x0+NET.X.scans[k]); ok(G.target&&G.target.kind==='dcscan','reset '+k+' at '+d.id); GM.interact(G); }
+    if(d.task==='dogs'){ const n=NET.net(G); for(const g of n.dogs){ walkTo(G,g.x); } walkTo(G,d.x0+NET.X.lead-10); for(let i=0;i<240;i++) step(G,0,0); ok(S.flags['dc_'+d.id+'_dogs'],'dogs checked in'); }
+    if(d.task==='hold'){ walkTo(G,d.x0+NET.X.pad); for(let i=0;i<120*17;i++) step(G,0,0); ok(S.flags['dc_'+d.id+'_hold'],'go-live gate held'); }
+    walkTo(G,d.x0+NET.X.term); ok(G.target&&G.target.kind==='dcterm','terminal at '+d.id); GM.interact(G); for(let i=0;i<120*4;i++) step(G,0,0); closeDialog(G); ok(S.flags['dc_'+d.id],d.id+' restored');
+    walkTo(G,d.x0+NET.X.door+120); ok(G.hero.x>d.x0+NET.X.door,'the door opened at '+d.id); driveTo(G,'easton'); } }
+
+section('the network: crew, truck, a DC');
+{ const G=newGame(), S=G.S, NET=GM.NET; S.flags.halfway=1; S.flags.network=1; S.flags.started=1; S.met.bret=1; S.met.dave=1; S.met.jose=1; S.inv.badge=1; S.gates.g_server=1; for(const g of MAP.gates) if(g.id==='g_server') g.open=true;
+  const d=NET.byId('taunton'); driveTo(G,'taunton'); walkTo(G,d.x0+NET.X.door+100); ok(G.hero.x<d.x0+NET.X.door,'the locked door holds');
+  walkTo(G,d.x0+NET.X.term); GM.interact(G); ok(G.dialog&&G.dialog.who==='A+','A+ answers at the terminal'); closeDialog(G);
+  for(let k=0;k<3;k++){ walkTo(G,d.x0+NET.X.scans[k]); GM.interact(G); } ok(NET.taskDone(S,d),'three readers reset');
+  walkTo(G,d.x0+NET.X.term); GM.interact(G); ok(/NOT ON MY LIST/.test(G.dialog.pages[0]),'needs Bret'); closeDialog(G); driveTo(G,'easton');
+  recruitP(G,'bret'); recruitP(G,'dave'); recruitP(G,'jose'); ok(S.crew.join()==='dave,jose'&&!G.npcs.find(n=>n.def.id==='bret').crew,'crew caps at two; the first goes home');
+  const saved=JSON.parse(JSON.stringify(S)); const G2=GM.create(saved); ok(G2.npcs.filter(q=>q.crew).length===2,'crew survives a save');
+  recruitP(G,'bret'); ok(goTo(G,'ground',NET.TRUCK_E),'to the truck'); driveTo(G,'taunton'); walkTo(G,d.x0+NET.X.term); GM.interact(G); for(let i=0;i<120*4;i++) step(G,0,0); closeDialog(G); ok(S.flags.dc_taunton,'Bret clears Taunton');
+  walkTo(G,d.x0+NET.X.door+100); ok(G.hero.x>d.x0+NET.X.door,'door opens'); }
 
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
@@ -138,6 +163,7 @@ section('full playthrough');
   const saved38=JSON.parse(JSON.stringify(S)); const Gs=GM.create(saved38); ok(Gs.cur.node.id==='hq_b1','a save made in 1938 resumes back in the archive');
   walkTo(G,GM.P38.X.start-70+10); ok(G.target&&G.target.act==='back','the way back'); GM.interact(G); ok(G.cur.node.id==='hq_b1'&&!G.p38,'back in the Legacy Archive');
   for(let k=0;k<6&&!S.eggs.jeopardy;k++) talkTo(G,'dave'); ok(S.eggs.jeopardy,'Daily Double won');
+  runNetwork(G);
   for(const r of MAP.rooms) if(!S.rooms[r.id]) ok(goTo(G,r.node,(r.x0+r.x1)/2),'visit '+r.name);
   if(!S.eggs.catnip){ walkTo(G,GM.LIFE.MILO.x+10); GM.interact(G); closeDialog(G); talkTo(G,'tina'); walkTo(G,GM.LIFE.MILO.x+10); GM.interact(G); GM.advance(G,0); closeDialog(G); walkTo(G,900); GM.command(G,'throw'); for(let i=0;i<240;i++) step(G,0,0); }
   talkTo(G,'ryan'); GM.command(G,'dance'); for(let i=0;i<240;i++) step(G,0,0); GM.command(G,'dance'); GM.command(G,'clap'); for(let i=0;i<300;i++) step(G,0,0); GM.command(G,'roll'); for(let i=0;i<300;i++) step(G,0,0);
