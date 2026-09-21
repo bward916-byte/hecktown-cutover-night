@@ -39,9 +39,9 @@ function earth(){
   const W=MAP.nodes.ground.world, bottom=V.y1+10;
   for(const s of W.s){ if(!vis(s.x0,s.x1)) continue; const x=s.x0-0.3, w=s.w+0.6;
     R(x,s.y,w,bottom-s.y,'#2a2420');
-    const grass=s.x1<=548, inHQ=s.x0>=1100&&s.x1<=1900, dock=s.y<-20;
+    const grass=s.x1<=548&&s.x0>=60, inHQ=s.x0>=1100&&s.x1<=1900, dock=s.y<-20;
     R(x,s.y,w,grass?5:3.5,grass?'#4f6b3a':(dock?'#7b7f86':'#3a3e47')); if(grass) R(x,s.y+5,w,3,'#3c5230'); }
-  R(-400,0,400,bottom,'#2a2420'); R(-400,0,400,5,'#4f6b3a'); R(3500,0,500,bottom,'#1f2c3a'); R(3500,4,500,3,'#3d5a72');             // the canal
+  R(-900,0,700,bottom,'#2a2420'); R(-900,0,700,5,'#4f6b3a'); R(3500,0,500,bottom,'#1f2c3a'); R(3500,4,500,3,'#3d5a72');             // the canal
   ctx.strokeStyle='rgba(0,0,0,.18)'; ctx.lineWidth=1.2; for(let y=40;y<bottom;y+=46){ ctx.beginPath(); for(let x=Math.floor(V.x0/60)*60;x<V.x1+60;x+=60) ctx.lineTo(x,y+6*Math.sin(x*0.02+y)); ctx.stroke(); }
 }
 
@@ -177,7 +177,7 @@ const PROPS={
  hvac(x,y){ R(x-30,y-34,60,34,'#8a9099'); O(x-30,y-34,60,34); for(let k=0;k<6;k++) LN(x-24,y-28+k*5,x+6,y-28+k*5,'rgba(0,0,0,.35)',1); ctx.strokeStyle=INK; ctx.beginPath(); ctx.arc(x+18,y-17,8,0,7); ctx.stroke(); },
  mule(x,y){ ctx.fillStyle='#6a5a4a'; ctx.strokeStyle=INK; ctx.lineWidth=1; ctx.beginPath(); ctx.ellipse(x,y-30,20,10,0,0,7); ctx.fill(); ctx.stroke(); for(const k of [-13,-7,8,14]) R(x+k,y-24,3.5,24,'#5a4a3a'); ctx.beginPath(); ctx.ellipse(x+24,y-44,7,11,0.6,0,7); ctx.fill(); ctx.stroke(); R(x+23,y-62,2.5,10,'#5a4a3a'); R(x+28,y-60,2.5,9,'#5a4a3a'); },
 };
-function props(now){ for(const p of MAP.props){ if(!vis(p.x-80,p.x+80)||!seen(p.node,p.x)) continue; const f=PROPS[p.type]; if(f) f(p.x,MAP.nodes[p.node].world.yAt(p.x),now); } }
+function props(now){ for(const p of MAP.props){ if(!vis(p.x-80,p.x+80)||!seen(p.node,p.x)) continue; const f=PROPS[p.type]; if(f) f(p.x,MAP.nodes[p.node].world.yAt(p.x),now,ctx,p); } }
 
 function pickups(G,now){
   const S=G.S, bob=Math.sin(now/300)*1.5;
@@ -189,7 +189,7 @@ function pickups(G,now){
 }
 
 /* ---------------- one frame ---------------- */
-let darkness=0;
+let darkness=0; const HOOKS=[];
 function render(c,view,G,now,dt){
   ctx=c; V=view; const S=G.S, t=GM.count(S.signoffs)/6*0.7+(S.inv.badge?0.15:0)+(S.done?0.15:0), h=G.hero;
   const on=id=>(G.cur.node&&G.cur.node.id===id)||(G.cur.link&&(G.cur.link.lo.node.id===id||G.cur.link.hi.node.id===id)), found=id=>MAP.rooms.some(r=>r.node===id&&r.dark&&S.rooms[r.id]);
@@ -204,6 +204,7 @@ function render(c,view,G,now,dt){
   structure(G); pickups(G,now);
   for(const q of G.npcs){ if(!vis(q.w.x-40,q.w.x+40)||!q.pose) continue; PP.person(ctx,q.pose,q.def.look,{ground:x=>q.node.world.yAt(x),mode:q.w.mode,w:q.w,t:now/1000,talk:!!(G.dialog&&(G.dialog.who===q.def.name||(G.dialog.pages[G.dialog.i]||'').indexOf(q.def.name+':')===0))}); }
   const b=G.biscuit; if(vis(b.x-30,b.x+30)) PP.dog(ctx,b.x,MAP.nodes.ground.world.yAt(b.x),b.t,b.run,b.run||h.x>b.x?1:-1);
+  for(const f of HOOKS) f(ctx,G,now,V);                  // later stages draw their creatures here
   if(!heroBack) drawHero();
 
   // darkness underground, with the light you carry
@@ -219,5 +220,5 @@ function render(c,view,G,now,dt){
   if(G.target&&!G.dialog){ const T=G.target, y=(T.q&&T.q.pose?T.q.pose.head.y:world.yAt(T.x)-70)-18; tag((V.touch?'':'E  ')+T.label+'  ·  '+T.name,T.x,y,'#f2b544','#101a2e',true); }
   if(G.stairHint&&!G.dialog&&!G.target){ const s=G.stairHint; tag((s.up?'▲ up':'')+(s.up&&s.down?'    ':'')+(s.down?'▼ down':''),s.x,world.yAt(s.x)-92,'rgba(16,26,46,.78)','#f6ecd8'); }
 }
-root.HDRAW={render:render,HERO_LOOK:HERO_LOOK};
+root.HDRAW={render:render,HERO_LOOK:HERO_LOOK,PROPS:PROPS,HOOKS:HOOKS};
 })(typeof globalThis!=='undefined'?globalThis:this);
