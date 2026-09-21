@@ -132,7 +132,7 @@ function talkLines(G,p){
   const S=G.S, F=S.flags, I=S.inv;
   switch(p.id){
    case 'rianan':
-     if(!F.started){ F.started=1; award(G,PTS.start,'Cutover checklist received'); return ['There you are. A+ gets archived at midnight and I am not doing it on vibes.','Six system owners, six sign-offs: Network, Backup, Catalog, EDI, Storefront, Jobs. Walk the campus and get them.','Start with Andrew downstairs. Half the doors in this company want a Level 2 badge.']; }
+     if(!F.started){ F.started=1; award(G,PTS.start,'Cutover checklist received'); return ['There you are, Brian. A+ gets archived at midnight and I am not doing it on vibes.','Six system owners, six sign-offs: Network, Backup, Catalog, EDI, Storefront, Jobs. Walk the campus and get them.','Start with Andrew downstairs. Half the doors in this company want a Level 2 badge.']; }
      if(S.done) return ['It went quietly. After forty years, it went quietly. Go home. Or finish your lap, I know you.'];
      return ['That alley cat has a business plan. I respect it. I also want to pet it.',count(S.signoffs)+' of 6 sign-offs. The Journal has the list if you lose track.'];
    case 'andrew':
