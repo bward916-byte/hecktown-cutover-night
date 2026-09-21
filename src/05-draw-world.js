@@ -3,7 +3,7 @@
 'use strict';
 const E=root.WalkEngine, MAP=root.HMAP, GM=root.HGAME, PP=root.HPEOPLE, FH=MAP.FH, INK=PP.INK;
 const CEIL=86, SLAB=12, WY=-28, TOP=MAP.HQ_TOP;     // TOP: the HQ roof level
-const HERO_LOOK={skin:'#efc39d',hair:'#4a3626',style:'short',shirt:'#5a5f7a',pants:'#26293a',acc:'glasses'};
+const HERO_LOOK={skin:'#efc39d',hair:'#4a3626',style:'short',shirt:'#5a5f7a',pants:'#26293a',acc:'glasses',top:'button',bottom:'jeans',shoe:'sneaker',build:{h:1,d:1,belly:0}};
 const lerp=(a,b,t)=>a+(b-a)*t, clamp=(v,a,b)=>v<a?a:(v>b?b:v);
 function mixHex(a,b,t){ const h=s=>[parseInt(s.slice(1,3),16),parseInt(s.slice(3,5),16),parseInt(s.slice(5,7),16)], A=h(a), B=h(b); return 'rgb('+(lerp(A[0],B[0],t)|0)+','+(lerp(A[1],B[1],t)|0)+','+(lerp(A[2],B[2],t)|0)+')'; }
 let ctx=null, V=null;
