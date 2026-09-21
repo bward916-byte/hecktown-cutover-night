@@ -39,7 +39,8 @@ function bridgeCall(G,n){
     GM.dlg(APLUS,['I CAN HEAR THIS CALL.']), GM.dlg(R,['Rianan: "We know."']),
     GM.dlg(APLUS,['THE ORDERS SHIP ON TIME. THEY HAVE ALWAYS SHIPPED ON TIME. WHY IS THAT NOT ENOUGH.']),
     GM.dlg(R,['Rianan: "Because tomorrow they ship without you. And that has to be okay."']), GM.dlg(APLUS,['...']),
-    GM.dlg(R,['Rianan: "'+(6-n)+' to go. Keep walking."']), {fn:G=>G.events.push({type:'banner',text:'The whole team, on one call.'})}];
+    GM.dlg(R,['Rianan: "'+(6-n)+' to go. Keep walking."','Rianan: "And A+ locked the other nine DCs out of their own terminals. Truck\'s in the yard. Take whoever you need."']),
+    {fn:G=>{ G.S.flags.network=1; G.events.push({type:'banner',text:'The whole team, on one call. The Phillips truck is in The Yard.'}); }}];
 }
 function reveal(G){
   const s=st(G); return [{fn:G=>{ s.reveal=3.5; G.events.push({type:'sfx',name:'door'}); }},
