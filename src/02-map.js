@@ -118,6 +118,7 @@ duct('tun_2',800,900);
 [[600,'pipes'],[1000,'pump'],[1150,'pump'],[1400,'pipes']].forEach(p=>prop(p[1],'tun_2',p[0]));
 [[1540,'sacks'],[1620,'barrel'],[1700,'scale'],[1780,'sacks'],[1840,'barrel'],[2120,'aplus']].forEach(p=>prop(p[1],'tun_3',p[0]));
 prop('term','ground',1010);
+[['ground',1290],['hq_f2',1212],['hq_b1',1830]].forEach(p=>prop('aplus_wall',p[0],p[1]));             // A+ watches from these
 [[-165,'car',0],[-95,'car',1],[-25,'car',2],[-60,'lamp'],[92,'picnic'],[335,'koi'],[664,'dumpster']].forEach(p=>prop(p[1],'ground',p[0],{v:p[2]||0}));
 
 root.HMAP=MAP;
