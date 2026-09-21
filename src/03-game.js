@@ -4,7 +4,7 @@
 const E=root.WalkEngine, MAP=root.HMAP, CFG=E.CFG;
 const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
 const SIGNOFFS=['Network','Backup','Catalog','EDI','Storefront','Jobs'];
-const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10,jeopardy:25};
+const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10,jeopardy:25,sku:30};
 
 /* ---------------- people ----------------  look = [skin, hair, style, shirt, pants, accessory] */
 const P=(id,name,role,look,node,x,opt)=>{ const p=Object.assign({id:id,name:name,role:role,look:{skin:look[0],hair:look[1],style:look[2],shirt:look[3],pants:look[4],acc:look[5]},node:node,x:x},opt||{});
@@ -73,7 +73,7 @@ const ITEMS=[
 ];
 const TERMS=[{id:'t_dock',node:'ground',x:2260,where:'Receiving Dock'},{id:'t_roof',node:'hq_roof',x:1840,where:'Roof Garden'},{id:'t_gate',node:'ground',x:1010,where:'Security Gate'}];
 
-const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg*4+PTS.duct+PTS.jeopardy;
+const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg*4+PTS.duct+PTS.jeopardy+PTS.sku;
 const RANKS=[[0,'New Badge'],[12,'Ticket Closer'],[30,'On-Call'],[50,'Change Approver'],[72,'Cutover Lead'],[95,'Hecktown Legend']];
 
 function freshSave(){ return {v:1,flags:{},inv:{},met:{},rooms:{},pages:{},eggs:{},signoffs:{},terms:{},gates:{},points:0,time:0,done:false,pos:{node:'ground',x:1150}}; }
