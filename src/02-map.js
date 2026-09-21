@@ -47,7 +47,7 @@ const duct=(nodeId,x0,x1)=>MAP.ducts.push({node:nodeId,x0:x0,x1:x1});
 const prop=(type,nodeId,x,opt)=>MAP.props.push(Object.assign({type:type,node:nodeId,x:x},opt||{}));
 
 /* ---------------- ground: west lot, dog-park knoll, HQ ground floor, yard, raised warehouse floor, east yard ---------------- */
-node('ground','Hecktown Road',0,0,[['flat',140],['stairs',5,26,5],['flat',200],['stairs',5,26,-5],['flat',1582],['stairs',4,12,7],['flat',1034],['stairs',4,12,-7],['flat',264]]);
+node('ground','Hecktown Road',-200,0,[['flat',260],['flat',80],['stairs',5,26,5],['flat',200],['stairs',5,26,-5],['flat',1582],['stairs',4,12,7],['flat',1034],['stairs',4,12,-7],['flat',264]]);
 /* ---------------- HQ office, 1100..1900 ---------------- */
 node('hq_b1','HQ Basement',420,FH,[['flat',1480]]);
 node('hq_f2','HQ 2nd Floor',1100,-FH,[['flat',800]]);
@@ -74,9 +74,10 @@ flight('tun_s2',['tun_3',1456],['tun_2',1300]);
 
 /* ---------------- 1938: the feed store, far west of everything and joined to nothing (see 03b-prologue) ---------------- */
 node('y1938','Phillips Feed · Germansville, PA',-3000,0,[['flat',2600]],{era:true});
+MAP.nodes.y1938.world.x1=MAP.nodes.y1938.world.hx1=-700;   // keep the two eras well apart for the camera
 
 /* ---------------- rooms (each is worth discovery points) ---------------- */
-room('ground',244,444,'Dog Park');                room('ground',520,660,"Tina's Tacos");
+room('ground',-200,60,'Employee Lot');           room('ground',244,444,'Dog Park');                room('ground',520,660,"Tina's Tacos");
 room('ground',680,900,"Lou's Garage");            room('ground',930,1060,'Security Gate');
 room('ground',1100,1215,'HQ Lobby');              room('ground',1215,1330,'Accounting');              room('ground',1330,1556,'Help Desk');
 room('ground',1724,1900,'Customer Care');         room('ground',1930,2130,'The Yard');
@@ -116,7 +117,8 @@ duct('tun_2',800,900);
 [[2720,'shelf'],[2800,'shelf'],[2960,'desk'],[3040,'cabinet'],[3110,'safe']].forEach(p=>prop(p[1],'wh_mezz',p[0]));
 [[600,'pipes'],[1000,'pump'],[1150,'pump'],[1400,'pipes']].forEach(p=>prop(p[1],'tun_2',p[0]));
 [[1540,'sacks'],[1620,'barrel'],[1700,'scale'],[1780,'sacks'],[1840,'barrel'],[2120,'aplus']].forEach(p=>prop(p[1],'tun_3',p[0]));
-prop('term','ground',1010); 
+prop('term','ground',1010);
+[[-165,'car',0],[-95,'car',1],[-25,'car',2],[-60,'lamp'],[92,'picnic'],[335,'koi'],[664,'dumpster']].forEach(p=>prop(p[1],'ground',p[0],{v:p[2]||0}));
 
 root.HMAP=MAP;
 })(typeof globalThis!=='undefined'?globalThis:this);
