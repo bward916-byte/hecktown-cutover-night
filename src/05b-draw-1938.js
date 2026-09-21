@@ -7,7 +7,7 @@ let ctx=null, V=null;
 const R=(x,y,w,h,c)=>{ ctx.fillStyle=c; ctx.fillRect(x,y,w,h); };
 const LN=(x0,y0,x1,y1,c,lw)=>{ ctx.strokeStyle=c; ctx.lineWidth=lw||1; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke(); };
 function hash(s){ let h=7; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h; }
-const ERA_X=-500;                                         // camera west of this: we are in 1938
+const ERA_X=-500, ERA_HOOKS=[], ERA_POST=[];                                         // camera west of this: we are in 1938
 
 /* ---------------- scenery ---------------- */
 function sack(x,y,label){ ctx.fillStyle='#c9b48a'; ctx.strokeStyle=INK; ctx.lineWidth=0.9; ctx.beginPath(); ctx.ellipse(x,y-7,8,7.5,0,0,7); ctx.fill(); ctx.stroke(); R(x-5,y-8,10,2,'#7a5a3a'); if(label){ ctx.fillStyle='#5a3a24'; ctx.font='700 3.2px Georgia,serif'; ctx.textAlign='center'; ctx.fillText(label,x,y-3.5); } }
@@ -63,7 +63,7 @@ function render38(c,view,G,now,dt){
   R(-3600,0,3400,900,'#6a5a3a'); R(-3600,0,3400,5,'#7a8a4a'); R(-2300,0,600,5,'#8a7a5a');
   ctx.strokeStyle='#8a9a5a'; ctx.lineWidth=1; for(let x=-3400;x<-300;x+=13){ if(x>-2300&&x<-1700) continue; const hh=3+(hash('g'+x)%5); LN(x,0,x+1.5,-hh,'#8a9a5a',1); }
   tree(-3080,1.1); tree(-2380,0.9); tree(-1300,1.2); tree(-560,1); tree(-460,0.8);
-  fence(); farmhouse(); store(); signpost(-1580); wagon(-1850); horse(X.mare,now,st>=2&&st<5&&P&&P.scene==='yard');
+  for(const f of ERA_HOOKS) f(ctx,G,now,V); fence(); farmhouse(); store(); signpost(-1580); wagon(-1850); horse(X.mare,now,st>=2&&st<5&&P&&P.scene==='yard');
   if(P&&P.scene==='yard'){ if(st===0){ glow(X.sack,-8,now); sack(X.sack,0,'OATS'); } if(st===2){ glow(X.order,-40,now); crate(X.order,-30); } }
   // people
   const talking=name=>!!(G.dialog&&(G.dialog.who===name||(G.dialog.pages[G.dialog.i]||'').indexOf(name+':')===0));
@@ -72,20 +72,21 @@ function render38(c,view,G,now,dt){
       PP.person(ctx,q.pose,q.def.look,{ground:ground,mode:q.w.mode,w:q.w,t:now/1000,talk:talking(q.def.name),happy:kid&&!talking(q.def.name)}); if(kid) ctx.restore(); } }
   else{ if(!founderCache){ const w=E.createWalker(W38,X.founder+30); w.facing=1; founderCache=E.poseOf(w); } PP.person(ctx,founderCache,GM.P38.PEOPLE.founder.look,{ground:ground,t:now/1000}); }
   const onEra=G.cur.node&&G.cur.node.id==='y1938';
-  if(onEra&&!(P&&P.hideHero)){ const h=G.hero; PP.person(ctx,G.pose,GM.P38.HAND,{ground:ground,mode:h.mode,w:h,t:now/1000});
+  if(onEra&&!(P&&P.hideHero)){ const h=G.hero; PP.person(ctx,G.pose,P&&P.scene==='visit'?D.HERO_LOOK:GM.P38.HAND,{ground:ground,mode:h.mode,w:h,t:now/1000});
     if(P&&P.carry){ const A=G.pose.arms[1], cx=(A.hx+G.pose.arms[0].hx)/2+h.facing*2, cy=Math.min(A.hy,G.pose.arms[0].hy)-2; if(P.carry==='oats') sack(cx,cy+8,'OATS'); else crate(cx,cy+6); } }
   // sepia: drain the colour, then warm it
   ctx.setTransform(V.DPR,0,0,V.DPR,0,0);
   ctx.globalCompositeOperation='saturation'; ctx.fillStyle='#808080'; ctx.fillRect(0,0,V.W,V.H);
-  ctx.globalCompositeOperation='multiply'; ctx.fillStyle=P&&P.scene==='later'?'#e2c89a':'#d9b98a'; ctx.fillRect(0,0,V.W,V.H); ctx.globalCompositeOperation='source-over';
+  ctx.globalCompositeOperation='multiply'; ctx.fillStyle=P&&P.scene==='visit'?'#d8d8dc':(P&&P.scene==='later'?'#e2c89a':'#d9b98a'); ctx.fillRect(0,0,V.W,V.H); ctx.globalCompositeOperation='source-over';
+  for(const f of ERA_POST) f(ctx,G,now,V,ox,oy);     // drawn after the sepia pass, so it keeps its colour
   if(rain){ const rnd=k=>{ const v=Math.sin(k*12.9898)*43758.5453; return v-Math.floor(v); }; ctx.strokeStyle='rgba(235,230,215,.4)'; ctx.lineWidth=1; ctx.lineCap='butt'; ctx.beginPath();
     for(let i=0;i<180;i++){ const sp=0.45+rnd(i+7)*0.3, y=(rnd(i+3)*V.H+now*sp)%(V.H+20)-20, x=((rnd(i)*(V.W+60)-y*0.3)%(V.W+60)+V.W+60)%(V.W+60)-30; ctx.moveTo(x,y); ctx.lineTo(x-4,y+13); } ctx.stroke(); }
   const vg=ctx.createRadialGradient(V.W/2,V.H/2,Math.min(V.W,V.H)*0.35,V.W/2,V.H/2,Math.max(V.W,V.H)*0.75); vg.addColorStop(0,'rgba(40,24,10,0)'); vg.addColorStop(1,'rgba(40,24,10,.45)'); ctx.fillStyle=vg; ctx.fillRect(0,0,V.W,V.H);
   if(V.quiet||!P) return;
   const tag=(text,wx,wy,bg,fg,bold)=>{ ctx.font=(bold?'600 ':'500 ')+'12px \"IBM Plex Sans\",system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; const w=ctx.measureText(text).width+16, x=wx*V.zoom+ox, y=wy*V.zoom+oy;
     ctx.fillStyle=bg; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x-w/2,y-11,w,22,6); else ctx.rect(x-w/2,y-11,w,22); ctx.fill(); ctx.fillStyle=fg; ctx.fillText(text,x,y+0.5); };
-  if(P.scene==='yard') for(const q of P.npcs) if(Math.abs(q.w.x-G.hero.x)<130&&!(G.target&&G.target.q===q)) tag(q.def.name,q.w.x,q.pose.head.y-16,'rgba(40,28,16,.6)','#f6ecd8');
-  if(G.target&&!G.dialog&&!G.card){ const T=G.target, y=(T.q?T.q.pose.head.y:(T.act==='mare'?-80:-44))-18; tag((V.touch?'':'E  ')+T.label+'  ·  '+T.name,T.x,y,'#f2b544','#101a2e',true); }
+  if(P.scene!=='later') for(const q of P.npcs) if(Math.abs(q.w.x-G.hero.x)<130&&!(G.target&&G.target.q===q)) tag(q.def.name,q.w.x,q.pose.head.y-16,'rgba(40,28,16,.6)','#f6ecd8');
+  if(G.target&&!G.dialog&&!G.card){ const T=G.target, y=(T.q?T.q.pose.head.y:(T.act==='mare'?-80:(T.act==='back'?-70:-44)))-18; tag((V.touch?'':'E  ')+T.label+'  ·  '+T.name,T.x,y,'#f2b544','#101a2e',true); }
 }
 
 /* ---------------- full-screen cards ---------------- */
@@ -102,5 +103,5 @@ function drawCard(c,view,G){
 
 const baseRender=D.render;
 D.render=function(c,view,G,now,dt){ if(view.camx<ERA_X) render38(c,view,G,now,dt); else baseRender(c,view,G,now,dt); drawCard(c,view,G); };
-D.ERA_X=ERA_X;
+D.ERA_X=ERA_X; D.ERA_HOOKS=ERA_HOOKS; D.ERA_POST=ERA_POST;
 })(typeof globalThis!=='undefined'?globalThis:this);
