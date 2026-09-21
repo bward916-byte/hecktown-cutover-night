@@ -7,7 +7,7 @@ let ctx=null, V=null;
 const R=(x,y,w,h,c)=>{ ctx.fillStyle=c; ctx.fillRect(x,y,w,h); };
 const LN=(x0,y0,x1,y1,c,lw)=>{ ctx.strokeStyle=c; ctx.lineWidth=lw||1; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke(); };
 function hash(s){ let h=7; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h; }
-const ERA_X=-350;                                         // camera west of this: we are in 1938
+const ERA_X=-500;                                         // camera west of this: we are in 1938
 
 /* ---------------- scenery ---------------- */
 function sack(x,y,label){ ctx.fillStyle='#c9b48a'; ctx.strokeStyle=INK; ctx.lineWidth=0.9; ctx.beginPath(); ctx.ellipse(x,y-7,8,7.5,0,0,7); ctx.fill(); ctx.stroke(); R(x-5,y-8,10,2,'#7a5a3a'); if(label){ ctx.fillStyle='#5a3a24'; ctx.font='700 3.2px Georgia,serif'; ctx.textAlign='center'; ctx.fillText(label,x,y-3.5); } }
