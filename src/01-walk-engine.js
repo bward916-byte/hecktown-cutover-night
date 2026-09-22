@@ -18,7 +18,7 @@ const CFG = {
   crouchIdle:0.5, crouchWalk:1.1,             // how far below "legs locked straight" the hips ride
   heelOff:0.6, heelStrike:0.25, toeFirstUp:0.12, toeFirstDown:0.35,    // foot pitch, radians
   leanSpeed:0.07, leanAccel:0.06, leanClimb:0.17, leanDescend:-0.03,
-  armSwing:0.045,
+  armSwing:0.045, elbowRest:0.22, stoop:0, bobK:480, bobD:26,
   // jumping
   jumpV:165, gravity:520, jumpRun:78, jumpPrep:0.13, squatJump:7,
   // crawling, rolling, throwing, reading, dancing
@@ -32,6 +32,7 @@ const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
 const lerp=(a,b,t)=>a+(b-a)*t;
 const ss=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
 const LEG=CFG.thigh+CFG.shin, LMAX=LEG*0.985;
+const GA=(w,k)=>(w.gait&&w.gait[k]!=null)?w.gait[k]:CFG[k];     // a walker can carry its own gait (see 01b-body)
 
 /* ---------------- World: nothing but level surfaces, sorted left to right. A stair is a run of narrow ones.
    Every floor, landing and flight in the game is one of these; the game layer moves a walker between them. ---------------- */
@@ -112,7 +113,7 @@ function aim(w,world,f,i,tx,T,settle,sf){
   f.prof = dy<-0.5?'up':(dy>0.5?'down':'flat');
   if(f.prof!=='flat' && !settle) T=Math.max(T,CFG.swingStair*(f.planted?1:0.6));
   f.tp = settle?0:(f.prof==='up'?CFG.toeFirstUp:(f.prof==='down'?CFG.toeFirstDown:-CFG.heelStrike*sf));
-  f.lift = f.prof==='flat'?(settle?2.2:lerp(CFG.liftSlow,CFG.liftFast,sf)):CFG.liftStair;
+  f.lift = f.prof==='flat'?(settle?2.2:lerp(GA(w,'liftSlow'),GA(w,'liftFast'),sf)):CFG.liftStair;
   if(!f.planted) f.lift*=0.5;                           // re-aimed in mid-air: no need to arc again
   f.face=w.facing;                                      // a boot turns around when it next leaves the ground
   const a=ankleFor(tx,ty,f.tp,f.face);
@@ -223,7 +224,7 @@ function stepWalk(w,world,input,dt,o){
   let ref=Infinity; for(const f of w.feet) if(f.planted) ref=Math.min(ref,f.py);
   if(ref===Infinity) ref=Math.min(f0.ty,f1.ty);
   for(const f of w.feet) if(!f.planted && f.ty>ref) ref+=(f.ty-ref)*ss(f.t)*0.7;   // start sinking early toward a lower landing
-  const crouch=lerp(CFG.crouchIdle,CFG.crouchWalk,sf)+w.stair*0.6+w.squat;
+  const crouch=lerp(GA(w,'crouchIdle'),GA(w,'crouchWalk'),sf)+w.stair*0.6+w.squat;
   w.des+=(ref-(CFG.ankleH+LEG-crouch)-w.des)*(1-Math.exp(-(o.squat>0.5?26:10)*dt));
   let target=w.des;
   for(const f of w.feet){ const dx=Math.min(Math.abs(f.ax-w.x),LMAX-3); target=Math.max(target,f.ay-Math.sqrt(LMAX*LMAX-dx*dx)); }
@@ -239,8 +240,8 @@ function stepWalk(w,world,input,dt,o){
 /* Spring, lean, head, arm targets. Shared by walking and flight. */
 function upper(w,dt,o,sf,accN){
   const F=w.facing;
-  w.bv+=((w.y-w.by)*480-w.bv*26)*dt; w.by+=w.bv*dt;
-  let leanT=(w.vx/CFG.walkSpeed)*CFG.leanSpeed+accN*CFG.leanAccel+F*o.lean;
+  w.bv+=((w.y-w.by)*GA(w,'bobK')-w.bv*GA(w,'bobD'))*dt; w.by+=w.bv*dt;
+  let leanT=(w.vx/CFG.walkSpeed)*GA(w,'leanSpeed')+accN*CFG.leanAccel+F*o.lean+(w.mode==='walk'?F*GA(w,'stoop'):0);
   if(w.mode==='walk') leanT+=F*w.stair*(w.grade>0.05?CFG.leanClimb:(w.grade<-0.05?CFG.leanDescend:0));
   w.lean+=(leanT-w.lean)*(1-Math.exp(-o.leanRate*dt));
   w.headAdd+=(o.head-w.headAdd)*(1-Math.exp(-9*dt));
@@ -248,7 +249,7 @@ function upper(w,dt,o,sf,accN){
   const r=1-Math.exp(-o.rate*dt);
   for(let i=0;i<2;i++){
     const rel=(w.feet[i].ax-w.x)*F;
-    let ta=w.mode==='air'?0:clamp(-rel*CFG.armSwing,-0.8,0.8)*(0.35+0.65*sf), tb=0.22+Math.max(0,ta)*0.9+sf*0.25;
+    let ta=w.mode==='air'?0:clamp(-rel*GA(w,'armSwing'),-0.8,0.8)*(0.35+0.65*sf), tb=GA(w,'elbowRest')+Math.max(0,ta)*0.9+sf*0.25;
     const oa=o.arm[i]; if(oa){ ta=lerp(ta,oa.a,oa.k); tb=lerp(tb,oa.b,oa.k); }
     w.arm[i]+=(ta-w.arm[i])*r; w.armB[i]+=(tb-w.armB[i])*r;
   }
