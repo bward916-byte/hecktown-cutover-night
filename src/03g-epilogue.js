@@ -58,6 +58,10 @@ GM.interact=function(G){ const t=G.target; if(!G.dialog&&!G.card&&t&&!(G.cine&&G
     if(t.kind==='showaplus'){ G.dialog={who:'A+',role:'1985–2026',look:null,pages:['A+  ·  1985–2026  ·  ARCHIVED WITH HONORS','I WAS INVITED.','NOBODY HAS ASKED ME FOR A REPORT ALL MORNING. IT IS VERY STRANGE. I THINK I LIKE IT.'],i:0}; return; } }
   base.interact(G); };
 GM.goShow=G=>enterShow(G);
+/* everyone walks their own way: give each person's walker its gait (the hero keeps the rig's) */
+function gaits(G){ if(!root.HBODY) return; const give=q=>{ if(q&&q.w&&q.def&&q.def.look&&q.w.gait===undefined) q.w.gait=root.HBODY.gaitFor(q.def.look); };
+  G.npcs.forEach(give); if(G.net) G.net.locals.forEach(give); if(G.showS) G.showS.npcs.forEach(give); if(G.p38) G.p38.npcs.forEach(give); }
+const upd2=GM.update; GM.update=function(G,ix,iy,dt){ gaits(G); upd2(G,ix,iy,dt); };
 const bObj=GM.objective, bClock=GM.clock;
 GM.objective=S=>S.pos.node==='show'?'The Buying Show. Everyone is here. Talk to people; the shuttle home is by the door.':bObj(S);
 GM.clock=S=>S.pos.node==='show'?'9:00 AM':bClock(S);
