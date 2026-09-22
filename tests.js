@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -126,6 +126,14 @@ section('the epilogue: speedrun clock, the Buying Show');
   const q=EPI.show(G).npcs[3]; walkTo(G,q.w.x+8); ok(G.target&&G.target.kind==='showtalk','people to talk to'); GM.interact(G); ok(G.dialog&&G.dialog.pages[0].length>10,'they have something to say'); closeDialog(G);
   const saved=JSON.parse(JSON.stringify(S)); const G2=GM.create(saved); ok(G2.cur.node.id==='show'&&EPI.show(G2).npcs.length>10,'a save at the show resumes there');
   walkTo(G,EPI.SX+100); ok(G.target&&G.target.kind==='showexit','the shuttle home'); GM.interact(G); ok(G.cur.node.id==='ground','back in Easton'); }
+
+section('everyone walks their own way');
+{ const W=MAP.nodes.ground.world, core=MAP.nodes.hq_f2; let worst=0, n=0; const seen=new Set();
+  for(const p of GM.PEOPLE){ const g=HBODY.gaitFor(p.look); seen.add(JSON.stringify([g.crouchWalk.toFixed(2),g.liftFast.toFixed(2),g.armSwing.toFixed(3)]));
+    for(const [world,x0,x1] of [[W,-150,720],[W,2080,2260]]){ const w=E.createWalker(world,x0); w.gait=g; for(let i=0;i<120*14&&w.x<x1;i++){ const P=E.updateWalker(w,world,Math.min(1,g.pace*1.1),DT); w.events.length=0; n++;
+        for(const L of P.legs) worst=Math.max(worst,Math.hypot(L.ax-P.hip.x,L.ay-P.hip.y)); } } }
+  ok(worst<=30*0.985+0.05,'no one over-extends a leg on flats or stairs (worst '+worst.toFixed(2)+' over '+n+' steps)'); ok(seen.size>=GM.PEOPLE.length*0.9,'gaits differ ('+seen.size+' of '+GM.PEOPLE.length+')');
+  const B=GM.PEOPLE.map(p=>HBODY.buildOf(p.look)); ok(B.some(b=>b.d>1.3)&&B.some(b=>b.d<1.02)&&B.filter(b=>b.belly>0).length>=5,'slight to heavy builds'); }
 
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
