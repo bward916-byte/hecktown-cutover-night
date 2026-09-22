@@ -62,6 +62,7 @@ GM.update=function(G,ix,iy,dt){ base.update(G,ix,iy,dt); tick(G,dt); };
 GM.interact=function(G){
   const t=G.target; if(!G.dialog&&!G.card&&t&&!G.p38){ if(t.kind==='milo'){ talkMilo(G); return; }
     if(t.kind==='odog'){ G.dialog={who:'The office dog',role:'asleep',look:null,pages:['The office dog opens one eye, decides you are not dinner, and goes back to sleep.'],i:0}; G.events.push({type:'sfx',name:'purr'}); return; } }
+  if(!G.dialog&&!G.card&&!G.target&&!G.p38&&!G.drive&&!G.board&&G.S.inv.catnip){ GM.command(G,'throw'); return; }
   base.interact(G);
 };
 GM.advance=function(G,choice){ const d=G.dialog;
