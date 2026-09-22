@@ -39,7 +39,6 @@ function renderOpts(){ const K=H.keys.get(), T=[['90%',0.9],['100%',1],['115%',1
   for(const b of document.querySelectorAll('#oBody [data-rb]')) b.onclick=()=>{ rebind=b.dataset.rb; renderOpts(); }; }
 function openOpts(){ if(H.state!=='play'&&H.state!=='title') return; prevState=H.state; H.setState('options'); renderOpts(); ov.classList.remove('hide'); }
 function closeOpts(){ rebind=null; ov.classList.add('hide'); H.setState(prevState); }
-$('bOpts').onclick=openOpts;
 $('bMap').onclick=()=>{ O.map=!O.map; saveOpts(); };
 
 /* ---------------- speedrun clock ---------------- */
@@ -131,5 +130,4 @@ EXT.keys.push((e,state)=>{
   if(state==='play'&&a==='photo'){ enterPhoto(); return true; }
   return false; });
 addEventListener('keyup',e=>{ if(!PH) return; const K=H.keys.get(); const m={left:'L',right:'R',up:'U',down:'D'}; for(const a in m) if(K[a].indexOf(e.code)>=0) pheld[m[a]]=false; });
-$('bPhoto').onclick=enterPhoto;
 })();
