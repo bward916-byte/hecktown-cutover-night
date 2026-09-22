@@ -51,7 +51,6 @@ const endStick=e=>{ if(stick&&e.pointerId===stick.id) stick=null; }; cv.addEvent
 function setTouch(){ if(!V.touch){ V.touch=true; document.body.classList.add('touch'); } }
 if(matchMedia('(pointer:coarse)').matches) setTouch();
 for(const b of document.querySelectorAll('#pad button[data-act]')) b.addEventListener('pointerdown',e=>{ e.preventDefault(); wake(); queue.push(b.dataset.act); });
-$('bMore').addEventListener('pointerdown',e=>{ e.preventDefault(); const o=$('pad').classList.toggle('open'); $('bMore').setAttribute('aria-expanded',o); $('bMore').textContent=o?'Less':'More'; });
 const padMap={0:'use',1:'roll',2:'jump',3:'crawl',4:'read',5:'dance',6:'clap',7:'throw'}, padWas={};
 function readInput(){
   let ix=0, iy=0;
@@ -111,7 +110,12 @@ let hudT=0, shownDialog=null, shownPage=-1, typing=null;
 function typeTick(dt){ if(!typing||!G.dialog) return; const T=typing, L=T.text.length; if(T.n>=L) return; T.n=Math.min(L,T.n+dt*60); const k=Math.floor(T.n);
   if(k-T.last>=3){ T.last=k; if(/\S/.test(T.text[k-1]||'')) blip(T.who,T.kid); } $('dtext').textContent=T.text.slice(0,k); }
 function typingDone(){ return !typing||!G.dialog||typing.n>=typing.text.length; }
+/* the big touch button says what it will do */
+const VERB={'Step through':'Enter','Take the shuttle':'Ride'};
+function useVerb(){ if(G.card) return 'Next'; if(G.dialog) return 'Next'; if(G.drive) return 'Honk'; if(G.board) return 'Drive';
+  const t=G.target; if(t) return VERB[t.label]||t.label.split(' ')[0]; if(G.S.inv.catnip) return 'Throw'; return null; }
 function hud(){
+  const vb=useVerb(), ub=$('bUse'); ub.textContent=vb||'Use'; ub.classList.toggle('idle',!vb);
   const S=G.S; $('hClock').textContent=GM.clock(S); $('hPlace').textContent=G.room?G.room.name:(G.cur.link||(G.cur.node&&G.cur.node.mid)?'On the stairs':G.cur.node.label);
   $('hGoal').textContent=GM.objective(S); $('hPts').textContent=S.points+' / '+GM.MAXPTS; $('hRank').textContent=GM.percent(S)+'%  ·  '+GM.rank(S); $('hBar').style.width=GM.percent(S)+'%';
   const h=G.hero; for(const b of document.querySelectorAll('#pad button[aria-pressed]')){ const a=b.dataset.act; b.setAttribute('aria-pressed',a==='crawl'?h.mode==='crawl':(a==='read'?h.reading:h.dancing)); }
@@ -164,7 +168,6 @@ function refreshTitle(){ const s=loadSave(); $('bContinue').classList.toggle('hi
   $('resume').textContent=s?('Saved game: '+GM.percent(s)+'%, '+GM.rank(s)+', '+GM.clock(s)+' on cutover night.'):''; $('keysHelp').innerHTML=keysHTML(); }
 $('bContinue').onclick=()=>{ wake(); begin(loadSave()); };
 let armNew=false; $('bNew').onclick=()=>{ wake(); if(loadSave()&&!armNew){ armNew=true; $('bNew').textContent='Erase the save and start over?'; return; } wipe(); begin(null); };
-$('bSkip').onclick=()=>{ if(G&&G.p38){ GM.skipPrologue(G); } };
 $('score').onclick=toggleJournal; $('bJournal').onclick=toggleJournal;
 $('bZoom').onclick=()=>{ zi=(zi+1)%zoomStops.length; };
 $('bSnd').onclick=function(){ soundOn=!soundOn; this.textContent=soundOn?'Sound on':'Sound off'; wake(); if(master) master.gain.value=soundOn?1:0; };
@@ -184,7 +187,7 @@ function frame(now){
     G.events.length=0;
     autosave+=dt; if(autosave>20){ autosave=0; save(); }
     for(const f of EXT.tick) f(dt);
-    typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); $('bSkip').classList.toggle('hide',!G.p38||G.p38.scene==='visit'); } dialogUI(); document.body.classList.toggle('card',!!(G.card||G.board||G.drive));
+    typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); } dialogUI(); document.body.classList.toggle('card',!!(G.card||G.board||G.drive));
   } else { readInput(); queue.length=0; acc=0; }
   if(saveBlip>0){ saveBlip-=dt; if(saveBlip<=0) $('saved').classList.remove('on'); }
   if(AC){ tickMusic(); tickRain(); }
