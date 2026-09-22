@@ -79,7 +79,7 @@ function hand(ctx,A,F,skin,shirt,curl,flat){
   ctx.restore();
   ctx.beginPath(); ctx.moveTo(-0.6,-1.4); ctx.lineTo(2.6,-1.6); ctx.quadraticCurveTo(3.4,0,2.6,1.6); ctx.lineTo(-0.6,1.4); ctx.closePath(); ctx.fill(); ctx.lineWidth=0.8; ctx.stroke();
   ctx.save(); ctx.translate(0.7,s*1.2); ctx.rotate(s*(0.55+curl*0.5)); ctx.beginPath(); ctx.ellipse(1.3,0,1.55,0.75,0,0,7); ctx.fill(); ctx.stroke(); ctx.restore();
-  ctx.fillStyle=shirt; ctx.beginPath(); ctx.rect(-1.5,-2.2,1.5,4.4); ctx.fill(); ctx.stroke();
+  if(shirt){ ctx.fillStyle=shirt; ctx.beginPath(); ctx.rect(-1.5,-2.2,1.5,4.4); ctx.fill(); ctx.stroke(); }
   ctx.restore();
 }
 
@@ -114,14 +114,17 @@ function torsoPath(ctx,at,D,bel){ const p=(k,d)=>at(k,d);
 function dot(ctx,p,col,r){ ctx.fillStyle=col; ctx.beginPath(); ctx.arc(p[0],p[1],r||0.45,0,7); ctx.fill(); }
 function line(ctx,a,b,col,w){ ctx.strokeStyle=col; ctx.lineWidth=w||0.6; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke(); }
 function top(ctx,P,F,look,o,at,C){
-  const D=o.build.d, bel=o.build.belly, T=o.top, col=look.shirt, dk=shade(col,0.66), lt=shade(col,1.18>1?1:1);
+  const D=o.build.d, bel=o.build.belly, T=o.top, col=look.shirt, dk=shade(col,0.66);
   const fill=c=>{ torsoPath(ctx,at,D,bel); ctx.fillStyle=c; ctx.fill(); };
   if(o.under){ fill(o.under); }
   // the garment itself
   if(T==='cardigan'||T==='blazer'){ torsoPath(ctx,at,D,bel); ctx.save(); ctx.clip(); ctx.fillStyle=col; const a=at(-0.1,-8), b=at(1.1,-8), c=at(1.1,3.3*D), d=at(-0.1,4.1*D);
-      if(T==='blazer'){ const v=at(0.52,5.2*D); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(at(1.1,1.6)[0],at(1.1,1.6)[1]); ctx.lineTo(v[0],v[1]); ctx.lineTo(at(-0.1,5.6*D)[0],at(-0.1,5.6*D)[1]); ctx.lineTo(at(-0.1,-8)[0],at(-0.1,-8)[1]); ctx.fill();
-        const n0=at(0.99,2.4), t1=at(0.62,4.2*D), t2=at(0.9,3.0); ctx.fillStyle='#8a2a2a'; ctx.beginPath(); ctx.moveTo(n0[0],n0[1]); ctx.lineTo(t2[0],t2[1]); ctx.lineTo(t1[0],t1[1]); ctx.closePath(); ctx.fill(); }
-      else { ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(c[0],c[1]); ctx.lineTo(d[0],d[1]); ctx.closePath(); ctx.fill(); }
+      const open=T==='blazer'?[at(1.02,-0.4),at(0.4,6*D),at(-0.1,6.2*D)]:[at(1.05,0.6),at(0.3,5.6*D),at(-0.1,5.8*D)];
+      ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(open[0][0],open[0][1]); ctx.lineTo(open[1][0],open[1][1]); ctx.lineTo(open[2][0],open[2][1]); ctx.closePath(); ctx.fill();
+      if(T==='blazer'){ const k0=at(0.985,1.3), k1=at(0.6,4.1*D); ctx.lineCap='butt'; line(ctx,k0,k1,'#8a2a2a',1.5); dot(ctx,at(0.975,1.4),'#6a1e1e',0.8);            // tie and knot
+        line(ctx,at(1.0,0.3),at(0.93,2.2),'#ece8de',0.9);                                                                                  // shirt collar point
+        line(ctx,open[0],open[1],shade(col,0.55),0.9); line(ctx,at(1.0,-1.2),at(0.62,3.6*D),shade(col,0.8),0.7); }                       // lapel
+      else { line(ctx,open[0],open[1],shade(col,0.55),0.9); }
       ctx.restore(); }
   else if(T==='hivis'||T==='sweatervest'){ torsoPath(ctx,at,D,bel); ctx.save(); ctx.clip(); ctx.fillStyle=col; const a=at(-0.1,-8), b=at(0.86,-8), c=at(0.86,2.2), v=at(T==='sweatervest'?0.66:0.9,4.6*D), d=at(-0.1,8);
       ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(c[0],c[1]); ctx.lineTo(v[0],v[1]); ctx.lineTo(d[0],d[1]); ctx.closePath(); ctx.fill();
@@ -135,13 +138,13 @@ function top(ctx,P,F,look,o,at,C){
   ctx.lineCap='round';
   if(T==='tee'||T==='sweater'){ const a=at(0.985,2.2), b=at(0.94,0.2); ctx.strokeStyle=dk; ctx.lineWidth=0.8; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.quadraticCurveTo(at(0.93,1.6)[0],at(0.93,1.6)[1],b[0],b[1]); ctx.stroke(); }
   if(T==='sweater'){ for(let d=-4;d<=4.5;d+=1.6) line(ctx,at(-0.03,d*D),at(0.07,d*D),dk,0.5); }
-  if(T==='polo'||T==='button'||T==='flannel'){ const c1=at(1.0,2.2), c2=at(0.86,3.9), c3=at(0.93,1.3); ctx.fillStyle=T==='button'?shade(col,1)===col?col:col:col; ctx.beginPath(); ctx.moveTo(c1[0],c1[1]); ctx.lineTo(c2[0],c2[1]); ctx.lineTo(c3[0],c3[1]); ctx.closePath(); ctx.fillStyle=T==='flannel'?dk:shade(col,0.85); ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=0.6; ctx.stroke();
+  if(T==='polo'||T==='button'||T==='flannel'){ const c1=at(1.0,2.2), c2=at(0.84,4.3*D), c3=at(0.92,0.9); ctx.beginPath(); ctx.moveTo(c1[0],c1[1]); ctx.lineTo(c2[0],c2[1]); ctx.lineTo(c3[0],c3[1]); ctx.closePath(); ctx.fillStyle=T==='flannel'?dk:shade(col,0.85); ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=0.6; ctx.stroke();
     const n=T==='polo'?2:5; for(let i=0;i<n;i++) dot(ctx,at(0.84-i*(T==='polo'?0.08:0.16),4.6*D),'#f2efe8',0.42); }
   if(T==='hoodie'){ const hb=at(0.98,-3.6); ctx.fillStyle=dk; ctx.beginPath(); ctx.ellipse(hb[0],hb[1],2.6,3.4,Math.atan2(P.neck.y-P.hip.y,P.neck.x-P.hip.x),0,7); ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=0.7; ctx.stroke();
     const p1=at(0.1,1.2*D), p2=at(0.34,1.2*D), p3=at(0.34,(4.8+bel*1.4)*D), p4=at(0.1,(4.9+bel*1.2)*D); ctx.strokeStyle=dk; ctx.lineWidth=0.7; ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.lineTo(p3[0],p3[1]); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p4[0],p4[1]); ctx.stroke();
     line(ctx,at(0.97,2.0),at(0.82,2.4),'#f2efe8',0.5); line(ctx,at(0.97,1.2),at(0.84,1.5),'#f2efe8',0.5); for(let d=-4;d<=4.5;d+=1.8) line(ctx,at(-0.03,d*D),at(0.05,d*D),dk,0.5); }
-  if(T==='cardigan'){ for(let i=0;i<4;i++) dot(ctx,at(0.2+i*0.18,3.4*D),'#d8d2c0',0.5); }
-  if(T==='blazer'){ const l1=at(0.96,3.0), l2=at(0.55,4.7*D); line(ctx,l1,l2,shade(col,0.6),0.7); dot(ctx,at(0.38,4.9*D),'#c9a56a',0.55); const pk=at(0.72,-2); line(ctx,at(0.72,1.6*D),at(0.72,3.4*D),shade(col,0.6),0.6); }
+  if(T==='cardigan'){ for(let i=0;i<3;i++) dot(ctx,at(0.18+i*0.16,(5.1-i*0.35)*D),'#d8d2c0',0.5); }
+  if(T==='blazer'){ dot(ctx,at(0.36,5.4*D),'#c9a56a',0.55); line(ctx,at(0.7,-3.4*D),at(0.7,-1.4*D),shade(col,0.6),0.6); }
   if(T==='sweatervest'){ const c1=at(1.0,2.2), c2=at(0.86,3.6); line(ctx,c1,c2,'#f2efe8',0.8); }
 }
 function person(ctx,P,look,opt){
@@ -157,7 +160,7 @@ function person(ctx,P,look,opt){
   const arm=(i,far)=>{ const A=P.arms[i], sc=far?C.sleeveFar:C.sleeve, sk=far?C.skinFar:C.skin;
     if(o.long){ stroke(ctx,[P.sh.x,P.sh.y,A.ex,A.ey,A.hx,A.hy],armW,sc); const cx=A.ex+(A.hx-A.ex)*0.86, cy=A.ey+(A.hy-A.ey)*0.86; stroke(ctx,[cx,cy,A.hx+(A.hx-A.ex)*0.02,A.hy+(A.hy-A.ey)*0.02],armW+0.5,o.top==='blazer'?'#ece8de':shade(o.sleeve,far?0.55:0.75)); }
     else { const sx=P.sh.x+(A.ex-P.sh.x)*0.62, sy=P.sh.y+(A.ey-P.sh.y)*0.62; stroke(ctx,[sx,sy,A.ex,A.ey,A.hx,A.hy],armW*0.82,sk); stroke(ctx,[P.sh.x,P.sh.y,sx,sy],armW+0.7,sc); }
-    hand(ctx,A,F,sk,sc,curl(i),flat); };
+    hand(ctx,A,F,sk,o.long?(o.top==='blazer'?'#ece8de':sc):null,curl(i),flat); };
   const leg=(i,far)=>{ const L=P.legs[i], col=far?C.pantsFar:C.pants; stroke(ctx,[P.hip.x,P.hip.y,L.kx,L.ky,L.ax,L.ay],legW,col); stroke(ctx,[L.kx,L.ky,L.ax,L.ay],legW*0.83,col);
     ctx.lineCap='round'; if(o.bottom==='jeans') line(ctx,[P.hip.x+(L.kx-P.hip.x)*0.15,P.hip.y+(L.ky-P.hip.y)*0.15],[L.kx+(L.ax-L.kx)*0.8,L.ky+(L.ay-L.ky)*0.8],'rgba(210,160,90,.45)',0.4);
     else if(o.bottom==='slacks') line(ctx,[P.hip.x+(L.kx-P.hip.x)*0.2+L.face*0.8,P.hip.y+(L.ky-P.hip.y)*0.2],[L.ax+L.face*0.8,L.ay-1.4],'rgba(255,255,255,.14)',0.45);
