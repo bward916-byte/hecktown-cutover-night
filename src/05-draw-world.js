@@ -192,7 +192,7 @@ function pickups(G,now){
 }
 
 /* ---------------- one frame ---------------- */
-let darkness=0; const HOOKS=[], BGHOOKS=[];
+let darkness=0; const HOOKS=[], BGHOOKS=[], FLOORHOOKS=[];
 function render(c,view,G,now,dt){
   ctx=c; V=view; const S=G.S, t=GM.count(S.signoffs)/6*0.7+(S.inv.badge?0.15:0)+(S.done?0.15:0), h=G.hero;
   const on=id=>(G.cur.node&&G.cur.node.id===id)||(G.cur.link&&(G.cur.link.lo.node.id===id||G.cur.link.hi.node.id===id)), found=id=>MAP.rooms.some(r=>r.node===id&&r.dark&&S.rooms[r.id]);
@@ -200,7 +200,7 @@ function render(c,view,G,now,dt){
   ctx.setTransform(V.DPR,0,0,V.DPR,0,0); sky(t,now); for(const f of BGHOOKS) f(ctx,G,now,V,t);
   const ox=V.W/2-V.camx*V.zoom, oy=V.H*0.62-V.camy*V.zoom; ctx.setTransform(V.zoom*V.DPR,0,0,V.zoom*V.DPR,ox*V.DPR,oy*V.DPR);
   V.x0=V.camx-V.W/2/V.zoom-10; V.x1=V.camx+V.W/2/V.zoom+10; V.y0=V.camy-V.H*0.62/V.zoom; V.y1=V.camy+V.H*0.38/V.zoom;
-  earth(); warehouseBack(t,now); interiors(t); props(now); flights();
+  earth(); warehouseBack(t,now); interiors(t); props(now); for(const f of FLOORHOOKS) f(ctx,G,now,V); flights();
   const heroBack=!!G.cur.link||(G.cur.node&&G.cur.node.mid), world=G.cur.world;
   const drawHero=()=>{ for(const s of h.shots) PP.treat(ctx,s.x,s.y,s.a,clamp(s.life,0,1)); PP.person(ctx,G.pose,HERO_LOOK,{scarf:h.scarf,ground:x=>world.yAt(x),mode:h.mode,w:h,t:now/1000}); };
   if(heroBack) drawHero();
@@ -223,5 +223,5 @@ function render(c,view,G,now,dt){
   if(G.target&&!G.dialog){ const T=G.target, y=(T.q&&T.q.pose?T.q.pose.head.y:world.yAt(T.x)-70)-18; tag((V.touch?'':'E  ')+T.label+'  ·  '+T.name,T.x,y,'#f2b544','#101a2e',true); }
   if(G.stairHint&&!G.dialog&&!G.target){ const s=G.stairHint; tag((s.up?'▲ up':'')+(s.up&&s.down?'    ':'')+(s.down?'▼ down':''),s.x,world.yAt(s.x)-92,'rgba(16,26,46,.78)','#f6ecd8'); }
 }
-root.HDRAW={render:render,HERO_LOOK:HERO_LOOK,PROPS:PROPS,HOOKS:HOOKS,BGHOOKS:BGHOOKS};
+root.HDRAW={render:render,HERO_LOOK:HERO_LOOK,PROPS:PROPS,HOOKS:HOOKS,BGHOOKS:BGHOOKS,FLOORHOOKS:FLOORHOOKS};
 })(typeof globalThis!=='undefined'?globalThis:this);
