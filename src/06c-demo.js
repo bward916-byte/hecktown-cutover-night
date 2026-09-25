@@ -13,7 +13,7 @@ const $=id=>document.getElementById(id), clamp=(v,a,b)=>v<a?a:(v>b?b:v), lerp=(a
 const rr=(c,x,y,w,h,r)=>{ c.beginPath(); if(c.roundRect) c.roundRect(x,y,w,h,r); else c.rect(x,y,w,h); };
 const CAST=['rianan','brians','bret','dave','aaron','umesh','fares','ash'], LEN=48;
 const SEC={intro:0,office:3.5,doors:13.4,turn:24.2,back:26.8,freeze:33.2,montage:36.4,curtain:40.4};
-const BILL={rianan:['RIANAN','IT Department Head  ·  would stop for any cat'],brians:['BRIAN S','IT Manager  ·  nationally ranked pinball wizard'],bret:['BRET','Infrastructure  ·  has already checked your password'],
+const BILL={rianan:['RIANAN','IT Department Head  ·  would stop for any cat'],brians:['BRIAN S','IT Manager  ·  nationally ranked pinball wizard'],bret:['BRET','Infrastructure  ·  new baby boy, and yes your screen is locked'],
   dave:['DAVE','iSeries Guru  ·  this close to Jeopardy'],aaron:['AARON','Network  ·  picks his line early'],umesh:['UMESH','EDI  ·  every 850 is his'],fares:['FARES','EDI  ·  Umesh\'s friend, and also his 850s'],
   ash:['ASH','Salesforce  ·  built a flow for that'],greg:['GREG','Number Scientist  ·  in no particular hurry'],aplus:['A+','since 1985  ·  a monster, affectionately']};
 let S=null, idle=0, prevLight=null;
