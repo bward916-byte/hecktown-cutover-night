@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js','03k-chapters.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -149,6 +149,18 @@ section('banter, pinball, Fares');
   ok(GM.PEOPLE.some(p=>p.id==='fares'&&p.node==='hq_f2'),'Fares works in EDI');
   ok(goTo(G,'hq_f2',1543),'reach the pinball machine'); walkTo(G,1543); ok(G.target&&G.target.kind==='pinball','pinball is playable'); GM.interact(G); ok(S.flags.pinball===1,'played a ball');
   let said=new Set(); for(let i=0;i<120*60;i++){ step2(G); for(const b of G.story.bub) said.add(b.id); if(i%(120*6)===0) walkTo(G,1300+((i/720)%4)*120); } ok(said.size>=2,'people banter as you pass ('+[...said].join(',')+')'); }
+
+section('Chapter 2: Trivia Night');
+{ const G=GM.create(GM.freshSave('trivia')); GM.skipPrologue(G); G.events.length=0; const S=G.S, TV=GM.TRIVIA;
+  ok(S.chapter==='trivia'&&G.cur.node.id==='ground','a trivia save starts in Easton'); const d=G.npcs.find(q=>q.def.id==='dave'); ok(d.node.id==='hq_f2'&&Math.abs(d.w.x-1470)<2,'Dave hosts from the War Room');
+  ok(/Dave/.test(GM.objective(S)),'objective points at Dave'); talkTo(G,'dave'); skipCards(G); for(let i=0;i<60;i++) step(G,0,0); ok(S.flags.tvIntro,'the intro played');
+  let tries=0; while(TV.T(S).i<TV.CLUES.length&&tries++<40){ if(!G.dialog){ walkTo(G,d.w.x+12); GM.interact(G); for(let i=0;i<30&&!G.dialog;i++) step(G,0,0); }
+    if(G.dialog&&G.dialog.choices){ const c=TV.CLUES[TV.T(S).i]; if(tries===1){ GM.advance(G,(c.ok+1)%3); ok(TV.T(S).wrong===1,'a wrong answer is wrong'); closeDialog(G); continue; } GM.advance(G,c.ok); closeDialog(G); } else closeDialog(G); }
+  ok(TV.T(S).i===TV.CLUES.length&&TV.T(S).right===8,'eight right ('+TV.T(S).right+')');
+  walkTo(G,d.w.x+12); GM.interact(G); for(let i=0;i<120*3&&!(G.dialog&&G.dialog.choices);i++){ step(G,0,0); if(G.dialog&&!G.dialog.choices) GM.advance(G,null); }
+  ok(G.dialog&&G.dialog.choices&&G.dialog.choices.length===3,'Final Jeopardy'); GM.advance(G,1); for(let i=0;i<120*3;i++){ step(G,0,0); if(G.dialog) GM.advance(G,null); }
+  ok(S.done&&TV.T(S).final,'champion'); ok(GM.chapterEnding(S)&&/champion/.test(GM.chapterEnding(S).title),'chapter ending text');
+  const C=GM.create(GM.freshSave('cutover')); ok(!C.S.chapter||C.S.chapter==='cutover','the cutover save is unchanged'); ok(!GM.chapterEnding(C.S),'cutover keeps its own ending'); }
 
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
