@@ -90,7 +90,7 @@ function startEnd(){ const G=H.G, S=G.S; if(S.runEnd==null) S.runEnd=S.run||0; t
 function nextEnd(){ if(!END) return; if(END.phase<2){ END.phase++; END.t=0; } else if(END.phase===2){ END.i++; END.t=0; if(END.i>=END.lines.length){ END.phase=3; END.t=0; } } else finishEnd(); }
 function finishEnd(){ END=null; document.body.classList.remove('cine'); H.showEnding(); const btns=document.querySelector('#eBody .btns');
   if(btns&&!$('eShow')){ const b=document.createElement('button'); b.className='btn ghost'; b.id='eShow'; b.textContent='Take the shuttle to the Buying Show'; b.onclick=()=>{ H.closeEnding(); GM.goShow(H.G); }; btns.appendChild(b); } }
-function teamPhoto(){ const world=E.makeWorld(E.surfaces(0,0,[['flat',4000]])), core=['rianan','aaron','bret','brians','umesh','dave','john','greg','ryan','jose','ash','andrew','pam','melissa','cathy'];
+function teamPhoto(){ const world=E.makeWorld(E.surfaces(0,0,[['flat',4000]])), core=['rianan','aaron','bret','brians','umesh','fares','dave','john','greg','ryan','jose','ash','andrew','pam','melissa','cathy'];
   const front=[], back=[]; const mk=(look,i,arr,sp)=>{ const w=E.createWalker(world,200+i*sp); w.facing=w.dir=w.kneeF=i%2?-1:1; arr.push({look:look,pose:E.poseOf(w)}); };
   core.forEach((id,i)=>{ const p=GM.PEOPLE.find(z=>z.id===id); if(p) mk(p.look,i,front,26); }); mk(D.HERO_LOOK,core.length,front,26);
   GM.PEOPLE.filter(p=>core.indexOf(p.id)<0).forEach((p,i)=>mk(p.look,i,back,22)); return {front:front,back:back}; }
