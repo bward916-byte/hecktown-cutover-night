@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js','03k-chapters.js','03l-aivs.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js','03k-chapters.js','03l-aivs.js','03m-loop.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -172,6 +172,17 @@ section('Chapter 3: A+ vs. the AI');
     ok(goTo(G,'hq_f2',AV.FETCH.x+10),'up to Fetch'); GM.interact(G); closeDialog(G); ok(ai.k===k+1,'Fetch learned lesson '+(k+1)); }
   ok(ai.stage==='final','four lessons'); ok(goTo(G,'hq_b1',AV.APX.x-20),'down for the handover'); GM.interact(G); for(let i=0;i<120*4;i++){ step(G,0,0); if(G.dialog) GM.advance(G,null); }
   ok(S.done,'the handover'); ok(/handover/i.test(GM.chapterEnding(S).title),'chapter ending'); }
+
+section('Chapter 4: the Time Loop');
+{ const G=GM.create(GM.freshSave('loop')); GM.skipPrologue(G); G.events.length=0; const S=G.S, LP=GM.LOOP, l=LP.L(S);
+  ok(S.chapter==='loop'&&GM.clock(S)==='6:00 PM','starts at 6 PM'); talkTo(G,'ash'); closeDialog(G); ok(S.flags.ashLoop1,'Ash remembers');
+  useAt(G,'hq_f2',1200,'item'); talkTo(G,'andrew'); ok(S.inv.badge,'badge in loop 1');
+  l.t=LP.LEN-0.5; for(let i=0;i<120*10;i++) step(G,0,0); ok(l.n===2&&S.inv.badge&&G.cur.node.id==='ground','midnight resets to loop 2, the badge came back');
+  talkTo(G,'ash'); closeDialog(G); ok(goTo(G,'wh_mezz',LP.TOKEN_X),'crawl to the Cage Office'); ok(G.target&&G.target.kind==='looptoken','the token is there'); GM.interact(G); ok(S.inv.token,'token');
+  talkTo(G,'ash'); ok(l.flowOff&&!S.inv.token,'Ash kills the flow');
+  l.t=LP.LEN-0.5; for(let i=0;i<120*10;i++) step(G,0,0); ok(l.n===3&&!l.flowOff&&S.inv.badge&&S.inv.token,'loop 3: flow is back on, badge and token kept');
+  talkTo(G,'ash'); ok(l.flowOff,'flow off again, fast this time'); for(const t of GM.TERMS) useAt(G,t.node,t.x,'term'); for(let i=0;i<120*6;i++){ step(G,0,0); if(G.dialog) GM.advance(G,null); }
+  ok(S.done&&GM.clock(S)==='12:01 AM','the loop breaks'); ok(/ended/.test(GM.chapterEnding(S).title),'chapter ending'); }
 
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
