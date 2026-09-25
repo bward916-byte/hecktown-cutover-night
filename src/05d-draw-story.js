@@ -72,14 +72,17 @@ function aplusCard(c,V,G,now){
 D.aplusFace=face; D.drawCardStyle=function(c,V,G,k){ if(k.style!=='comic') return false; const t=k.t, a=clamp(Math.min(t/0.6,(k.dur-t)/0.6),0,1);
   c.setTransform(V.DPR,0,0,V.DPR,0,0); c.globalAlpha=Math.max(a,0.001); c.fillStyle='#0b1220'; c.fillRect(0,0,V.W,V.H);
   c.fillStyle='rgba(242,181,68,.06)'; for(let y=0;y<V.H;y+=8) for(let x=(y/8%2)*4;x<V.W;x+=8){ c.beginPath(); c.arc(x,y,1.3,0,7); c.fill(); }
-  c.textAlign='center'; c.textBaseline='middle'; c.fillStyle='#f2b544'; c.font='700 '+Math.min(40,V.W/12)+'px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.fillText(k.title,V.W/2,V.H*0.2);
-  c.fillStyle='#f6ecd8'; c.font='italic '+Math.min(20,V.W/24)+'px Georgia,serif'; c.fillText(k.sub||'',V.W/2,V.H*0.2+Math.min(34,V.W/14));
-  const ps=k.panels||[], n=ps.length, gap=14, pw=Math.min(220,(V.W-40-gap*(n-1))/n), ph=pw*0.72, x0=(V.W-(n*pw+(n-1)*gap))/2, y0=V.H*0.42;
-  ps.forEach((p,i)=>{ const show=clamp((t-0.5-i*0.7)/0.35,0,1); if(show<=0) return; const x=x0+i*(pw+gap), y=y0+(1-show)*12; c.globalAlpha=a*show;
+  const tall=V.W<560, ty=tall?V.H*0.14:V.H*0.2, tf=D.fitFont(c,k.title,'700 ','"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif',Math.min(38,V.H/10,V.W/18),V.W*0.84);
+  c.textAlign='center'; c.textBaseline='middle'; c.fillStyle='#f2b544'; c.font='700 '+tf+'px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.fillText(k.title,V.W/2,ty);
+  const sf=D.fitFont(c,k.sub||'','italic ','Georgia,serif',Math.min(20,V.H/22),V.W*0.88); c.fillStyle='#f6ecd8'; c.font='italic '+sf+'px Georgia,serif'; c.fillText(k.sub||'',V.W/2,ty+tf*0.6+sf*0.9);
+  const ps=k.panels||[], n=ps.length, gap=14;
+  let pw,ph,x0,y0; if(tall){ pw=Math.min(300,V.W-60); ph=Math.min(pw*0.5,(V.H*0.62-gap*(n-1))/n); x0=(V.W-pw)/2; y0=ty+tf+sf+34; }                 // portrait: panels stack
+  else { pw=Math.min(220,(V.W-40-gap*(n-1))/n); ph=Math.min(pw*0.72,V.H*0.42); x0=(V.W-(n*pw+(n-1)*gap))/2; y0=Math.max(ty+tf+sf+24,V.H*0.4); }
+  ps.forEach((p,i)=>{ const show=clamp((t-0.5-i*0.7)/0.35,0,1); if(show<=0) return; const x=tall?x0:x0+i*(pw+gap), y=(tall?y0+i*(ph+gap):y0)+(1-show)*12; c.globalAlpha=a*show;
     c.fillStyle='#f6ecd8'; c.fillRect(x-3,y-3,pw+6,ph+6); c.fillStyle=['#c9a56a','#5a6f8f','#2f5a3a'][i%3]; c.fillRect(x,y,pw,ph);
     c.fillStyle='rgba(0,0,0,.12)'; for(let yy=y+4;yy<y+ph;yy+=6) for(let xx=x+((yy-y)/6%2)*3;xx<x+pw;xx+=6){ c.beginPath(); c.arc(xx,yy,1.1,0,7); c.fill(); }
-    c.fillStyle=p.i==='A+'?'#7fe0a0':'#f6ecd8'; c.font=(p.i==='A+'?'700 ':'')+Math.round(ph*0.4)+'px '+(p.i==='A+'?'"IBM Plex Mono",monospace':'system-ui,sans-serif'); c.fillText(p.i,x+pw/2,y+ph*0.42);
-    c.fillStyle='#f6ecd8'; c.fillRect(x+6,y+ph-24,pw-12,18); c.strokeStyle=INK; c.lineWidth=1; c.strokeRect(x+6,y+ph-24,pw-12,18); c.fillStyle='#101a2e'; c.font='600 '+Math.min(12,pw/16)+'px "IBM Plex Sans",sans-serif'; c.fillText(p.c,x+pw/2,y+ph-15); });
+    c.fillStyle=p.i==='A+'?'#7fe0a0':'#f6ecd8'; c.font=(p.i==='A+'?'700 ':'')+Math.round(Math.min(ph*0.4,pw*0.3))+'px '+(p.i==='A+'?'"IBM Plex Mono",monospace':'system-ui,sans-serif'); c.fillText(p.i,x+pw/2,y+ph*0.42);
+    c.fillStyle='#f6ecd8'; c.fillRect(x+6,y+ph-24,pw-12,18); c.strokeStyle=INK; c.lineWidth=1; c.strokeRect(x+6,y+ph-24,pw-12,18); c.fillStyle='#101a2e'; c.font='600 '+D.fitFont(c,p.c,'600 ','"IBM Plex Sans",sans-serif',12,pw-20)+'px "IBM Plex Sans",sans-serif'; c.fillText(p.c,x+pw/2,y+ph-15); });
   c.globalAlpha=a*0.5; c.fillStyle='#f6ecd8'; c.font='500 11px "IBM Plex Sans",sans-serif'; c.fillText(V.touch?'tap to continue':'E or Space to continue',V.W/2,V.H-30); c.globalAlpha=1; return true; };
 
 const baseRender=D.render;
