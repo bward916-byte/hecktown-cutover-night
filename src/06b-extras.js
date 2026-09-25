@@ -22,7 +22,7 @@ const applyText=()=>document.documentElement.style.setProperty('--ts',O.text); a
 
 /* ---------------- options ---------------- */
 const ov=document.createElement('div'); ov.id='options'; ov.className='overlay hide'; ov.innerHTML='<div class="sheet" id="oBody"></div>'; document.body.appendChild(ov);
-const NAMES={left:'Walk left',right:'Walk right',up:'Up the stairs',down:'Down the stairs',use:'Talk / use',jump:'Jump',roll:'Roll',crawl:'Crawl',throw:'Throw',read:'Read',dance:'Dance',clap:'Clap',stroll:'Stroll (hold)',journal:'Journal',zoom:'Zoom',sound:'Sound',map:'Minimap',photo:'Photo mode'};
+const NAMES={left:'Walk left',right:'Walk right',up:'Up the stairs',down:'Down the stairs',use:'Talk / use',jump:'Jump',crawl:'Crawl',throw:'Throw',read:'Read',stroll:'Stroll (hold)',journal:'Journal',zoom:'Zoom',sound:'Sound',map:'Minimap',photo:'Photo mode'};
 const keyName=c=>({Space:'Space',Enter:'Enter',Tab:'Tab',ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓',ShiftLeft:'Shift',ShiftRight:'R-Shift',Escape:'Esc'}[c]||c.replace(/^Key|^Digit/,''));
 let rebind=null, prevState='play';
 function renderOpts(){ const K=H.keys.get(), T=[['90%',0.9],['100%',1],['115%',1.15],['130%',1.3]];
