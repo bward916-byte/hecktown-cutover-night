@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js','03k-chapters.js','03l-aivs.js','03m-loop.js','03n-pinball.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js','03k-chapters.js','03l-aivs.js','03m-loop.js','03n-pinball.js','03o-raft.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -195,6 +195,16 @@ section('Chapter 5: Pinball Showdown');
   ok(S.done&&st.best>PN.TARGET,'beat 1,985,000 ('+st.best+')'); ok(/Showdown/.test(GM.chapterEnding(S).title),'chapter ending');
   const G2=GM.create(GM.freshSave('pinball')); GM.skipPrologue(G2); G2.S.flags.pinIntro=1; for(const pt of PN.PARTS) PN.P(G2.S).parts[pt.id]=1; PN.P(G2.S).fixed=true; walkTo(G2,PN.MACHINE.x+4); GM.interact(G2); let g=0; while(G2.pin&&g++<120*60){ if(G2.pin.phase==='ready') PN.flip(G2); step2(G2); }
   ok(!G2.pin&&!G2.S.done&&PN.P(G2.S).matches===1,'never flipping loses to A+ and you can try again'); }
+
+section('Chapter 6: the Offsite');
+{ const G=GM.create(GM.freshSave('raft')); G.events.length=0; const S=G.S, RF=GM.RAFT, st=RF.R(S); ok(S.chapter==='raft'&&!!G.raft&&G.cur.node.id==='river','on the river'); skipCards(G); for(let i=0;i<60;i++) step2(G); ok(S.flags.raftIntro,'Aaron gave the rules');
+  // steer for the clear lane: aim at the nearest green wave ahead, dodge rocks
+  let guard=0, bumpsSeen=0; while(!S.done&&guard++<120*400){ const r=G.raft; if(G.dialog){ GM.advance(G,null); step2(G); continue; } if(G.card){ G.card.t=G.card.dur; step2(G); continue; }
+    let target=0; const rocks=RF.ROCKS.filter(k=>k.x>r.x-5&&k.x<r.x+90); const wave=RF.WAVES.find(w=>!w.got&&w.x>r.x&&w.x<r.x+160);
+    if(wave) target=wave.lane; if(rocks.length){ const lanes=[-0.8,-0.4,0,0.4,0.8].filter(l=>rocks.every(k=>Math.abs(k.lane-l)>k.r+0.2)); if(lanes.length&&!lanes.some(l=>Math.abs(l-target)<0.15)) target=lanes.reduce((a,b)=>Math.abs(b-r.lane)<Math.abs(a-r.lane)?b:a); }
+    const dy=target-r.lane, iy=Math.abs(dy)>0.05?-Math.sign(dy):0; GM.update(G,rocks.length?0:1,iy,DT); G.events.length=0; if(r.bumps>bumpsSeen) bumpsSeen=r.bumps; }
+  ok(S.done,'reached the take-out (flips '+st.flips+', waves '+st.waves+', guard '+guard+')'); ok(st.waves>=3,'took some green water'); ok(/offsite/i.test(GM.chapterEnding(S).title),'chapter ending');
+  const sv=JSON.parse(JSON.stringify(S)); sv.done=false; sv.raft.sec=4; const G2=GM.create(sv); ok(G2.raft&&Math.abs(G2.raft.x-RF.SECS[4].x0-40)<1,'a save resumes at the last eddy'); }
 
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
