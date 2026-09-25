@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js','03k-chapters.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js','03k-chapters.js','03l-aivs.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -161,6 +161,17 @@ section('Chapter 2: Trivia Night');
   ok(G.dialog&&G.dialog.choices&&G.dialog.choices.length===3,'Final Jeopardy'); GM.advance(G,1); for(let i=0;i<120*3;i++){ step(G,0,0); if(G.dialog) GM.advance(G,null); }
   ok(S.done&&TV.T(S).final,'champion'); ok(GM.chapterEnding(S)&&/champion/.test(GM.chapterEnding(S).title),'chapter ending text');
   const C=GM.create(GM.freshSave('cutover')); ok(!C.S.chapter||C.S.chapter==='cutover','the cutover save is unchanged'); ok(!GM.chapterEnding(C.S),'cutover keeps its own ending'); }
+
+section('Chapter 3: A+ vs. the AI');
+{ const G=GM.create(GM.freshSave('aivs')); GM.skipPrologue(G); G.events.length=0; const S=G.S, AV=GM.AIVS, ai=AV.ai(S);
+  ok(S.chapter==='aivs'&&G.cur.node.id==='hq_f2','starts in the bullpen'); walkTo(G,AV.FETCH.x+10); ok(G.target&&G.target.kind==='fetch','Fetch is there'); GM.interact(G); skipCards(G); for(let i=0;i<60;i++) step(G,0,0); ok(ai.stage==='askA','met Fetch');
+  for(let k=0;k<4;k++){ const L=AV.LESSONS[k];
+    ok(goTo(G,'hq_b1',AV.APX.x-20),'down to A+ ('+k+')'); ok(G.target&&G.target.kind==='aplus3','A+ is talkable'); GM.interact(G); closeDialog(G); ok(ai.stage==='source','A+ sends you to '+L.src);
+    talkTo(G,L.src); ok(ai.stage==='backA','learned '+L.topic+' from '+L.src);
+    ok(goTo(G,'hq_b1',AV.APX.x-20),'back to A+'); GM.interact(G); closeDialog(G); ok(ai.stage==='toF','A+ dictates');
+    ok(goTo(G,'hq_f2',AV.FETCH.x+10),'up to Fetch'); GM.interact(G); closeDialog(G); ok(ai.k===k+1,'Fetch learned lesson '+(k+1)); }
+  ok(ai.stage==='final','four lessons'); ok(goTo(G,'hq_b1',AV.APX.x-20),'down for the handover'); GM.interact(G); for(let i=0;i<120*4;i++){ step(G,0,0); if(G.dialog) GM.advance(G,null); }
+  ok(S.done,'the handover'); ok(/handover/i.test(GM.chapterEnding(S).title),'chapter ending'); }
 
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
