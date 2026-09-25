@@ -12,6 +12,7 @@ function mins(S){ const m=/(\d+):(\d+)\s*(AM|PM)/.exec(GM.clock(S)||''); if(!m) 
 PP.setLight(function(x,y){
   if(!G) return null; const N=G.cur.node;
   if(N&&N.era) return {dir:1,k:0.6,col:'255,226,170',rim:0.3};
+  if(N&&N.future) return N.id==='y2060'?{dir:-1,k:0.7,col:'255,250,240',rim:0.35}:{dir:1,k:0.35,col:'140,220,180',rim:0.4};
   if(N&&(N.dc||N.show)) return {dir:-1,k:0.55,col:N.show?'255,236,200':'235,240,255',rim:0.25};
   if(x>1092&&x<1908&&y<FH-10){ let best=null,bd=1e9; for(const f of FIX){ if(Math.abs(y-f.y)>60) continue; const d=Math.abs(f.x-x); if(d<bd){ bd=d; best=f; } }
     if(best) return {dir:best.x<x?-1:1,k:0.35+0.5*clamp(1-bd/90,0,1),col:'255,242,214',rim:0.18+0.3*clamp(1-bd/70,0,1)}; }
