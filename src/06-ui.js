@@ -77,6 +77,7 @@ function tone(freq,dur,vol,type,to,delay){ if(!AC)return; const o=AC.createOscil
 function footfall(ev,hard){
   switch(ev.type){
     case 'npcstep':{ const v=(1-ev.d/170)*0.05*(0.8+0.4*(ev.heavy-1)); if(ev.shoe==='dress') burst(1500,1.6,v*0.9,0.04); else if(ev.shoe==='boot') burst(Math.max(260,420-120*(ev.heavy-1)),1,v*1.3,0.09); else burst(650,0.8,v*0.7,0.06); } break;
+    case 'runstop': burst(2400,0.9,0.05,0.16,600); break;   case 'runstart': burst(300,0.6,0.04,0.25,900); break;
     case 'step':  burst(hard||ev.stone?950:520,hard||ev.stone?1.4:0.8,(0.04+0.09*clamp(ev.speed/CFG.walkSpeed,0,1))*(ev.prof==='down'?1.25:1),hard||ev.stone?0.07:0.11); break;
     case 'land':  burst(360,0.8,0.12+0.14*clamp(ev.speed/200,0,1),0.14); break;
     case 'jump':  burst(500,0.7,0.06,0.12,1400); break;   case 'roll': burst(300,0.6,0.10,0.16,700); break;
@@ -203,7 +204,7 @@ function frame(now){
   const h=G.hero, w=G.cur.world, target=Math.min(V.H/zoomStops[zi],V.W/250); zoomNow=zoomNow?zoomNow+(target-zoomNow)*(1-Math.exp(-6*dt)):target; V.zoom=zoomNow;
   if(EXT.camera&&EXT.camera(state,V,dt)){ }
   else if(state==='title'){ const ph=(now/1000)%28, past=ph<14; V.camx=past?-2600+Math.sin(now/7000)*140:1330+Math.sin(now/9000)*160; V.camy=past?-70:-110; V.titleFade=Math.max(0,1-Math.min(ph,Math.abs(ph-14),28-ph)/0.8); }
-  else{ V.camx+=(h.x+h.facing*24+h.vx*0.25-V.camx)*(1-Math.exp(-3.2*dt)); const standY=w.yAt(h.x)-34; V.camy+=(standY+(Math.min(h.y,standY+3)-standY-3)*0.35-V.camy)*(1-Math.exp(-2.8*dt)); }
+  else{ const lead=h.mode==='run'?70:24; V.camx+=(h.x+h.facing*lead+h.vx*0.25-V.camx)*(1-Math.exp(-3.2*dt)); const standY=w.yAt(h.x)-34; V.camy+=(standY+(Math.min(h.y,standY+3)-standY-3)*0.35-V.camy)*(1-Math.exp(-2.8*dt)); }
   V.quiet=state==='title'||state==='photo'||state==='ending-seq'; DRAW.render(ctx,V,G,now,dt);
   if(state==='title'&&V.titleFade>0){ ctx.setTransform(V.DPR,0,0,V.DPR,0,0); ctx.fillStyle='rgba(11,18,32,'+V.titleFade.toFixed(3)+')'; ctx.fillRect(0,0,V.W,V.H); }
   for(const f of EXT.after) f(ctx,V,G,state,dt,now);
