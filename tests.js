@@ -138,7 +138,10 @@ section('everyone walks their own way');
 section('people do things while they wait');
 { const G=newGame(), had=new Set(), kinds=new Set(); for(let i=0;i<120*40;i++){ step2(G); for(const q of G.npcs) if(q.w.idle){ had.add(q.def.id); kinds.add(q.w.idle.name); } }
   ok(had.size>=10,'people pick up habits near the player ('+had.size+')'); ok(kinds.size>=4,'several kinds ('+[...kinds].join(',')+')');
-  const pam=G.npcs.find(q=>q.def.id==='pam'); ok(!pam.w.idle||pam.w.idle.name==='type','Pam only types'); }
+  const pam=G.npcs.find(q=>q.def.id==='pam'); ok(!pam.w.idle||pam.w.idle.name==='type','Pam only types');
+  G.S.done=1; let danced=new Set(); for(let i=0;i<120*40;i++){ step2(G); for(const q of G.npcs) if(q.w.dancing) danced.add(q.def.id); } ok(danced.size>=5,'after midnight people dance ('+danced.size+')');
+  const H=newGame(); H.S.flags.started=1; H.S.met.pam=1; H.S.met.melissa=1; H.S.flags.catalogAsked=1; H.S.inv.label=1; talkTo(H,'melissa'); ok(H.S.signoffs.Catalog,'Catalog signs');
+  const who=new Set(); for(let i=0;i<120*2;i++){ step2(H); for(const q of H.npcs) if(q.w.act&&q.w.act.name==='clap') who.add(q.def.id); } ok(who.size>=2,'the room applauds a sign-off ('+[...who].join(',')+')'); }
 
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
@@ -190,7 +193,7 @@ section('full playthrough');
   runNetwork(G);
   for(const r of MAP.rooms) if(!S.rooms[r.id]) ok(goTo(G,r.node,(r.x0+r.x1)/2),'visit '+r.name);
   if(!S.eggs.catnip){ walkTo(G,GM.LIFE.MILO.x+10); GM.interact(G); closeDialog(G); talkTo(G,'tina'); walkTo(G,GM.LIFE.MILO.x+10); GM.interact(G); GM.advance(G,0); closeDialog(G); walkTo(G,900); GM.command(G,'throw'); for(let i=0;i<240;i++) step(G,0,0); }
-  talkTo(G,'ryan'); GM.command(G,'dance'); for(let i=0;i<240;i++) step(G,0,0); GM.command(G,'dance'); GM.command(G,'clap'); for(let i=0;i<300;i++) step(G,0,0); GM.command(G,'roll'); for(let i=0;i<300;i++) step(G,0,0);
+  ok(!GM.command(G,'dance')&&!GM.command(G,'clap')&&!GM.command(G,'roll'),'dancing, clapping and rolling belong to the cast');
   for(const r of MAP.rooms) ok(S.rooms[r.id],'room found: '+r.name);
   ok(S.points===GM.MAXPTS,'100% reachable: '+S.points+' / '+GM.MAXPTS); ok(GM.rank(S)==='Hecktown Legend','top rank');
 
@@ -201,7 +204,7 @@ section('full playthrough');
 
 section('random input soak (10 game-minutes)');
 { const G=newGame(); G.S.inv.badge=1; G.S.inv.tunnelkey=1; let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
-  let ix=0,iy=0; const cmds=['jump','roll','crawl','throw','read','dance','clap'];
+  let ix=0,iy=0; const cmds=['jump','crawl','throw','read'];
   for(let i=0;i<120*600;i++){ if(i%90===0){ ix=[-1,0,1,1,-1][Math.floor(rnd()*5)]; iy=[0,0,-1,1][Math.floor(rnd()*4)]; if(rnd()<0.3) GM.command(G,cmds[Math.floor(rnd()*cmds.length)]); if(rnd()<0.2){ GM.interact(G); closeDialog(G);} }
     step(G,ix,iy); }
   ok(true,'no exceptions'); console.log('  ended on '+(G.cur.node?G.cur.node.id:G.cur.link.id)+', '+GM.count(G.S.rooms)+' rooms found by luck'); }
