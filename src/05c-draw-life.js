@@ -10,6 +10,8 @@ P.car=(x,y,now,c,p)=>{ const col=CARS[(p.v||0)%CARS.length]; c.strokeStyle=INK; 
   c.fillStyle='#14171d'; for(const k of [-18,18]){ c.beginPath(); c.arc(x+k,y-6,6,0,7); c.fill(); c.fillStyle='#8d939c'; c.beginPath(); c.arc(x+k,y-6,2.2,0,7); c.fill(); c.fillStyle='#14171d'; }
   c.fillStyle='#f6ecd8'; c.fillRect(x+27,y-15,3,2.5); c.fillStyle='#e0563a'; c.fillRect(x-30,y-15,2.5,2.5);
   c.fillStyle='rgba(246,236,216,.5)'; c.fillRect(x-36,y-1,1.5,1.5); c.fillRect(x+34,y-1,1.5,1.5); };
+P.sitebanner=(x,y,now,c)=>{ const t=now/1000; c.fillStyle='#2f6f9f'; c.fillRect(x-36,y-78,72,16); c.strokeStyle=INK; c.lineWidth=0.8; c.strokeRect(x-36,y-78,72,16); c.fillStyle='#f6ecd8'; c.font='700 6px "IBM Plex Sans Condensed",sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('NEW WEBSITE  ·  LIVE TODAY',x,y-70);
+  for(let k=0;k<6;k++){ c.fillStyle=['#f2b544','#e0563a','#6fe08a'][k%3]; c.beginPath(); c.arc(x-30+k*12,y-62+Math.sin(t*3+k)*2,1.6,0,7); c.fill(); } c.fillStyle='#8d939c'; c.fillRect(x-38,y-80,2,20); c.fillRect(x+36,y-80,2,20); };
 P.picnic=(x,y,now,c)=>{ c.fillStyle='#8a6a48'; c.fillRect(x-22,y-18,44,3.5); c.fillRect(x-28,y-9,56,2.5); c.strokeStyle='#5a4432'; c.lineWidth=2.4; c.beginPath(); c.moveTo(x-14,y); c.lineTo(x-6,y-18); c.moveTo(x+14,y); c.lineTo(x+6,y-18); c.stroke(); };
 P.koi=(x,y,now,c)=>{ c.fillStyle='#3a5a4a'; c.beginPath(); c.ellipse(x,y+1.5,34,4.5,0,0,7); c.fill(); c.fillStyle='#2c5a78'; c.beginPath(); c.ellipse(x,y+1.5,31,3.3,0,0,7); c.fill();
   c.fillStyle='rgba(255,255,255,.18)'; c.fillRect(x-20,y+0.4,10,0.8); c.fillRect(x+6,y+2,8,0.7);
