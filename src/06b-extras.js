@@ -83,7 +83,7 @@ function photoPost(c,V,G){ const W=V.W, Hh=V.H; c.setTransform(V.DPR,0,0,V.DPR,0
 /* ---------------- the ending: montage, a line for everyone, the team photo ---------------- */
 let END=null; const portraits={};
 function portraitOf(look,key){ if(portraits[key]) return portraits[key]; const cv=document.createElement('canvas'); cv.width=cv.height=112; PP.portrait(cv.getContext('2d'),look,112); return portraits[key]=cv; }
-function endLines(){ const L=[]; for(const p of GM.PEOPLE) if(GM.EPI.ENDINGS[p.id]) L.push({look:p.look,key:p.id,text:GM.EPI.ENDINGS[p.id]}); L.push({look:D.HERO_LOOK,key:'hero',text:GM.EPI.ENDINGS.hero}); return L; }
+function endLines(){ const L=[]; for(const id of GM.ENDING_ORDER){ if(id==='hero'){ L.push({look:D.HERO_LOOK,key:'hero',text:GM.EPI.ENDINGS.hero}); continue; } const p=GM.PEOPLE.find(z=>z.id===id); if(p&&GM.EPI.ENDINGS[id]) L.push({look:id==='ash'?Object.assign({},p.look,{acc:'glasses',glasses:true}):p.look,key:id,text:GM.EPI.ENDINGS[id]}); } return L; }
 function startEnd(){ const G=H.G, S=G.S; if(S.runEnd==null) S.runEnd=S.run||0; try{ const b=JSON.parse(localStorage.getItem(BEST_KEY)||'null'); if(b==null||S.runEnd<b) localStorage.setItem(BEST_KEY,JSON.stringify(S.runEnd)); }catch(_){ }
   const dcs=GM.NET?GM.NET.DCS.filter(d=>S.flags['dc_'+d.id]).length:0, pages=GM.count(S.pages);
   END={phase:0,t:0,i:0,lines:endLines(),cards:[{card:'MIDNIGHT',sub:'ENDSBS *ALL  ·  completed normally',dur:6,style:'comic',panels:[{i:'✍',c:'Six signatures'},{i:'☎',c:'One bridge call'},{i:'🚚',c:dcs+' of 9 DCs back on the network'}]},
