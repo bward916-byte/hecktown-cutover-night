@@ -12,7 +12,9 @@ function weatherAt(time){ const p=time%420;
   const rain=p<150?0:(p<190?ss((p-150)/40):(p<300?1:(p<340?1-ss((p-300)/40):0)));
   const cloud=p<130?0:(p<170?ss((p-130)/40):(p<320?1:(p<360?1-ss((p-320)/40):0)));
   const mist=p<330?0:(p<360?ss((p-330)/30):(p<400?1:1-ss((p-400)/20)));
-  return {rain:rain,cloud:cloud,mist:mist*0.7}; }
+  const wind=p<40?0:(p<60?ss((p-40)/20):(p<150?1:(p<175?1-ss((p-150)/25):0)));
+  const puddle=p<190?0:(p<300?ss((p-190)/60):(p<400?1-ss((p-300)/100):0));
+  return {rain:rain,cloud:cloud,mist:mist*0.7,wind:wind,puddle:puddle}; }
 function tick(G,dt){
   const S=G.S; G.wx=weatherAt(S.time); if(G.wx.rain>0.7&&Math.random()<dt*0.02) G.wx.flash=1; G.flash=Math.max(0,(G.flash||0)-dt*3); if(G.wx.flash) G.flash=1;
   // the yard forklift: out, pause, beep back
