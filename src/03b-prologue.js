@@ -19,7 +19,7 @@ function card(title,sub,dur){ return {card:title,sub:sub||'',dur:dur||4}; }
 function dlg(who,pages){ return {dlg:who,pages:pages}; }
 function runCine(G,dt){
   while(G.cine&&G.cine.length){ const s=G.cine[0];
-    if(s.card!==undefined){ if(!G.card) G.card={title:s.card,sub:s.sub,t:0,dur:s.dur,style:s.style,panels:s.panels}; G.card.t+=dt; if(G.card.t<G.card.dur) return; G.card=null; G.cine.shift(); return; }
+    if(s.card!==undefined){ if(!G.card){ G.card={title:s.card,sub:s.sub,t:0,dur:s.dur,style:s.style,panels:s.panels,from:s.from,to:s.to}; if(s.style==='clock') G.events.push({type:'sfx',name:'whoosh'}); } G.card.t+=dt; if(G.card.t<G.card.dur) return; G.card=null; G.cine.shift(); return; }
     if(s.dlg){ if(!s.started){ s.started=true; const p=s.dlg; G.dialog={who:p.name,role:p.role,look:p.look,pages:s.pages,i:0,cine:true}; G.events.push({type:'sfx',name:'talk'}); return; } if(G.dialog) return; G.cine.shift(); continue; }
     if(s.fn){ G.cine.shift(); s.fn(G); continue; }
     G.cine.shift(); }
@@ -48,12 +48,12 @@ function finish38(G){
   const F=PEOPLE38.founder, K=PEOPLE38.kid, M=PEOPLE38.miller;
   G.cine=[dlg(M,['Mrs. Miller: "In this weather? Well. I suppose you said you would."','Mrs. Miller: "You showed up. That\'s the whole thing, isn\'t it."']),
     {fn:G=>G.events.push({type:'banner',text:'Paid in eggs. Entered as cash.'})},
-    card('SOME YEARS LATER','the same yard',4),{fn:later},
+    {card:'SOME YEARS LATER',sub:'the same yard',dur:4.5,style:'clock',from:1938,to:1946},{fn:later},
     dlg({name:F.name,role:'Grandpa',look:F.look},['"Farmers are counting on that feed, Blaine. Rain or no rain, it goes today."']),
     dlg(K,['Blaine: "Even in the rain, Grandpa?"']),
     dlg({name:F.name,role:'Grandpa',look:F.look},['"Especially in the rain. Show up for the people who count on you. That\'s the whole business."']),
     card('Show up for the people who count on you.','',5),
-    card('TONIGHT','Easton, Pennsylvania  ·  6:00 PM  ·  cutover night',4),{fn:arrive}];
+    {card:'TONIGHT',sub:'Easton, Pennsylvania  ·  6:00 PM  ·  cutover night',dur:8,style:'clock',from:1946,to:2026},{fn:arrive}];
   G.S.flags.p38=4;
 }
 /* ---------------- the portal: once the Ledger is whole, you can walk back into 1938 as yourself ---------------- */
@@ -68,7 +68,7 @@ function visit38(G){
   G.events.push({type:'save'});
 }
 function leave38(G){ const n=MAP.nodes.hq_b1; G.p38=null; G.cur={node:n,world:n.world}; G.hero=E.createWalker(n.world,GM.PORTAL_X+26); G.pose=E.poseOf(G.hero); G.S.pos={node:'hq_b1',x:G.hero.x}; G.events.push({type:'snap'}); G.events.push({type:'save'}); }
-GM.enter1938=function(G){ G.cine=[card('1938','something is wrong with the light',3.5),{fn:visit38}]; };
+GM.enter1938=function(G){ G.cine=[{card:'1938',sub:'something is wrong with the light',dur:5,style:'clock',from:2026,to:1938},{fn:visit38}]; };
 function target38(G){
   const h=G.hero, P=G.p38, st=G.S.flags.p38|0; if(!P||G.cine.length) return null;
   if(P.scene==='visit'){ let best=null,bd=1e9; const take=(d,t)=>{ if(d<bd){bd=d;best=t;} };
