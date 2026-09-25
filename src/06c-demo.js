@@ -7,6 +7,10 @@ const H=window.__hecktown, EXT=H.EXT, GM=HGAME, PP=HPEOPLE, D=HDRAW, E=WalkEngin
 const $=id=>document.getElementById(id), clamp=(v,a,b)=>v<a?a:(v>b?b:v);
 const rr=(c,x,y,w,h,r)=>{ c.beginPath(); if(c.roundRect) c.roundRect(x,y,w,h,r); else c.rect(x,y,w,h); };
 const LEN=46, CAST=['rianan','brians','bret','dave','aaron','umesh','fares','ash'];
+/* the "starring" roll: a lower-third for each of the cast as they run past centre stage */
+const BILL={rianan:['RIANAN','IT Department Head  ·  would stop for any cat'],brians:['BRIAN S','IT Manager  ·  nationally ranked pinball wizard'],bret:['BRET','Infrastructure  ·  has already checked your password'],
+  dave:['DAVE','iSeries Guru  ·  this close to Jeopardy'],aaron:['AARON','Network  ·  picks his line early'],umesh:['UMESH','EDI  ·  every 850 is his'],fares:['FARES','EDI  ·  Umesh\'s friend, and also his 850s'],
+  ash:['ASH','Salesforce  ·  built a flow for that'],greg:['GREG','Number Scientist  ·  in no particular hurry'],aplus:['A+','since 1985  ·  a monster, affectionately']};
 let S=null, idle=0;
 
 function person(id){ return GM.PEOPLE.find(p=>p.id===id); }
@@ -14,7 +18,7 @@ function build(){
   const world=E.makeWorld(E.surfaces(-500,0,[['flat',1800]]));
   const actors=CAST.map((id,i)=>{ const p=person(id), w=E.createWalker(world,-60-i*34); w.gait=B?B.gaitFor(p.look):undefined; return {id:id,p:p,w:w,pose:E.poseOf(w),inp:0,hold:0,said:{}}; });
   const greg=person('greg'), gw=E.createWalker(world,-90); gw.gait=B?B.gaitFor(greg.look):undefined;
-  return {t:0,world:world,actors:actors,greg:{p:greg,w:gw,pose:E.poseOf(gw)},mon:{x:-330,dir:1,run:false,mood:'mean'},milo:{x:250,run:0},bub:[],note:0,beat:0,conf:[],sting:{}}; }
+  return {cap:null,billed:{},t:0,world:world,actors:actors,greg:{p:greg,w:gw,pose:E.poseOf(gw)},mon:{x:-330,dir:1,run:false,mood:'mean'},milo:{x:250,run:0},bub:[],note:0,beat:0,conf:[],sting:{}}; }
 const say=(who,text,dur)=>{ S.bub=S.bub.filter(b=>b.who!==who); S.bub.push({who:who,text:text,t:dur||1.8}); };
 
 /* ---------------- music: a bouncy two-bar chase in C, faster and higher on the way back ---------------- */
@@ -58,10 +62,16 @@ function tick(dt){ S.t+=dt; const t=S.t, ph=phase(), M=S.mon, W=S.world;
   const g=S.greg; let gi=0; if(t>9&&t<33) gi=0.32; if(t>9.2&&!S.sting.g1){ S.sting.g1=1; say('greg','Fiscal.',2); } if(ph==='greg'&&!S.sting.g2){ S.sting.g2=1; say('greg','...Counting.',2); } g.pose=E.updateWalker(g.w,W,gi,dt); g.w.events.length=0;
   for(const b of S.bub) b.t-=dt; S.bub=S.bub.filter(b=>b.t>0);
   for(const k of S.conf){ k.x+=k.vx*dt; k.y+=k.vy*dt; k.r+=dt*6; }
+  // who's who, as each one crosses the middle of the stage
+  if(ph==='chase'||ph==='greg'){ const bill=id=>{ if(S.billed[id]||(S.cap&&S.cap.t<1.5)) return; S.billed[id]=1; S.cap={id:id,t:0}; };
+    if(S.mon.x>120) bill('aplus'); for(const a of S.actors) if(a.w.x>250&&a.w.x<400) bill(a.id); if(ph==='greg'||S.greg.w.x>260) bill('greg'); }
+  if(S.cap){ S.cap.t+=dt; if(S.cap.t>2.4) S.cap=null; }
   music(dt); if(t>=LEN) stop(); }
 
 /* ---------------- drawing ---------------- */
-function draw(c,V,now){ const W=V.W, Hh=V.H, t=S.t, ph=phase(), sc=Math.min(W/560,Hh/290)*0.95, ox=W/2-320*sc, oy=Hh*0.68;
+function draw(c,V,now){ const W=V.W, Hh=V.H, t=S.t, ph=phase(), tall=W<Hh, sc=tall?Math.min(W/300,Hh/300):Math.min(W/560,Hh/290)*0.95;
+  if(tall){ const xs=S.actors.map(a=>a.w.x).concat(S.mon.x>-200?[S.mon.x]:[]), mid=xs.reduce((p,q)=>p+q,0)/Math.max(1,xs.length); S.camX=(S.camX==null?320:S.camX)+(clamp(mid,150,500)-(S.camX==null?320:S.camX))*0.06; }   // on a phone held upright, follow the chase
+  const ox=W/2-(tall?S.camX:320)*sc, oy=Hh*(tall?0.62:0.68);
   c.setTransform(V.DPR,0,0,V.DPR,0,0);
   if(ph==='intro'){ c.fillStyle='#0b1220'; c.fillRect(0,0,W,Hh); const txt='PHILLIPS IT PRESENTS', n=Math.floor(clamp(t/1.8,0,1)*txt.length); c.fillStyle='#7fe0a0'; c.font='700 '+Math.min(22,W/22)+'px "IBM Plex Mono",monospace'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(txt.slice(0,n)+(Math.floor(t*3)%2?'▮':' '),W/2,Hh*0.45);
     if(t>2.2){ c.globalAlpha=clamp((t-2.2)/0.6,0,1); c.fillStyle='#f6ecd8'; c.font='italic '+Math.min(18,W/26)+'px Georgia,serif'; c.fillText('a cutover in one act, with music',W/2,Hh*0.45+40); c.globalAlpha=1; } return; }
@@ -71,7 +81,7 @@ function draw(c,V,now){ const W=V.W, Hh=V.H, t=S.t, ph=phase(), sc=Math.min(W/56
   c.save(); c.translate(ox,oy); c.scale(sc,sc);
   for(let x=-120;x<780;x+=120){ c.fillStyle='#2f3a4a'; c.fillRect(x+20,-120,70,70); c.fillStyle='rgba(255,236,190,.14)'; c.fillRect(x+24,-116,62,62); c.fillStyle='#1d2430'; c.fillRect(x+54,-116,2,62);
     c.fillStyle='#f6ecd8'; c.fillRect(x+40,-190,40,3); const lg=c.createLinearGradient(0,-187,0,0); lg.addColorStop(0,'rgba(255,240,200,.14)'); lg.addColorStop(1,'rgba(255,240,200,0)'); c.fillStyle=lg; c.beginPath(); c.moveTo(x+40,-187); c.lineTo(x+80,-187); c.lineTo(x+110,0); c.lineTo(x+10,0); c.fill(); }
-  c.fillStyle='#1d2430'; c.fillRect(-400,0,1500,200); c.fillStyle='#4a5566'; c.fillRect(-400,0,1500,3);
+  c.fillStyle='#1d2430'; c.fillRect(-400,0,1500,700); c.fillStyle='#4a5566'; c.fillRect(-400,0,1500,3);
   if(ph!=='finale'){ c.fillStyle='#243447'; c.fillRect(220,-160,200,22); c.fillStyle='#f2b544'; c.font='700 12px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('HECKTOWN ROAD',320,-149); }
   if(D.PROPS.pinball) D.PROPS.pinball(430,0,now,c);
   const gy=()=>0, T=now/1000;
@@ -83,11 +93,17 @@ function draw(c,V,now){ const W=V.W, Hh=V.H, t=S.t, ph=phase(), sc=Math.min(W/56
   c.restore();
   // bubbles, in screen space
   c.font='700 '+Math.round(Math.max(11,12*sc))+'px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.textAlign='center'; c.textBaseline='middle';
-  for(const b of S.bub){ let x,y; if(b.who==='aplus'){ x=ox+S.mon.x*sc; y=oy-100*sc; } else if(b.who==='greg'){ x=ox+S.greg.pose.head.x*sc; y=oy+(S.greg.pose.head.y-22)*sc; } else { const a=S.actors.find(z=>z.id===b.who); if(!a) continue; x=ox+a.pose.head.x*sc; y=oy+(a.pose.head.y-22)*sc; }
-    x=clamp(x,80,W-80); const tw=c.measureText(b.text).width+18; c.fillStyle=b.who==='aplus'?'rgba(6,14,8,.92)':'rgba(246,236,216,.96)'; rr(c,x-tw/2,y-13,tw,26,10); c.fill(); if(b.who==='aplus'){ c.strokeStyle='#6fe08a'; c.lineWidth=1.5; c.stroke(); }
+  const placed=[]; for(const b of S.bub){ let x,y; if(b.who==='aplus'){ x=ox+S.mon.x*sc; y=oy-100*sc; } else if(b.who==='greg'){ x=ox+S.greg.pose.head.x*sc; y=oy+(S.greg.pose.head.y-22)*sc; } else { const a=S.actors.find(z=>z.id===b.who); if(!a) continue; x=ox+a.pose.head.x*sc; y=oy+(a.pose.head.y-22)*sc; }
+    const tw=c.measureText(b.text).width+18; x=clamp(x,tw/2+8,W-tw/2-8); for(let k=0;k<6&&placed.some(r=>Math.abs(r[0]-x)<(r[2]+tw)/2+4&&Math.abs(r[1]-y)<28);k++) y-=30; placed.push([x,y,tw]); c.fillStyle=b.who==='aplus'?'rgba(6,14,8,.92)':'rgba(246,236,216,.96)'; rr(c,x-tw/2,y-13,tw,26,10); c.fill(); if(b.who==='aplus'){ c.strokeStyle='#6fe08a'; c.lineWidth=1.5; c.stroke(); }
     c.fillStyle=b.who==='aplus'?'#7fe0a0':'#243447'; c.fillText(b.text,x,y+0.5); }
   if(ph==='finale'){ const a=clamp((t-38)/1,0,1); c.globalAlpha=a; const tf=D.fitFont(c,'HECKTOWN ROAD','700 ','"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif',Math.min(54,Hh/7),W*0.84);
     c.fillStyle='#f6ecd8'; c.font='700 '+tf+'px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.fillText('HECKTOWN ROAD',W/2,Hh*0.14); c.fillStyle='#7fe0a0'; c.font='700 '+Math.round(tf*0.36)+'px "IBM Plex Mono",monospace'; c.fillText('> CUTOVER NIGHT_',W/2,Hh*0.14+tf*0.75); c.globalAlpha=1; }
+  if(S.cap&&BILL[S.cap.id]){ const [nm,tag]=BILL[S.cap.id], a=clamp(Math.min(S.cap.t/0.25,(2.4-S.cap.t)/0.3),0,1), x0=Math.max(16,W*0.05), y0=Hh-92, slide=(1-a)*-40;
+    const nf=D.fitFont(c,nm,'700 ','"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif',26,W*0.6), tf=D.fitFont(c,tag,'italic ','Georgia,serif',15,W*0.86);
+    c.globalAlpha=a; c.textAlign='left'; c.font='italic '+tf+'px Georgia,serif'; const w=Math.max(c.measureText(tag).width,nf*nm.length*0.6)+28;
+    c.fillStyle=S.cap.id==='aplus'?'rgba(6,14,8,.9)':'rgba(16,26,46,.85)'; rr(c,x0+slide,y0,w,54,8); c.fill(); c.fillStyle=S.cap.id==='aplus'?'#6fe08a':'#f2b544'; c.fillRect(x0+slide,y0,5,54);
+    c.fillStyle=S.cap.id==='aplus'?'#7fe0a0':'#f2b544'; c.font='700 '+nf+'px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.fillText((S.cap.id==='aplus'?'':'starring  ')+nm,x0+slide+16,y0+18);
+    c.fillStyle='#f6ecd8'; c.font='italic '+tf+'px Georgia,serif'; c.fillText(tag,x0+slide+16,y0+39); c.globalAlpha=1; c.textAlign='center'; }
   c.fillStyle='rgba(246,236,216,.5)'; c.font='500 12px "IBM Plex Sans",sans-serif'; c.fillText(V.touch?'tap to play':'press any key to play',W/2,Hh-24); }
 
 /* ---------------- start, stop, attract ---------------- */
