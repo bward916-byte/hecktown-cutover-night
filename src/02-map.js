@@ -90,7 +90,7 @@ room('hq_roof',1100,1556,'Antenna Farm');         room('hq_roof',1724,1900,'Roof
 room('hq_b1',1724,1900,'Server Room');            room('hq_b1',1330,1556,'Legacy Archive');      room('hq_b1',1110,1330,'Basement Storage');
 room('hq_b1',420,1090,'The Old Tunnel',{dark:true});
 room('gar_loft',680,900,"Lou's Loft");
-room('wh_mezz',2640,2890,'Pick Module');          room('wh_mezz',2900,3160,'Cage Office');
+room('wh_mezz',2640,2752,'Pick Module');          room('wh_mezz',2752,2890,'Conveyor Crossover'); room('wh_mezz',2900,3160,'Cage Office');
 room('wh_cat',2340,3060,'Top Rack Catwalk');      room('wh_cat',2260,2335,'HVAC Duct');
 room('tun_2',420,790,'Lower Tunnel',{dark:true}); room('tun_2',790,910,'Collapsed Section',{dark:true});
 room('tun_2',910,1520,'Pump Gallery',{dark:true});
@@ -104,6 +104,7 @@ gate('g_tunnel','hq_b1',1100,'tunnelkey','Bricked-over door');
 gate('g_aplus','tun_3',1890,'signoffs','A+ Machine Room');
 duct('wh_cat',2262,2336);
 duct('tun_2',800,900);
+duct('wh_mezz',2766,2846);                         // the mezzanine conveyor crosses the walkway at knee height: crawl under it
 
 /* ---------------- props: scenery only ---------------- */
 [[300,'bench'],[372,'tree'],[270,'tree'],[430,'lamp'],[590,'tacotruck'],[1000,'booth'],[1060,'lamp'],[1960,'lamp'],[2040,'trailer'],[3300,'trailer'],[3380,'lamp'],[3460,'mule'],
