@@ -856,7 +856,7 @@ const PEOPLE=[
  P('aaron','Aaron','Network Specialist',['#d9a77c','#1f1a17','hoodie','#4a4f6b','#1f2330','cable'],'hq_roof',1300,{wander:[1180,1480]}),
  P('dave','Dave','iSeries Guru',['#eec2a0','#8e8e8e','beard','#8a4a3a','#3a3d47','flannel'],'hq_b1',1820),
  P('john','John','iSeries Manager',['#e9bb95','#3a2c22','short','#2f5f8f','#2b2f3a','keys'],'hq_f2',1512),
- P('greg','Greg','Number Scientist',['#9a9a9a','#777777','wavy','#8a8a8a','#5a5a5a','cardigan'],'hq_b1',1440,{wander:[1350,1530]}),
+ P('greg','Greg','Number Scientist',['#9a9a9a','#777777','wavy','#8a8a8a','#5a5a5a','cardigan'],'hq_b1',1440,{wander:[1400,1530]}),
  P('pam','Pam','Item Maintenance (PIM)',['#f1c9a5','#6a4a3a','bun','#7a5a8a','#2b2f3a','lanyard'],'hq_f2',1236,{busy:true}),
  P('melissa','Melissa','Item Maintenance (PIM)',['#e8b48e','#2a1e18','ponytail','#3f7f8f','#2b2f3a','lanyard'],'hq_f2',1284,{busy:true}),
  P('cathy','Cathy','PIM Assistant',['#f0c7a3','#b07a4a','wavy','#c25a7a','#2b2f3a','lanyard'],'hq_f2',1320,{lines:['I\'m Pam and Melissa\'s assistant. They\'re in the PIM. They are always in the PIM. I bring them things.','Four hundred attributes on a bag of kibble. I have opinions about every one of them.','If you need them, talk loud. They won\'t look up from the grid, but they\'re listening.']}),
@@ -1572,7 +1572,7 @@ GM.PTS_SKU=30; GM.STORY={st:st,aplusSay:aplusSay,aplusMood:aplusMood,SKUS:SKUS,V
 'use strict';
 const GM=root.HGAME;
 const clamp=(v,a,b)=>v<a?a:(v>b?b:v), ss=t=>{ t=clamp(t,0,1); return t*t*(3-2*t); };
-const PORTAL_X=1392;
+const PORTAL_X=1350;                                      // west end of the archive, clear of Greg's pacing
 const LIFT={x0:3236,x1:3440};
 
 /* A seven-minute sky: clear, clouds build, rain, it clears, a little mist, clear again. Driven by play time so it survives a save. */
@@ -1593,7 +1593,7 @@ function tick(G,dt){
   if(G.portalOpen&&!S.flags.ap_portal&&GM.STORY){ S.flags.ap_portal=1; GM.STORY.aplusSay(G,'YOU READ THE WHOLE LEDGER. NOBODY READS THE LEDGER. I OPENED A DOOR IN THE ARCHIVE. GO SEE WHERE IT STARTED.'); }
   const N=G.cur.node, h=G.hero;
   if(G.portalOpen&&N&&N.id==='hq_b1'&&!G.dialog&&!G.p38){ const d=Math.abs(PORTAL_X-h.x); let best=G.target, bd=best?Math.abs(best.x-h.x)+(best.kind==='item'||best.kind==='page'?-40:0):1e9;
-    if(d<28&&d<bd) best={kind:'portal',label:'Step through',name:'1938',x:PORTAL_X}; G.target=best; }
+    if(d<28&&d-10<bd) best={kind:'portal',label:'Step through',name:'1938',x:PORTAL_X}; G.target=best; }
 }
 const base={update:GM.update,interact:GM.interact};
 GM.update=function(G,ix,iy,dt){ base.update(G,ix,iy,dt); tick(G,dt); };
