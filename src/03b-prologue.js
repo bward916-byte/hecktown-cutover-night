@@ -144,6 +144,6 @@ GM.command=function(G,name){ if(G.card||(G.p38&&G.p38.scene==='later')) return f
 GM.objective=function(S){ return S.pos.node==='y1938'?OBJ[S.flags.p38|0]:base.objective(S); };
 GM.clock=function(S){ return S.pos.node==='y1938'?'1938':base.clock(S); };
 GM.skipPrologue=function(G){ if(G.p38||(G.cur.node&&G.cur.node.id==='y1938')) arrive(G); };
-GM.card=card; GM.dlg=dlg; GM.P38={X:X,HAND:HAND,PEOPLE:PEOPLE38};
+GM.card=card; GM.dlg=dlg; GM.runCine=runCine; GM.P38={X:X,HAND:HAND,PEOPLE:PEOPLE38};
 GM.HERO={name:'Brian W',role:'Web Developer'};
 })(typeof globalThis!=='undefined'?globalThis:this);
