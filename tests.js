@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -184,6 +184,7 @@ section('full playthrough');
   talkTo(G,'greg'); let got=0; GM.PAGES.forEach((pg,i)=>{ if(got<6&&pg[0]!=='tun_2'&&pg[0]!=='tun_3'){ useAt(G,pg[0],pg[1],'page'); got++; } });
   talkTo(G,'greg'); ok(S.inv.tunnelkey,'tunnel key');
   ok(goTo(G,'tun_3',2000),'reach the deep level through the tunnels and the crawl'); useAt(G,'tun_3',2110,'aplus'); ok(S.done,'ending reached');
+
   ok(S.flags.ch1&&S.flags.halfway&&S.flags.ch3&&S.flags.ch4,'chapter cards and the halfway call all played'); ok(S.flags.reveal,'the Server Room reveal played'); ok(S.flags.ap_so6&&S.flags.ap_badge,'A+ spoke up along the way');
   ok(['rianan','aaron','dave','ash','umesh','john','hero'].every(id=>S.flags['vig_'+id]),'vignettes played ('+Object.keys(S.flags).filter(k=>k.indexOf('vig_')===0).join(',')+')');
   ok(G.S.flags.ap_portal||true,'');
@@ -191,11 +192,20 @@ section('full playthrough');
   // 100%: everything else
   GM.PAGES.forEach((pg,i)=>{ if(!S.pages[i]) useAt(G,pg[0],pg[1],'page'); });
   for(const p of GM.PEOPLE) if(!S.met[p.id]) talkTo(G,p.id);
-  ok(G.portalOpen,'the portal opens once the Ledger is whole'); ok(goTo(G,'hq_b1',GM.PORTAL_X+12),'reach the portal'); ok(G.target&&G.target.kind==='portal','portal is usable'+(G.target&&G.target.kind==='portal'?'':' (hero '+G.hero.x.toFixed(0)+' '+G.hero.mode+' on '+(G.cur.node&&G.cur.node.id)+', target '+(G.target?G.target.kind+' '+G.target.name:'none')+', dialog '+!!G.dialog+', card '+!!G.card+')')); GM.interact(G);
+  ok(G.portalOpen,'the portal opens once the Ledger is whole'); ok(goTo(G,'hq_b1',GM.PORTAL_X+12),'reach the portal'); ok(G.target&&G.target.kind==='portal','portal is usable'+(G.target&&G.target.kind==='portal'?'':' (hero '+G.hero.x.toFixed(0)+' '+G.hero.mode+' on '+(G.cur.node&&G.cur.node.id)+', target '+(G.target?G.target.kind+' '+G.target.name:'none')+', dialog '+!!G.dialog+', card '+!!G.card+')')); GM.interact(G); if(G.dialog&&G.dialog.choices) GM.advance(G,0);   // after the ending the portal asks which way
   for(let i=0;i<120*6&&G.cur.node.id!=='y1938';i++) step(G,0,0); ok(G.cur.node.id==='y1938'&&G.p38&&G.p38.scene==='visit'&&S.eggs.y1938,'walked into 1938');
   walkTo(G,GM.P38.X.founder+40); ok(G.target&&G.target.act==='talk38','the Founder will talk'); GM.interact(G); closeDialog(G);
   const saved38=JSON.parse(JSON.stringify(S)); const Gs=GM.create(saved38); ok(Gs.cur.node.id==='hq_b1','a save made in 1938 resumes back in the archive');
   walkTo(G,GM.P38.X.start-70+10); ok(G.target&&G.target.act==='back','the way back'); GM.interact(G); ok(G.cur.node.id==='hq_b1'&&!G.p38,'back in the Legacy Archive');
+  // the time machine: forward to 2060, on to 3270, home
+  { const FU=GM.FUTURE; ok(goTo(G,'hq_b1',GM.PORTAL_X+12),'back to the portal'); ok(G.target&&G.target.kind==='portal','portal after the ending'+(G.target&&G.target.kind==='portal'?'':' (target '+(G.target?G.target.kind+' '+G.target.name:'none')+' hero '+G.hero.x.toFixed(0)+' '+G.hero.mode+' node '+G.cur.node.id+' dialog '+!!G.dialog+' card '+!!G.card+' cine '+(G.cine&&G.cine.length)+' open '+G.portalOpen+')')); GM.interact(G); ok(G.dialog&&G.dialog.choices&&G.dialog.choices.length===2,'the portal offers both ways'); GM.advance(G,1);
+    for(let i=0;i<120*8&&G.cur.node.id!=='y2060';i++) step(G,0,0); ok(G.cur.node.id==='y2060'&&S.eggs.y2060,'arrived in 2060');
+    walkTo(G,FU.F2060+520); ok(G.target&&G.target.act==='exhibit','the A+ exhibit'); GM.interact(G); closeDialog(G);
+    const g60=FU.fut(G).npcs.find(q=>q.def.id==='greg'); walkTo(G,g60.w.x+12); ok(G.target&&G.target.act==='talk'&&G.target.q===g60,'Greg is in 2060'); GM.interact(G); closeDialog(G);
+    walkTo(G,FU.F2060+1440); ok(G.target&&G.target.act==='onward','onward to 3270'); GM.interact(G); for(let i=0;i<120*9&&G.cur.node.id!=='y3270';i++) step(G,0,0); ok(G.cur.node.id==='y3270'&&S.eggs.y3270,'arrived in 3270');
+    const sv=JSON.parse(JSON.stringify(S)); const Gf=GM.create(sv); ok(Gf.cur.node.id==='y3270'&&FU.fut(Gf).npcs.length===4,'a save in 3270 resumes there');
+    walkTo(G,FU.F3270+1300); ok(G.target&&G.target.act==='aplus','A+ runs the moon'); GM.interact(G); ok(G.dialog&&/MOON|CAME BACK/.test(G.dialog.pages[0]),'and says so'); closeDialog(G);
+    walkTo(G,FU.F3270+40); ok(G.target&&G.target.act==='back','the airlock home'); GM.interact(G); for(let i=0;i<120*10&&G.cur.node.id!=='hq_b1';i++) step(G,0,0); ok(G.cur.node.id==='hq_b1','home in 2026'); }
   for(let k=0;k<6&&!S.eggs.jeopardy;k++) talkTo(G,'dave'); ok(S.eggs.jeopardy,'Daily Double won');
   runNetwork(G);
   for(const r of MAP.rooms) if(!S.rooms[r.id]) ok(goTo(G,r.node,(r.x0+r.x1)/2),'visit '+r.name);
