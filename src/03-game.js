@@ -53,6 +53,16 @@ const WARDROBE={rianan:{top:'blazer'},brians:{top:'polo'},ryan:{top:'tee'},ash:{
   blaine:{top:'blazer'},nick:{top:'blazer'},kim:{top:'cardigan'},ashley:{top:'button'},jessica:{top:'blazer'},jennifer:{top:'sweater'},josh:{top:'polo'},stephanie:{top:'polo'},wendy:{top:'polo'},marc:{top:'button'},
   dee:{top:'button',bottom:'slacks'},lou:{top:'tee',bottom:'work',shoe:'boot'},ben:{top:'tee',bottom:'work',shoe:'boot'},priya:{top:'tee',shoe:'sneaker'},frank:{top:'flannel',bottom:'work'},walt:{top:'button',bottom:'work',shoe:'boot'}};
 for(const p of PEOPLE) if(WARDROBE[p.id]) Object.assign(p.look,WARDROBE[p.id]);
+/* what people do while they wait: a few habits each, picked at random now and then */
+const HABITS={rianan:['phone','fold','shift'],brians:['fold','sip','shift'],ryan:['phone','shift'],ash:['type','sip'],umesh:['type','sip','shift'],jose:['type','fold'],andrew:['type','phone','sip'],aaron:['stretch','fold','shift'],
+  dave:['sip','fold','stretch'],john:['fold','phone','sip'],greg:['shift','fold'],pam:['type'],melissa:['type'],cathy:['sip','phone','shift'],bret:['phone','stretch','shift'],blaine:['fold','sip'],nick:['phone','fold'],kim:['type','sip'],
+  ashley:['type','phone'],jessica:['phone','fold'],jennifer:['type','sip'],josh:['type','phone'],stephanie:['type','phone'],wendy:['type','sip'],marc:['type','sip'],dee:['fold','shift'],lou:['stretch','sip'],ben:['stretch','shift'],
+  priya:['stretch'],rosa:['phone','stretch','shift'],dot:['phone','stretch'],sal:['phone','shift'],marisol:['phone','stretch'],tina:['sip','fold'],frank:['fold','shift'],walt:['sip','shift']};
+const IDLE_LEN={type:[6,12],sip:[2.8,3.2],phone:[5,9],stretch:[2.2,2.6],fold:[5,10],shift:[6,10]};
+function idleTick(q,dt){ const w=q.w; if(w.act||w.reading||w.dancing||w.mode!=='walk') return; if(w.idle) return;
+  q.idleT=(q.idleT==null?1+Math.random()*4:q.idleT)-dt; if(q.idleT>0) return;
+  const L=(q.def&&(q.def.habits||HABITS[q.def.id]))||['shift','fold','phone'], n=L[Math.floor(Math.random()*L.length)], r=IDLE_LEN[n];
+  w.idle={name:n,t:0,dur:r[0]+Math.random()*(r[1]-r[0])}; q.idleT=(q.def&&q.def.busy)?0.2:2+Math.random()*5; }
 const BISCUIT={id:'biscuit',name:'Biscuit',node:'ground',x:340,homeX:2740};
 
 /* ---------------- things to pick up or use ---------------- */
@@ -79,7 +89,7 @@ const ITEMS=[
 ];
 const TERMS=[{id:'t_dock',node:'ground',x:2260,where:'Receiving Dock'},{id:'t_roof',node:'hq_roof',x:1840,where:'Roof Garden'},{id:'t_gate',node:'ground',x:1010,where:'Security Gate'}];
 
-const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg*4+PTS.duct+PTS.jeopardy+PTS.sku+PTS.portal+PTS.dc*9;
+const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg+PTS.duct+PTS.jeopardy+PTS.sku+PTS.portal+PTS.dc*9;
 const RANKS=[[0,'New Badge'],[12,'Ticket Closer'],[30,'On-Call'],[50,'Change Approver'],[72,'Cutover Lead'],[95,'Hecktown Legend']];
 
 function freshSave(){ return {v:1,flags:{},inv:{},met:{},rooms:{},pages:{},eggs:{},signoffs:{},terms:{},gates:{},points:0,time:0,done:false,pos:{node:'ground',x:1150}}; }
@@ -305,8 +315,8 @@ function command(G,name){
   if(G.dialog) return false; const h=G.hero;
   if(h.mode==='crawl'&&(name==='crawl'||name==='jump')&&inDuct(G,16)){ G.events.push({type:'hint',text:'Too low to stand up in here.'}); return false; }
   const ok=E.command(h,G.cur.world,name);
-  if(ok&&(name==='dance'||name==='clap')&&!G.S.eggs[name]){ for(const q of G.npcs) if(q.node===G.cur.node&&Math.abs(q.w.x-h.x)<90){ G.S.eggs[name]=1; award(G,PTS.egg,name==='dance'?'Morale: danced for '+q.def.name:'Morale: a round of applause for '+q.def.name); q.clap=0.5; break; } }
-  if(ok&&name==='roll'&&!G.S.eggs.roll){ G.S.eggs.roll=1; award(G,PTS.egg,'Stop, drop and roll'); }
+  if(ok&&(name==='dance'||name==='clap')&&!G.S.eggs[name]){ for(const q of G.npcs) if(q.node===G.cur.node&&Math.abs(q.w.x-h.x)<90){ G.S.eggs[name]=1; award(G,0,name==='dance'?'Morale: danced for '+q.def.name:'Morale: a round of applause for '+q.def.name); q.clap=0.5; break; } }
+  if(ok&&name==='roll'&&!G.S.eggs.roll){ G.S.eggs.roll=1; award(G,0,'Stop, drop and roll'); }
   return ok;
 }
 
@@ -347,14 +357,15 @@ function update(G,ix,iy,dt){
     const near=Math.abs(q.w.x-h.x)<900; q.live=near; if(!near) continue;
     let inp=0; const p=q.def, same=q.node===N, dx=h.x-q.w.x;
     if(q.clap>0){ q.clap-=dt; if(q.clap<=0) E.command(q.w,q.node.world,'clap'); }
-    if(same&&Math.abs(dx)<70){ if(!p.busy&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); q.wait=Math.max(q.wait,1.5); }   // busy people keep their eyes on the screen
+    if(same&&Math.abs(dx)<70){ if(!p.busy&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); q.wait=Math.max(q.wait,1.5); if(!p.busy&&q.w.idle&&q.w.idle.name!=='shift'){ q.w.idle=null; q.idleT=2; } }   // busy people keep their eyes on the screen
     else if(p.wander){ q.wait-=dt; if(q.wait<=0){ if(Math.abs(q.goal-q.w.x)<6){ q.goal=p.wander[0]+Math.random()*(p.wander[1]-p.wander[0]); q.wait=2+Math.random()*7; } else inp=Math.sign(q.goal-q.w.x)*0.5*((q.w.gait&&q.w.gait.pace)||1); } }
+    if(inp===0) idleTick(q,dt); else if(q.w.idle) q.w.idle=null;
     q.pose=E.updateWalker(q.w,q.node.world,inp,dt); q.w.events.length=0;
   }
   // Biscuit
   const b=G.biscuit; b.t+=dt; if(b.run){ b.x+=260*dt; if(b.x>=BISCUIT.homeX){ b.x=BISCUIT.homeX; b.run=0; } }
 }
 
-root.HGAME={create:create,update:update,interact:interact,advance:advance,command:command,freshSave:freshSave,objective:objective,tasks:tasks,percent:percent,rank:rank,clock:clock,count:count,
+root.HGAME={idleTick:idleTick,create:create,update:update,interact:interact,advance:advance,command:command,freshSave:freshSave,objective:objective,tasks:tasks,percent:percent,rank:rank,clock:clock,count:count,
   PEOPLE:PEOPLE,PAGES:PAGES,ITEMS:ITEMS,TERMS:TERMS,SIGNOFFS:SIGNOFFS,MAXPTS:MAXPTS,BISCUIT:BISCUIT,needMet:needMet};
 })(typeof globalThis!=='undefined'?globalThis:this);
