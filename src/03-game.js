@@ -121,8 +121,8 @@ function tasks(S){
   t.push({title:'Level 2 badge',status:st(S.inv.badge,S.flags.started),note:S.flags.rfcAsked?'RFC form is on the Dev Bullpen printer. Bring it to Andrew.':'Andrew, Help Desk, HQ ground floor.'});
   const so=(name,who,where,asked,note)=>t.push({title:'Sign-off: '+name,status:st(S.signoffs[name],S.flags.started),note:S.signoffs[name]?who+' signed.':(asked?note:who+', '+where+'.')});
   so('Network','Aaron','HQ roof',S.flags.netAsked,S.inv.spool?'Bring the cable spool to Aaron on the roof.':'Aaron lent his cable spool to Lou. Check the loft over the garage.');
-  so('Backup','Dave','Server Room, HQ basement (badge)',S.flags.backupAsked,S.inv.tape?'Bring the tape to Dave.':'The SAVLIB tape is in the Cage Office on the warehouse mezzanine (badge).');
-  so('Catalog','Pam and Melissa','PIM Room, HQ 2nd floor',S.flags.catalogAsked,S.inv.label?'Bring the label to Pam.':'They need a SKU label sample from the Top Rack Catwalk in the warehouse.');
+  so('Backup','Dave','Server Room, HQ basement (badge)',S.flags.backupAsked,S.inv.tape?'Bring the tape to Dave.':'The SAVLIB tape is in the Cage Office on the warehouse mezzanine (badge). Crawl under the conveyor crossover to get there.');
+  so('Catalog','Pam and Melissa','PIM Room, HQ 2nd floor',S.flags.catalogAsked,S.inv.label?'Bring the label to Pam.':'They need a SKU label sample from the Top Rack Catwalk in the warehouse: up the mezzanine, crawl under the conveyor, then the far stairs.');
   so('EDI','Umesh','EDI & Integration, HQ 2nd floor',S.flags.ediAsked,S.inv.bol?'Bring the bill of lading to Umesh.':'Get tonight\'s bill of lading from Rosa at the Receiving Dock.');
   so('Storefront','Ash','Dev Bullpen, HQ 2nd floor',S.flags.sfAsked,S.inv.coffee?'Bring the coffee to Ash.':'Ash needs a coffee from Tina\'s Tacos, out in the west lot.');
   so('Jobs','John','War Room, HQ 2nd floor',S.flags.jobsAsked,count(S.terms)>=3?'All three queues held. Tell John.':'Hold the job queue at three green-screen terminals: '+TERMS.map(x=>x.where+(S.terms[x.id]?' (held)':'')).join(', ')+'.');
@@ -350,7 +350,7 @@ function update(G,ix,iy,dt){
   const N=G.cur.node;
   if(N){
     for(const r of MAP.rooms) if(r.node===N.id&&!S.rooms[r.id]&&h.x>r.x0+6&&h.x<r.x1-6){ S.rooms[r.id]=1; award(G,PTS.room,'Discovered: '+r.name); G.events.push({type:'save'});
-      if(r.name==='HVAC Duct'||r.name==='Collapsed Section'){ if(!S.eggs.duct){ S.eggs.duct=1; award(G,PTS.duct,'Tight squeeze'); } } }
+      if(r.name==='HVAC Duct'||r.name==='Collapsed Section'||r.name==='Conveyor Crossover'){ if(!S.eggs.duct){ S.eggs.duct=1; award(G,PTS.duct,'Tight squeeze'); } } }
     for(const g of MAP.gates) if(g.node===N.id&&!g.open&&Math.abs(g.x-h.x)<26&&needMet(S,g)) openGate(G,g);
     if(S.pos.node!==N.id||Math.abs(S.pos.x-h.x)>1){ S.pos.node=N.id; S.pos.x=Math.round(h.x); }
   }
