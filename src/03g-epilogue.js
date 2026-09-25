@@ -42,7 +42,7 @@ GM.create=function(save){ const G=base.create(save); if(G.cur.node&&G.cur.node.i
 GM.update=function(G,ix,iy,dt){ const S=G.S; if(!S.done) S.run=(S.run||0)+dt; else if(S.runEnd==null) S.runEnd=S.run||0;
   base.update(G,ix,iy,dt); const N=G.cur.node, h=G.hero; if(!N||G.dialog) return;
   if(N.id==='show'){ const s=show(G); if(!s.npcs.length) buildShow(G);
-    for(const q of s.npcs){ let inp=0; const dx=h.x-q.w.x; if(Math.abs(dx)<70&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); if(inp===0) GM.idleTick(q,dt); q.pose=E.updateWalker(q.w,N.world,inp,dt); q.w.events.length=0; }
+    for(const q of s.npcs){ let inp=0; const dx=h.x-q.w.x; if(Math.abs(dx)<70&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); if(inp===0) GM.idleTick(q,dt,N.world,true); q.pose=E.updateWalker(q.w,N.world,inp,dt); q.w.events.length=0; }
     let best=null, bd=1e9; const take=(d,t)=>{ if(d<bd){bd=d;best=t;} };
     const de=Math.abs(SX+90-h.x); if(de<34) take(de-30,{kind:'showexit',label:'Take the shuttle',name:'back to Easton',x:SX+90});
     const da=Math.abs(BX(9)+60-h.x); if(da<30) take(da-10,{kind:'showaplus',label:'Read',name:'A+, 1985–2026',x:BX(9)+60});
