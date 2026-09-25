@@ -54,7 +54,7 @@ function renderDC(c,V,G,now,dt){
   if(n.dogs) for(const g of n.dogs) dog(c,g.x,0,g.col,g.t,g.follow&&!g.home,g.follow?(G.hero.x>g.x?1:-1):1);
   // people
   const talking=name=>!!(G.dialog&&(G.dialog.who===name||(G.dialog.pages[G.dialog.i]||'').indexOf(name+':')===0)), gy=()=>0;
-  for(const q of n.locals) PP.person(c,q.pose,q.def.look,{ground:gy,mode:q.w.mode,w:q.w,t:t,talk:talking(q.def.name)});
+  for(const q of n.locals) PP.person(c,q.pose,q.def.look,{ground:gy,mode:q.w.mode,w:q.w,t:t,talk:talking(q.def.name),mood:q.mood&&q.mood.name});
   for(const q of G.npcs) if(q.node===G.cur.node&&q.pose) PP.person(c,q.pose,q.def.look,{ground:gy,mode:q.w.mode,w:q.w,t:t,talk:talking(q.def.name)});
   PP.person(c,G.pose,D.HERO_LOOK,{scarf:G.hero.scarf,ground:gy,mode:G.hero.mode,w:G.hero,t:t});
   // weather, in screen space
