@@ -23,7 +23,7 @@ const person=id=>GM.PEOPLE.find(p=>p.id===id);
    kind: run | scramble (legs spinning in place, cartoon style) | walk | stand | fold (arms crossed) | bow */
 function pose(x,t,F,kind,o){ o=o||{};
   const TH=C.thigh, SH=C.shin, TOR=C.torso, UA=C.upperArm, FA=C.foreArm, AH=C.ankleH;
-  const K={run:{f:1.55,th:0.9,kb:0.35,ka:1.5,lean:0.3,arm:1.05,el:1.7,bob:3.2},scramble:{f:5.5,th:1.05,kb:0.5,ka:1.4,lean:0.12,arm:1.3,el:1.5,bob:1.2},
+  const K={run:{f:1.6,th:0.95,kb:0.35,ka:1.55,lean:0.32,arm:1.15,el:1.75,bob:3.8},scramble:{f:5.5,th:1.05,kb:0.5,ka:1.4,lean:0.12,arm:1.3,el:1.5,bob:1.2},
     walk:{f:0.85,th:0.36,kb:0.1,ka:0.55,lean:0.03,arm:0.32,el:0.3,bob:0.9},stand:{f:0.3,th:0,kb:0.08,ka:0,lean:0,arm:0,el:0.25,bob:0},
     fold:{f:0.3,th:0,kb:0.08,ka:0,lean:-0.05,arm:0,el:2.2,bob:0},bow:{f:0.3,th:0,kb:0.15,ka:0,lean:0,arm:0,el:0.4,bob:0}}[kind]||{};
   const ph=(t*K.f+(o.off||0))*Math.PI*2, lean=(o.lean!=null?o.lean:K.lean)+(kind==='bow'?(o.bow||0)*1.0:0);
@@ -32,7 +32,7 @@ function pose(x,t,F,kind,o){ o=o||{};
     const kx=Math.sin(th)*F*TH, ky=Math.cos(th)*TH, ax=kx+Math.sin(th-k)*F*SH, ay=ky+Math.cos(th-k)*SH; legs.push([kx,ky,ax,ay,0.3*Math.sin(p)*(K.th>0.5?1:0.5)]); lows.push(ay); }
   const hipY=-(AH+Math.max(lows[0],lows[1]))-K.bob*(0.5+0.5*Math.cos(2*ph))-(o.hop||0)+(kind==='stand'||kind==='fold'?Math.sin(t*2.1)*0.3:0);
   const hip={x:x,y:hipY}, dx=Math.sin(lean)*F, dy=-Math.cos(lean), neck={x:x+dx*TOR,y:hipY+dy*TOR}, sh={x:x+dx*(TOR-2.6),y:hipY+dy*(TOR-2.6)};
-  const head={x:neck.x+dx*(C.neck+C.headR*0.95),y:neck.y+dy*(C.neck+C.headR*0.95),a:F*lean*0.5+(o.tilt||0)};
+  const head={x:neck.x+dx*(C.neck+C.headR*0.95),y:neck.y+dy*(C.neck+C.headR*0.95)+(kind==='run'?Math.sin(ph*2)*0.8:0),a:F*lean*0.5+(o.tilt||0)+(kind==='run'?0.05*Math.sin(ph*2):0)};
   const arms=[]; for(let i=0;i<2;i++){ const a=(kind==='fold'?0.2:-K.arm*Math.sin(ph+i*Math.PI))+(o.armsUp?2.8:0)+lean*0.6, b=a+(o.armsUp?0.2:K.el);
     const ex=sh.x+Math.sin(a)*F*UA, ey=sh.y+Math.cos(a)*UA; arms.push({ex:ex,ey:ey,hx:ex+Math.sin(b)*F*FA,hy:ey+Math.cos(b)*FA}); }
   return {hip:hip,neck:neck,head:head,sh:sh,face:F,prop:null,arms:arms,legs:legs.map(l=>({kx:x+l[0],ky:hipY+l[1],ax:x+l[2],ay:hipY+l[3],pitch:l[4],face:F}))}; }
@@ -135,21 +135,31 @@ function events(t,dt){
   if(T(SEC.curtain+3.6)) once('bow',()=>say('aplus','THANK YOU. THANK YOU.',1.8));
   // captions: one at a time
   if(!S.cap&&S.capQ&&S.capQ.length) S.cap={id:S.capQ.shift(),t:0};
-  if(S.cap){ S.cap.t+=dt; if(S.cap.t>1.7) S.cap=null; } }
+  if(S.cap){ S.cap.t+=dt; if(S.cap.t>3.2) S.cap=null; } }
 
-/* ---------------- music: a bouncy, cartoonish chase (original tune) ---------------- */
+/* ---------------- music: a cartoon chase, swung, with a walking bass, chord stabs, a countermelody on the way back ----------------
+   Original tune in C. 32 steps of swung eighths per loop; the way back goes up a fourth and faster. */
 const NOTE=n=>440*Math.pow(2,(n-69)/12);
-const MEL=[72,74,76,72,79,0,79,0,77,76,74,72,74,0,67,0,72,74,76,79,81,79,77,76,74,76,74,71,72,0,0,0], CH=[48,48,55,55,53,53,48,48];
+const MEL =[72,74,76,72,79,0,79,77,76,74,76,72,74,0,67,69,72,74,76,79,81,79,77,76,74,76,74,71,72,0,76,79];
+const MEL2=[84,0,83,0,81,0,79,0,77,0,76,0,74,0,72,0,84,0,81,0,79,0,76,0,74,76,77,74,72,0,0,0];
+const CH  =[[48,52,55],[48,52,55],[55,59,62],[55,59,62],[53,57,60],[53,57,60],[48,52,55],[55,59,62]];
+const BASS=[48,55,52,55, 55,62,59,62, 53,60,57,60, 48,55,59,55, 48,55,52,55, 55,62,59,62, 53,57,60,57, 48,52,55,43];
 function music(dt){ const a=A(); if(!a||!a.ctx()) return; const t=S.t;
   const ph=t<SEC.office?'intro':(t<SEC.turn?'chase':(t<SEC.turn+2.4?'stop':(t<SEC.freeze?'back':(t<SEC.freeze+2.2?'freeze':(t<SEC.curtain?'go':'finale')))));
   if(ph==='intro') once('intro',()=>[60,64,67,72].forEach((n,k)=>tone(NOTE(n),0.4,0.035,'triangle',null,k*0.14)));
-  if(ph==='chase'||ph==='back'||ph==='go'){ const bpm=ph==='chase'?190:214, step=60/bpm/2, up=ph==='chase'?0:5; S.beat+=dt;
-    while(S.beat>=step){ S.beat-=step; const i=S.note%32, root=CH[(i>>2)%8]+up;
-      tone(NOTE(i%2?root+7:root),step*0.7,0.045,'triangle');                                   // oom-pah
-      if(MEL[i]) tone(NOTE(MEL[i]+up),step*0.45,0.022,'square');
-      if(i%8===0) burst(110,0.7,0.06,0.06); if(i%4===2) burst(2600,1.4,0.02,0.03); if(i%8===4) burst(900,0.7,0.035,0.05);
+  if(ph==='chase'||ph==='back'||ph==='go'){ const bpm=ph==='chase'?184:212, step=60/bpm/2, up=ph==='chase'?0:5; S.beat+=dt;
+    while(S.beat>=step){ S.beat-=step; const i=S.note%32, sw=(i%2)?step*0.16:0;                       // swing: offbeats land late
+      tone(NOTE(BASS[i]+up),step*0.75,0.05,'triangle',null,sw);                                       // walking bass
+      if(i%4===2) for(const n of CH[(i>>2)%8]) tone(NOTE(n+12+up),step*0.35,0.014,'square',null,sw);    // chord stab on the off-beat
+      if(MEL[i]) tone(NOTE(MEL[i]+up),step*0.5,0.024,'square',null,sw);                                // the tune
+      if(ph!=='chase'&&MEL2[i]) tone(NOTE(MEL2[i]+up),step*0.4,0.014,'triangle',null,sw+0.01);        // countermelody once the tables turn
+      if(i%8===0) burst(110,0.7,0.07,0.07); if(i%8===4) burst(800,0.6,0.045,0.06); if(i%2===1) burst(4000,1.2,0.012,0.025,3000);   // kick, snare, hats
+      if(i===0&&Math.floor(S.note/32)%2===1) tone(NOTE(84+up),step,0.02,'sine',NOTE(72+up));          // a little slide at the top of every other loop
       S.note++; } }
-  if(ph==='finale') once('fan',()=>{ [60,64,67,72,76,79,84].forEach((n,k)=>tone(NOTE(n),k===6?1.6:0.22,0.035,'triangle',null,k*0.11)); }); }
+  if(ph==='stop') once('stopmus',()=>{ tone(NOTE(60),0.6,0.03,'triangle',NOTE(48)); });
+  if(ph==='freeze'){ S.tick=(S.tick||0)+dt; if(S.tick>0.5){ S.tick=0; burst(1800,3,0.03,0.03); } }
+  if(ph==='finale') once('fan',()=>{ [60,64,67,72,76,79,84].forEach((n,k)=>tone(NOTE(n),k===6?1.6:0.22,0.035,'triangle',null,k*0.11)); [48,52,55].forEach(n=>tone(NOTE(n),1.8,0.03,'triangle',null,0.66)); });
+  if(ph==='finale'&&t>SEC.curtain+2.4){ const step=60/150/2; S.beat+=dt; while(S.beat>=step){ S.beat-=step; const i=S.note%32; tone(NOTE(BASS[i]),step*0.7,0.03,'triangle'); if(MEL[i]&&i%2===0) tone(NOTE(MEL[i]),step*0.5,0.016,'square'); S.note++; } } }
 
 /* ---------------- drawing ---------------- */
 function drawSet(c,set,cam,t,sc,W,Hh,ox,oy){
@@ -214,7 +224,7 @@ function draw(c,V,now){
     const ap=b.who==='aplus'; c.fillStyle=ap?'rgba(6,14,8,.94)':'rgba(246,236,216,.97)'; rr(c,x-tw/2,y-14,tw,28,11); c.fill(); if(ap){ c.strokeStyle='#6fe08a'; c.lineWidth=1.5; c.stroke(); }
     c.fillStyle=ap?'#7fe0a0':'#243447'; c.fillText(b.text,x,y+0.5); }
   // starring
-  if(S.cap&&BILL[S.cap.id]){ const [nm,tag]=BILL[S.cap.id], a=clamp(Math.min(S.cap.t/0.2,(1.7-S.cap.t)/0.25),0,1), x0=Math.max(14,W*0.04), y0=Hh-(V.touch?150:96), slide=(1-a)*-40;
+  if(S.cap&&BILL[S.cap.id]){ const [nm,tag]=BILL[S.cap.id], a=clamp(Math.min(S.cap.t/0.25,(3.2-S.cap.t)/0.35),0,1), x0=Math.max(14,W*0.04), y0=Hh-(V.touch?150:96), slide=(1-a)*-40;
     const nf=D.fitFont(c,nm,'700 ','"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif',24,W*0.6), tf=D.fitFont(c,tag,'italic ','Georgia,serif',15,W*0.84);
     c.globalAlpha=a; c.textAlign='left'; c.font='italic '+tf+'px Georgia,serif'; const w=c.measureText(tag).width+30, ap=S.cap.id==='aplus';
     c.fillStyle=ap?'rgba(6,14,8,.92)':'rgba(16,26,46,.88)'; rr(c,x0+slide,y0,w,52,8); c.fill(); c.fillStyle=ap?'#6fe08a':'#f2b544'; c.fillRect(x0+slide,y0,5,52);
