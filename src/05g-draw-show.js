@@ -31,7 +31,7 @@ function renderShow(c,V,G,now){
   for(const q of s.npcs) if(Math.abs(q.w.x-G.hero.x)<120&&!(G.target&&G.target.q===q)) tag(q.def.name,q.w.x,q.pose.head.y-16,'rgba(16,26,46,.6)','#f6ecd8');
   if(G.target&&!G.dialog&&!G.card){ const T=G.target, y=(T.q?T.q.pose.head.y:-70)-18; tag((V.touch?'':'E  ')+T.label+'  ·  '+T.name,T.x,y,'#f2b544','#101a2e',true); }
 }
-D.ALTS.push({test:(V,G)=>V.camx>38000&&!G.drive,render:renderShow});
+D.ALTS.push({test:(V,G)=>V.camx>38000&&V.camx<46000&&!G.drive,render:renderShow});
 
 /* the shuttle stop, once the night is over */
 D.HOOKS.push(function(c,G,now,V){ if(!G.S.done) return; const x=EPI.SHUTTLE; if(x<V.x0-40||x>V.x1+40) return; const y=MAP.nodes.ground.world.yAt(x);
