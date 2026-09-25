@@ -85,7 +85,7 @@ function termUse(G,d){ const S=G.S, A={name:'A+',role:d.name,look:null};
       const all=DCS.every(z=>G.S.flags['dc_'+z.id]); if(all&&GM.STORY&&!G.S.flags.ap_net){ G.S.flags.ap_net=1; GM.STORY.aplusSay(G,'NINE BUILDINGS. NINE TERMINALS. ALL OF THEM SAID THANK YOU. I DID NOT TEACH THEM THAT.'); } }}); }
 function tickDC(G,dt,d){
   const S=G.S, n=net(G), h=G.hero; if(n.built!==d.id) buildDC(G,d); n.t+=dt;
-  for(const q of n.locals){ let inp=0; const dx=h.x-q.w.x; if(Math.abs(dx)<70&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); q.pose=E.updateWalker(q.w,d.node.world,G.dialog?0:inp,dt); q.w.events.length=0; }
+  for(const q of n.locals){ let inp=0; const dx=h.x-q.w.x; if(Math.abs(dx)<70&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); if(inp===0) GM.idleTick(q,dt); q.pose=E.updateWalker(q.w,d.node.world,G.dialog?0:inp,dt); q.w.events.length=0; }
   if(d.task==='dogs'&&!S.flags['dc_'+d.id+'_dogs']){ let k=0; for(const g of n.dogs){ g.t+=dt; if(g.home) continue; if(!g.follow&&Math.abs(g.x-h.x)<40){ g.follow=true; G.events.push({type:'sfx',name:'bark'}); }
       if(g.follow){ const goal=h.x-h.facing*(18+k*16); g.x+=clamp(goal-g.x,-120*dt,120*dt); k++; if(Math.abs(g.x-(d.x0+X.lead))<46){ g.home=true; g.x=d.x0+X.lead-30-n.dogs.filter(z=>z.home).length*14; G.events.push({type:'hint',text:'Checked in: '+n.dogs.filter(z=>z.home).length+' of 3'}); } } }
     if(n.dogs.every(z=>z.home)){ S.flags['dc_'+d.id+'_dogs']=1; G.events.push({type:'banner',text:'All three shelter dogs checked in'}); G.events.push({type:'save'}); } }
