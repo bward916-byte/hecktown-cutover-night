@@ -191,7 +191,7 @@ section('full playthrough');
   // 100%: everything else
   GM.PAGES.forEach((pg,i)=>{ if(!S.pages[i]) useAt(G,pg[0],pg[1],'page'); });
   for(const p of GM.PEOPLE) if(!S.met[p.id]) talkTo(G,p.id);
-  ok(G.portalOpen,'the portal opens once the Ledger is whole'); ok(goTo(G,'hq_b1',GM.PORTAL_X+12),'reach the portal'); ok(G.target&&G.target.kind==='portal','portal is usable'); GM.interact(G);
+  ok(G.portalOpen,'the portal opens once the Ledger is whole'); ok(goTo(G,'hq_b1',GM.PORTAL_X+12),'reach the portal'); ok(G.target&&G.target.kind==='portal','portal is usable'+(G.target&&G.target.kind==='portal'?'':' (hero '+G.hero.x.toFixed(0)+' '+G.hero.mode+' on '+(G.cur.node&&G.cur.node.id)+', target '+(G.target?G.target.kind+' '+G.target.name:'none')+', dialog '+!!G.dialog+', card '+!!G.card+')')); GM.interact(G);
   for(let i=0;i<120*6&&G.cur.node.id!=='y1938';i++) step(G,0,0); ok(G.cur.node.id==='y1938'&&G.p38&&G.p38.scene==='visit'&&S.eggs.y1938,'walked into 1938');
   walkTo(G,GM.P38.X.founder+40); ok(G.target&&G.target.act==='talk38','the Founder will talk'); GM.interact(G); closeDialog(G);
   const saved38=JSON.parse(JSON.stringify(S)); const Gs=GM.create(saved38); ok(Gs.cur.node.id==='hq_b1','a save made in 1938 resumes back in the archive');
