@@ -10,6 +10,7 @@ const ENDINGS={
   bret:'Bret was home before the baby woke up. The dogs met him at the door.',
   brians:'Brian S went home and built a new machine. The backglass is a green screen.',
   umesh:'Umesh watched the first 850 of the morning post cleanly, then closed the laptop.',
+  fares:'Fares and Umesh watched the first EDI batch post, then argued about whose it was. It was both of theirs.',
   dave:'Dave turned off a green screen that had been on since 1994. Then turned it back on. Just in case.',
   john:'John rewrote the midnight job so it only runs when someone asks. Nobody has asked yet.',
   greg:'Greg was seen in Accounting on Monday. And Receiving. And 1938.',
@@ -21,7 +22,8 @@ const ENDINGS={
   hero:'Brian W drove west to check on the cactus. The database was fine.' };
 const SHOW_LINES={ rianan:'"Nobody\'s on a bridge call. Look at that."', aaron:'"Raft\'s in the truck. Lehigh on Saturday."', dave:'"I\'d still like to have been on Jeopardy. This is close."',
   greg:'"Thirty-one booths. Thirty-two if you count Milo." (Greg has been at every one of these, including the ones before he was born.)', pam:'"We brought the PIM. It\'s a booth now."', melissa:'"Four hundred attributes, and every one of them is right."', cathy:'"I brought them coffee. At a trade show. Some things don\'t change."',
-  brians:'"Pinball machine in the IT booth. I built it Tuesday."', blaine:'"My grandfather opened a single feed store in 1938. His goal was to delight our customers and create a great place to work."', ash:'"Salesforce sent flowers. I built a flow for that too."' };
+  brians:'"Pinball machine in the IT booth. I built it Tuesday."', blaine:'"My grandfather opened a single feed store in 1938. His goal was to delight our customers and create a great place to work."', ash:'"Salesforce sent flowers. I built a flow for that too."', fares:'"Umesh wanted the booth by the snacks. I wanted the booth by the outlets. We got the booth by the bathroom."',
+  bret:'"Lanyard check. Everyone. Yes, even the cat."' };
 const GENERIC=['"We did that."','"Site\'s live. Site\'s been live. Relax."','"Somebody explain the cat."','"Next year, Monterey."','"I never want to see a green screen again."'];
 const BOOTHS=['KIBBLE CO','AQUATIC','FEED & FARM','VET','GROOM','SHELTER','TREATS','CENTRAL PET','MILO\'S','IT DEPT'];
 const BX=i=>SX+500+i*260;
