@@ -205,7 +205,9 @@ function render(c,view,G,now,dt){
   const drawHero=()=>{ for(const s of h.shots) PP.treat(ctx,s.x,s.y,s.a,clamp(s.life,0,1)); PP.person(ctx,G.pose,HERO_LOOK,{scarf:h.scarf,ground:x=>world.yAt(x),mode:h.mode,w:h,t:now/1000}); };
   if(heroBack) drawHero();
   structure(G); pickups(G,now);
-  for(const q of G.npcs){ if(!vis(q.w.x-40,q.w.x+40)||!q.pose) continue; PP.person(ctx,q.pose,q.def.look,{ground:x=>q.node.world.yAt(x),mode:q.w.mode,w:q.w,t:now/1000,talk:!!(G.dialog&&(G.dialog.who===q.def.name||(G.dialog.pages[G.dialog.i]||'').indexOf(q.def.name+':')===0))}); }
+  const late=/^(11:|12:)\d\d PM|AM/.test(GM.clock(G.S)||''), startled=!!(G.story&&G.story.ap&&G.story.ap.t<2.4);
+  const moodOf=q=>q.mood?q.mood.name:(startled&&q.node===G.cur.node?'surprise':(late&&(q.def.id.charCodeAt(0)+q.def.id.length)%3===0?'tired':null));
+  for(const q of G.npcs){ if(!vis(q.w.x-40,q.w.x+40)||!q.pose) continue; PP.person(ctx,q.pose,q.def.look,{mood:moodOf(q),ground:x=>q.node.world.yAt(x),mode:q.w.mode,w:q.w,t:now/1000,talk:!!(G.dialog&&(G.dialog.who===q.def.name||(G.dialog.pages[G.dialog.i]||'').indexOf(q.def.name+':')===0))}); }
   const b=G.biscuit; if(vis(b.x-30,b.x+30)) PP.dog(ctx,b.x,MAP.nodes.ground.world.yAt(b.x),b.t,b.run,b.run||h.x>b.x?1:-1);
   for(const f of HOOKS) f(ctx,G,now,V);                  // later stages draw their creatures here
   if(!heroBack) drawHero();
