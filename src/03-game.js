@@ -4,7 +4,7 @@
 const E=root.WalkEngine, MAP=root.HMAP, CFG=E.CFG;
 const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
 const SIGNOFFS=['Network','Backup','Catalog','EDI','Storefront','Jobs'];
-const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10,jeopardy:25,sku:30,portal:20,dc:25};
+const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10,jeopardy:25,sku:30,portal:20,dc:25,future:15};
 
 /* ---------------- people ----------------  look = [skin, hair, style, shirt, pants, accessory] */
 const P=(id,name,role,look,node,x,opt)=>{ const p=Object.assign({id:id,name:name,role:role,look:{skin:look[0],hair:look[1],style:look[2],shirt:look[3],pants:look[4],acc:look[5]},node:node,x:x},opt||{});
@@ -96,7 +96,7 @@ const ITEMS=[
 ];
 const TERMS=[{id:'t_dock',node:'ground',x:2260,where:'Receiving Dock'},{id:'t_roof',node:'hq_roof',x:1840,where:'Roof Garden'},{id:'t_gate',node:'ground',x:1010,where:'Security Gate'}];
 
-const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg+PTS.duct+PTS.jeopardy+PTS.sku+PTS.portal+PTS.dc*9;
+const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg+PTS.duct+PTS.jeopardy+PTS.sku+PTS.portal+PTS.dc*9+PTS.future*2;
 const RANKS=[[0,'New Badge'],[12,'Ticket Closer'],[30,'On-Call'],[50,'Change Approver'],[72,'Cutover Lead'],[95,'Hecktown Legend']];
 
 function freshSave(){ return {v:1,flags:{},inv:{},met:{},rooms:{},pages:{},eggs:{},signoffs:{},terms:{},gates:{},points:0,time:0,done:false,pos:{node:'ground',x:1150}}; }
@@ -189,6 +189,7 @@ function talkLines(G,p){
      if(F.ediAsked&&!I.bol&&!S.signoffs.EDI){ I.bol=1; G.events.push({type:'banner',text:'Got the bill of lading'}); return ['Umesh wants the BOL? Of course he does. Here. Don\'t fold it.']; }
      return ['Bay 2\'s waiting on that kibble. Trucks roll at dawn whether the system\'s up or not.'];
    case 'ash':
+     if(S.done) return ['Don\'t ask.','...Fine. I built a flow that triggers when everything ships. Everything shipped. I don\'t know where it took me. I was gone eleven minutes.'];
      if(S.signoffs.Storefront) return ['Salesforce is talking to me again. It apologized. We\'re fine.','Call me Ash. And yes, the flow will hold.'];
      if(I.coffee){ delete I.coffee; signoff(G,'Storefront'); return ['You are a good person. ...Okay. Orders are flowing end to end. Storefront is signed.']; }
      F.sfAsked=1; return ['I have been staring at this flow since lunch. I will sign Storefront the second there is coffee in my hand.','Tina\'s truck is still open tonight. West lot, past the garage.'];
@@ -201,7 +202,7 @@ function talkLines(G,p){
      if(count(S.terms)>=3){ signoff(G,'Jobs'); return ['All three queues held. The scheduler is clean. Jobs is signed.']; }
      F.jobsAsked=1; return ['Every midnight job in this building, I wrote or inherited. Three of them only hold from their own green screen.','Receiving Dock, the Roof Garden shed, and Dee\'s booth at the Security Gate. Hold the queue at each, then come back.'];
    case 'bret':
-     if(F.biscuitHome){ if(!F.biscuitPaid){ F.biscuitPaid=1; award(G,PTS.biscuit,'Biscuit is home'); G.events.push({type:'save'}); return ['Biscuit! There you are. Dogs first, hardware second. Thank you.']; } { const sec=['If it has a power supply, I can fix it. If it has firmware, I can fix it faster.','Rotate your passwords. Don\'t write them on a sticky note. Not under the keyboard either. I check.','Never plug in a USB stick you found in the parking lot. That one was mine. It was a test. You passed.','Server room is sixty-eight degrees. It is always sixty-eight degrees. If it is ever not sixty-eight degrees, call me.','Multi-factor. On everything. Yes, even that.','Every server in this building has a name. None of them are named after you. That is a security decision.']; F.bretSec=((F.bretSec|0)+1)%sec.length; return [sec[F.bretSec]]; } }
+     if(F.biscuitHome){ if(!F.biscuitPaid){ F.biscuitPaid=1; award(G,PTS.biscuit,'Biscuit is home'); G.events.push({type:'save'}); return ['Biscuit! There you are. Dogs first, hardware second. Thank you.']; } { const sec=['New baby boy at home. Three weeks. Sleeps like a server: never, then all at once.','If it has a power supply, I can fix it. If it has firmware, I can fix it faster.','Rotate your passwords. Don\'t write them on a sticky note. Not under the keyboard either. I check.','Never plug in a USB stick you found in the parking lot. That one was mine. It was a test. You passed.','Server room is sixty-eight degrees. It is always sixty-eight degrees. If it is ever not sixty-eight degrees, call me.','Multi-factor. On everything. Yes, even that.','Every server in this building has a name. None of them are named after you. That is a security decision.']; F.bretSec=((F.bretSec|0)+1)%sec.length; return [sec[F.bretSec]]; } }
      F.biscuitAsked=1; return ['Before anything else: is your screen locked? Good. Now.','Biscuit slipped out when the dock door cycled. He always runs to the dog park, west end of the lot.','He won\'t come without a treat. Customer Care keeps a jar by the window.'];
    case 'greg':
      if(I.tunnelkey) return ['Give me a fact table and a quiet room and I will kick data ass.','The door is west of Basement Storage. It was bricked in \'91. The bricks got bored.'];
