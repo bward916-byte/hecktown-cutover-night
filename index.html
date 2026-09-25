@@ -3474,11 +3474,11 @@ addEventListener('keyup',e=>{ if(!PH) return; const K=H.keys.get(); const m={lef
 const H=window.__hecktown, EXT=H.EXT, GM=HGAME, PP=HPEOPLE, D=HDRAW, E=WalkEngine, C=E.CFG;
 const $=id=>document.getElementById(id), clamp=(v,a,b)=>v<a?a:(v>b?b:v), lerp=(a,b,t)=>a+(b-a)*t, ss=t=>{ t=clamp(t,0,1); return t*t*(3-2*t); };
 const rr=(c,x,y,w,h,r)=>{ c.beginPath(); if(c.roundRect) c.roundRect(x,y,w,h,r); else c.rect(x,y,w,h); };
-const CAST=['rianan','brians','bret','dave','aaron','umesh','fares','ash'], LEN=76;
-const SEC={intro:0,office:3.5,doors:13.4,time:24.2,turn:52.0,back:54.6,freeze:61.0,montage:64.2,curtain:68.2};
+const CAST=['rianan','brians','bret','dave','aaron','umesh','fares','ash'], LEN=86.6;
+const SEC={intro:0,office:5.0,doors:14.9,time:25.7,turn:53.5,back:57.2,freeze:63.6,montage:66.8,curtain:70.8};
 /* the time-machine beat: three stops, each long enough to read. Everyone runs in, stops and looks around, a gag plays,
    A+ arrives late and confused, everyone scrambles and runs on. Clock spins of 1.2 s between. */
-const ERA=[{id:'y1938',t0:25.4,len:8,year:1938,title:'1938  ·  GERMANSVILLE, PA'},{id:'y2060',t0:34.6,len:7,year:2060,title:'2060  ·  THE MUSEUM OF THE CUTOVER'},{id:'moon',t0:42.8,len:8,year:3270,title:'3270  ·  PHILLIPS ORBITAL DC'}];
+const ERA=[{id:'y1938',t0:26.9,len:8,year:1938,title:'1938  ·  GERMANSVILLE, PA'},{id:'y2060',t0:36.1,len:7,year:2060,title:'2060  ·  THE MUSEUM OF THE CUTOVER'},{id:'moon',t0:44.3,len:8,year:3270,title:'3270  ·  PHILLIPS ORBITAL DC'}];
 const eraAt=t=>ERA.find(e=>t>=e.t0&&t<e.t0+e.len);
 const BILL={rianan:['RIANAN','IT Department Head  ·  would stop for any cat'],brians:['BRIAN S','IT Manager  ·  nationally ranked pinball wizard'],bret:['BRET','Infrastructure  ·  new baby boy, and yes your screen is locked'],
   dave:['DAVE','iSeries Guru  ·  this close to Jeopardy'],aaron:['AARON','Network  ·  picks his line early'],umesh:['UMESH','EDI  ·  every 850 is his'],fares:['FARES','EDI  ·  Umesh\'s friend, and also his 850s'],
@@ -3492,15 +3492,16 @@ function pose(x,t,F,kind,o){ o=o||{};
   const TH=C.thigh, SH=C.shin, TOR=C.torso, UA=C.upperArm, FA=C.foreArm, AH=C.ankleH;
   const K={run:{f:1.6,th:0.95,kb:0.35,ka:1.55,lean:0.32,arm:1.15,el:1.75,bob:3.8},scramble:{f:5.5,th:1.05,kb:0.5,ka:1.4,lean:0.12,arm:1.3,el:1.5,bob:1.2},
     walk:{f:0.85,th:0.36,kb:0.1,ka:0.55,lean:0.03,arm:0.32,el:0.3,bob:0.9},stand:{f:0.3,th:0,kb:0.08,ka:0,lean:0,arm:0,el:0.25,bob:0},
-    fold:{f:0.3,th:0,kb:0.08,ka:0,lean:-0.05,arm:0,el:2.2,bob:0},bow:{f:0.3,th:0,kb:0.15,ka:0,lean:0,arm:0,el:0.4,bob:0}}[kind]||{};
+    fold:{f:0.3,th:0,kb:0.08,ka:0,lean:-0.05,arm:0,el:2.2,bob:0},bow:{f:0.3,th:0,kb:0.15,ka:0,lean:0,arm:0,el:0.4,bob:0},kick:{f:0,th:0,kb:0.05,ka:0,lean:-0.06,arm:0,el:0.15,bob:0}}[kind]||{};
   const ph=(t*K.f+(o.off||0))*Math.PI*2, lean=(o.lean!=null?o.lean:K.lean)+(kind==='bow'?(o.bow||0)*1.0:0);
   const legs=[], lows=[];
-  for(let i=0;i<2;i++){ const p=ph+i*Math.PI, th=K.th*Math.sin(p)+(kind==='stand'||kind==='fold'||kind==='bow'?(i?0.06:-0.06):0), k=K.kb+K.ka*Math.max(0,Math.sin(p+0.9));
+  const kp=kind==='kick'?(o.kick||0)*Math.PI*2*(184/60/2)/2+(o.off||0)*Math.PI*2:0;
+  for(let i=0;i<2;i++){ const p=ph+i*Math.PI, th=kind==='kick'?1.45*Math.pow(Math.max(0,Math.sin(kp+i*Math.PI)),2):K.th*Math.sin(p)+(kind==='stand'||kind==='fold'||kind==='bow'?(i?0.06:-0.06):0), k=kind==='kick'?0.05:K.kb+K.ka*Math.max(0,Math.sin(p+0.9));
     const kx=Math.sin(th)*F*TH, ky=Math.cos(th)*TH, ax=kx+Math.sin(th-k)*F*SH, ay=ky+Math.cos(th-k)*SH; legs.push([kx,ky,ax,ay,0.3*Math.sin(p)*(K.th>0.5?1:0.5)]); lows.push(ay); }
-  const hipY=-(AH+Math.max(lows[0],lows[1]))-K.bob*(0.5+0.5*Math.cos(2*ph))-(o.hop||0)+(kind==='stand'||kind==='fold'?Math.sin(t*2.1)*0.3:0);
+  const hipY=-(AH+Math.max(lows[0],lows[1]))-K.bob*(0.5+0.5*Math.cos(2*ph))-(o.hop||0)-(kind==='kick'?2.5*Math.abs(Math.sin(kp)):0)+(kind==='stand'||kind==='fold'?Math.sin(t*2.1)*0.3:0);
   const hip={x:x,y:hipY}, dx=Math.sin(lean)*F, dy=-Math.cos(lean), neck={x:x+dx*TOR,y:hipY+dy*TOR}, sh={x:x+dx*(TOR-2.6),y:hipY+dy*(TOR-2.6)};
   const head={x:neck.x+dx*(C.neck+C.headR*0.95),y:neck.y+dy*(C.neck+C.headR*0.95)+(kind==='run'?Math.sin(ph*2)*0.8:0),a:F*lean*0.5+(o.tilt||0)+(kind==='run'?0.05*Math.sin(ph*2):0)};
-  const arms=[]; for(let i=0;i<2;i++){ const a=(kind==='fold'?0.2:-K.arm*Math.sin(ph+i*Math.PI))+(o.armsUp?2.8:0)+lean*0.6, b=a+(o.armsUp?0.2:K.el);
+  const arms=[]; for(let i=0;i<2;i++){ const a=(kind==='fold'?0.2:(kind==='kick'?(i?1.6:-1.4)+0.15*Math.sin(kp*2):-K.arm*Math.sin(ph+i*Math.PI)))+(o.armsUp?2.8:0)+lean*0.6, b=a+(o.armsUp?0.2:K.el);
     const ex=sh.x+Math.sin(a)*F*UA, ey=sh.y+Math.cos(a)*UA; arms.push({ex:ex,ey:ey,hx:ex+Math.sin(b)*F*FA,hy:ey+Math.cos(b)*FA}); }
   return {hip:hip,neck:neck,head:head,sh:sh,face:F,prop:null,arms:arms,legs:legs.map(l=>({kx:x+l[0],ky:hipY+l[1],ax:x+l[2],ay:hipY+l[3],pitch:l[4],face:F}))}; }
 
@@ -3560,8 +3561,8 @@ function scene(t){
     out.era=era; const mid=(Math.min(...out.actors.map(a=>a.x))+Math.max(...out.actors.map(a=>a.x)))/2; out.cam=clamp(T<flee?(mid+300)/2:mid*0.7+(out.mon.show?out.mon.x:mid)*0.3+60,-40,360); return out; }
   if(t<SEC.back){ // 3. the turnabout
     const T=t-SEC.turn; out.set='dead'; out.cam=10;
-    const m=run(-220,120,0,260,T); out.mon={show:true,x:m.x,F:T>1.0?-1:1,run:!m.done,mood:T<0.9?'mean':(T<1.8?'confused':'mean'),panic:T>1.8};
-    CAST.forEach((id,i)=>{ const col=i%4, row=i/4|0, tx=-40-col*28-row*14; const p=run(-330-row*20,tx,0.3+row*0.12,170,T); act(id,p.x,p.done?'fold':'walk',1,{mood:null}); });
+    const m=run(-220,120,0,260,T), trip=T>1.0&&T<2.2?Math.sin(clamp((T-1.0)/1.2,0,1)*Math.PI):0; out.mon={show:true,x:m.x,F:T>2.4?-1:1,run:!m.done,mood:T<0.9?'mean':(T<2.6?'confused':'mean'),panic:T>2.6,trip:trip};
+    CAST.forEach((id,i)=>{ const col=i%4, row=i/4|0, tx=-40-col*28-row*14; const p=run(-330-row*20,tx,1.1+row*0.12,170,T); act(id,p.x,p.done?'fold':'walk',1,{mood:T>1.2&&T<2.2?'happy':null}); });
     return out; }
   if(t<SEC.freeze+2.4){ // 4. the chase back, and 5. the freeze
     const T=Math.min(t,SEC.freeze)-SEC.back, frozen=t>=SEC.freeze&&t<SEC.freeze+2.2, zip=t>=SEC.freeze+2.2;
@@ -3572,9 +3573,11 @@ function scene(t){
   if(t<SEC.curtain){ out.set='montage'; return out; }
   // 6. the curtain call
   const T=t-SEC.curtain; out.set='curtain'; out.cam=0; const spots=[-205,-160,-115,-70,70,115,160,205];
-  CAST.forEach((id,i)=>{ const from=i<4?-420:420, p=run(from,spots[i],0.1+(i%4)*0.12,260,T); const bw=clamp(Math.sin(clamp((T-2.6-i*0.14)/0.9,0,1)*Math.PI),0,1);
-    act(id,p.x,p.done?(bw>0.01?'bow':'stand'):'run',p.done?(T>2.4?1:(i<4?1:-1)):p.F,{mood:p.done?'happy':null,bow:bw,hop:T>5.2&&Math.floor((T-5.2)*2.2+i)%2===0?6:0}); });
-  const g=run(-420,-250,0.2,60,T); act('greg',g.x,g.done?'stand':'walk',1,{mood:null,bow:0});
+  CAST.forEach((id,i)=>{ if(id==='ash') return; const from=i<4?-420:420, p=run(from,spots[i],0.1+(i%4)*0.12,260,T); const bw=clamp(Math.sin(clamp((T-2.6-i*0.14)/0.9,0,1)*Math.PI),0,1);
+    const kick=T>5.0&&T<11.0, look=T>12.6;
+    act(id,p.x,p.done?(kick?'kick':(bw>0.01?'bow':'stand')):'run',p.done?(look?1:(T>2.4?1:(i<4?1:-1))):p.F,{mood:p.done?(look?'surprise':'happy'):null,bow:bw,kick:kick?(T-5.0):0,off:i%2?0.5:0}); });
+  if(T>11.8){ const a=run(430,250,11.8,110,T); act('ash',a.x,a.done?'stand':'walk',-1,{mood:null,shades:true}); }
+  const g=run(-420,-250,0.2,60,T); act('greg',g.x,g.done?'stand':'walk',1,{mood:null,bow:0}); out.lyric=T>5.0&&T<11.0?T-5.0:null;
   out.mon={show:true,x:T<1.2?lerp(0,0,1):0,F:1,run:false,mood:T>3?'smug':'idle',rise:ss(T/1.2)};
   out.milo={show:true,x:250,F:-1,run:false,sit:true}; return out; }
 
@@ -3610,9 +3613,12 @@ function events(t,dt){
     if(T(E3+4.2)) once('e3d',()=>say('aplus','I RUN THE MOON. LATER. IT\'S COMPLICATED.',2.0)); if(T(E3+5.6)) once('e3e',()=>{ say('aplus','RRAAH!',0.9); S.shake=0.4; }); if(T(E3+7.2)) once('e3f',()=>say('umesh','850s! IN! SPACE!',1.4)); }
   // the turnabout
   if(T(SEC.turn+0.8)) once('scratch',()=>{ tone(900,0.35,0.05,'sawtooth',120); burst(800,0.6,0.05,0.3,200); });
-  if(T(SEC.turn+1.1)) once('q',()=>say('aplus','DEAD END?',1.0));
-  if(T(SEC.turn+1.9)) once('fold',()=>say('bret','Badge, please.',1.4));
-  if(T(SEC.turn+2.1)) once('eep2',()=>{ say('aplus','EEP!',0.9); S.shake=0.3; });
+  if(T(SEC.turn+1.0)) once('trip',()=>{ say('aplus','WHOA—',0.8); tone(700,0.5,0.04,'sine',180); });
+  if(T(SEC.turn+1.7)) once('thud',()=>{ S.shake=0.6; burst(90,0.7,0.08,0.25); for(let k=0;k<8;k++) S.dust.push({x:120+k*6-20,y:-2,a:0}); });
+  if(T(SEC.turn+2.0)) once('snick',()=>say('dave','...Who trips on their own cord?',1.6));
+  if(T(SEC.turn+2.5)) once('q',()=>say('aplus','DEAD END?',1.0));
+  if(T(SEC.turn+3.0)) once('fold',()=>say('bret','Badge, please.',1.4));
+  if(T(SEC.turn+3.4)) once('eep2',()=>{ say('aplus','EEP!',0.9); S.shake=0.3; });
   // the chase back
   if(T(SEC.back+0.6)) once('fw',()=>say('bret','FIREWALL!!',1.3));
   if(T(SEC.back+1.4)) once('get',()=>say('rianan','GET IT!',1.1));
@@ -3625,6 +3631,7 @@ function events(t,dt){
   if(T(SEC.freeze+2.2)) once('zip',()=>{ tone(400,0.3,0.05,'sine',1800); });
   if(T(SEC.curtain+3.2)) once('conf',()=>{ for(let i=0;i<120;i++) S.conf.push({x:(Math.random()-0.5)*700,y:-260-Math.random()*220,vx:(Math.random()-0.5)*50,vy:60+Math.random()*80,c:['#f2b544','#6fe08a','#e0563a','#6fb0ff','#f6ecd8'][i%5],r:Math.random()*6}); });
   if(T(SEC.curtain+3.6)) once('bow',()=>say('aplus','THANK YOU. THANK YOU.',1.8));
+  if(T(SEC.curtain+12.4)) once('ash1',()=>say('ash','Sorry I\'m late.',1.8)); if(T(SEC.curtain+14.0)) once('ash2',()=>say('rianan','Where were you?',1.4)); if(T(SEC.curtain+15.2)) once('ash3',()=>say('ash','Don\'t ask.',2.2));
   // captions: one at a time
   if(!S.cap&&S.capQ&&S.capQ.length) S.cap={id:S.capQ.shift(),t:0};
   if(S.cap){ S.cap.t+=dt; if(S.cap.t>3.2) S.cap=null; } }
@@ -3638,7 +3645,7 @@ const CH  =[[48,52,55],[48,52,55],[55,59,62],[55,59,62],[53,57,60],[53,57,60],[4
 const BASS=[48,55,52,55, 55,62,59,62, 53,60,57,60, 48,55,59,55, 48,55,52,55, 55,62,59,62, 53,57,60,57, 48,52,55,43];
 function music(dt){ const a=A(); if(!a||!a.ctx()) return; const t=S.t;
   const ph=t<SEC.office?'intro':(t<SEC.turn?'chase':(t<SEC.turn+2.4?'stop':(t<SEC.freeze?'back':(t<SEC.freeze+2.2?'freeze':(t<SEC.curtain?'go':'finale')))));
-  if(ph==='intro') once('intro',()=>[60,64,67,72].forEach((n,k)=>tone(NOTE(n),0.4,0.035,'triangle',null,k*0.14)));
+  if(ph==='intro'){ for(let k=0;k<6;k++) if(t>0.2+k*0.5) once('boot'+k,()=>tone(k===5?220:1320,k===5?0.4:0.05,0.03,k===5?'sawtooth':'square')); if(t>3.0) once('growl',()=>sfx('roar')); if(t>3.4) once('intro',()=>[60,64,67,72].forEach((n,k)=>tone(NOTE(n),0.4,0.035,'triangle',null,k*0.14))); }
   if(ph==='chase'||ph==='back'||ph==='go'){ const bpm=ph==='chase'?184:212, step=60/bpm/2, up=ph==='chase'?0:5; S.beat+=dt;
     while(S.beat>=step){ S.beat-=step; const i=S.note%32, sw=(i%2)?step*0.16:0;                       // swing: offbeats land late
       tone(NOTE(BASS[i]+up),step*0.75,0.05,'triangle',null,sw);                                       // walking bass
@@ -3710,8 +3717,14 @@ function cat(c,x,F,t,runv,sit){ c.save(); c.translate(x,0); c.scale(F,1); const 
 function draw(c,V,now){
   const W=V.W, Hh=V.H, t=S.t, T=now/1000, ZS={office:0.85,doors:0.64,dead:0.7,curtain:0.62,y1938:0.68,y2060:0.68,moon:0.7}[S.scn.set]||0.8, sc=(W<Hh?Math.min(W/300,Hh/330)*1.15:Math.min(Hh*0.3/64,W*0.9/300))*ZS, sh=S.shake>0?Math.sin(T*70)*S.shake*6:0, ox=W/2+sh, oy=Hh*(W<Hh?0.62:(S.scn.set==='curtain'?0.8:0.74));
   c.setTransform(V.DPR,0,0,V.DPR,0,0);
-  if(t<SEC.office){ c.fillStyle='#0b1220'; c.fillRect(0,0,W,Hh); const txt='PHILLIPS IT PRESENTS', n=Math.floor(clamp(t/1.6,0,1)*txt.length); c.fillStyle='#7fe0a0'; c.font='700 '+Math.min(22,W/20)+'px "IBM Plex Mono",monospace'; c.textAlign='center'; c.textBaseline='middle';
-    c.fillText(txt.slice(0,n)+(Math.floor(t*3)%2?'▮':' '),W/2,Hh*0.45); if(t>2){ c.globalAlpha=clamp((t-2)/0.6,0,1); c.fillStyle='#f6ecd8'; c.font='italic '+Math.min(18,W/24)+'px Georgia,serif'; c.fillText('a cutover chase, with music',W/2,Hh*0.45+36); c.globalAlpha=1; } return; }
+  if(t<SEC.office){ c.fillStyle='#050a06'; c.fillRect(0,0,W,Hh);
+    if(t<3.4){ const L=['A+ > BOOT','COPYRIGHT 1985  PHILLIPS PET FOOD & SUPPLIES','ORDERS SHIPPED ........ ALL OF THEM','CUTOVER SCHEDULED ..... TONIGHT  00:00','...','CUTOVER?'], fs=Math.min(18,W/30), x0=Math.max(20,W*0.12), y0=Hh*0.25;
+      c.font='700 '+fs+'px "IBM Plex Mono",monospace'; c.textAlign='left'; c.textBaseline='middle';
+      L.forEach((l,k)=>{ const st=0.2+k*0.5; if(t<st) return; const n=Math.floor(clamp((t-st)/0.35,0,1)*l.length); c.fillStyle=k===5?'#e0563a':'#7fe0a0'; c.fillText(l.slice(0,n)+(t-st<0.5&&Math.floor(t*6)%2?'▮':''),x0,y0+k*fs*1.7); });
+      if(t>2.6&&D.aplusMonster){ c.save(); c.translate(W*0.78,Hh*0.72); const s2=Math.min(W,Hh)/260; c.scale(s2,s2); D.aplusMonster(c,0,0,1,t,t>3.0?'mean':'confused',{dir:-1,talk:true,loom:t>3.0?1:0}); c.restore(); }
+      c.fillStyle='rgba(127,224,160,.05)'; for(let y=0;y<Hh;y+=3) c.fillRect(0,y,W,1); return; }
+    const txt='PHILLIPS IT PRESENTS', n=Math.floor(clamp((t-3.4)/0.9,0,1)*txt.length); c.fillStyle='#7fe0a0'; c.font='700 '+Math.min(22,W/20)+'px "IBM Plex Mono",monospace'; c.textAlign='center'; c.textBaseline='middle';
+    c.fillText(txt.slice(0,n)+(Math.floor(t*3)%2?'▮':' '),W/2,Hh*0.45); if(t>4.2){ c.globalAlpha=clamp((t-4.2)/0.5,0,1); c.fillStyle='#f6ecd8'; c.font='italic '+Math.min(18,W/24)+'px Georgia,serif'; c.fillText('a cutover chase, with music',W/2,Hh*0.45+36); c.globalAlpha=1; } return; }
   if(S.scn.set==='montage'){ D.drawCardStyle(c,V,{},{title:'THE GAME',sub:'no bosses · one very old system',t:t-SEC.montage,dur:4,style:'comic',panels:[{i:'1938',c:'It starts with oats'},{i:'✍',c:'Six signatures'},{i:'🚚',c:'Nine DCs, one truck'}]}); return; }
   const cam=S.camX; drawSet(c,S.scn.set,cam,t,sc,W,Hh,ox,oy); if(S.scn.set==='spin'){ c.textAlign='center'; c.fillStyle='rgba(246,236,216,.55)'; c.font='500 12px "IBM Plex Sans",sans-serif'; c.fillText(V.touch?'tap to play':'press any key to play',W/2,Hh-22); return; }
   c.save(); c.translate(ox,oy); c.scale(sc,sc); c.translate(-cam,0);
@@ -3723,8 +3736,9 @@ function draw(c,V,now){
     const P=pose(a.x,tt,a.F,a.kind,{hop:a.hop,bow:a.bow,off:off}); a.P=P; draws.push([a.x,()=>{
       if((a.kind==='run'||a.kind==='scramble')&&!sn.freeze){ c.strokeStyle='rgba(246,236,216,.35)'; c.lineWidth=1.2; for(let k=0;k<3;k++){ const y=P.hip.y-6-k*7, x=a.x-a.F*(10+k*3); c.beginPath(); c.moveTo(x,y); c.lineTo(x-a.F*(16+k*4),y); c.stroke(); } }
       if(a.kind==='scramble'){ c.strokeStyle='rgba(246,236,216,.5)'; c.lineWidth=1; c.beginPath(); c.ellipse(a.x+a.F*3,-12,15,12,0,0,7); c.stroke(); }
-      PP.person(c,P,p.look,{ground:gy,w:{},t:T+off,mood:a.mood,talk:S.bub.some(b=>b.who===a.id)}); }]); }
-  const M=sn.mon; if(M.show&&D.aplusMonster) draws.push([M.x,()=>{ const s=1.1, rise=M.rise!=null?M.rise:1; c.save(); c.translate(0,(1-rise)*120); D.aplusMonster(c,M.x,-(M.hop||0),s,T,M.panic?'confused':(M.mood||'mean'),{dir:M.F,run:M.run&&!sn.freeze,talk:S.bub.some(b=>b.who==='aplus'),loom:M.loom||0}); c.restore();
+      PP.person(c,P,p.look,{ground:gy,w:{},t:T+off,mood:a.mood,talk:S.bub.some(b=>b.who===a.id)});
+      if(a.shades){ c.save(); c.translate(P.head.x,P.head.y+1.2); c.rotate(P.head.a); c.scale(P.face*1.16,1.16); c.fillStyle='#101218'; c.fillRect(1.4,-0.6,4.8,2.3); c.fillRect(-0.6,-0.2,2.2,0.6); c.fillStyle='rgba(255,255,255,.35)'; c.fillRect(2,-0.3,1.2,0.6); c.restore(); } }]); }
+  const M=sn.mon; if(M.show&&D.aplusMonster) draws.push([M.x,()=>{ const s=1.1, rise=M.rise!=null?M.rise:1; c.save(); c.translate(0,(1-rise)*120); if(M.trip){ c.translate(M.x,0); c.rotate(M.F*M.trip*1.25); c.translate(-M.x,0); } D.aplusMonster(c,M.x,-(M.hop||0),s,T,M.panic?'confused':(M.mood||'mean'),{dir:M.F,run:M.run&&!sn.freeze,talk:S.bub.some(b=>b.who==='aplus'),loom:M.loom||0}); c.restore();
     if(M.panic&&!sn.freeze){ c.fillStyle='rgba(111,176,255,.85)'; for(let k=0;k<2;k++){ const ph=(T*2+k*0.5)%1; c.beginPath(); c.ellipse(M.x-M.F*(10+ph*14),-118+ph*18,1.8,2.8,0,0,7); c.fill(); } } }]);
   draws.sort((a,b)=>a[0]-b[0]).forEach(d=>d[1]());
   if((sn.set==='curtain'||sn.set==='moon')&&sn.milo&&sn.milo.show){ cat(c,sn.milo.x,sn.milo.F,T,false,true); if(sn.milo.helmet){ c.strokeStyle='rgba(200,230,255,.8)'; c.lineWidth=0.9; c.fillStyle='rgba(200,230,255,.18)'; c.beginPath(); c.arc(sn.milo.x+sn.milo.F*2.5,-12.5,7,0,7); c.fill(); c.stroke(); } }
@@ -3748,6 +3762,10 @@ function draw(c,V,now){
     c.fillStyle=ap?'#7fe0a0':'#f2b544'; c.font='700 '+nf+'px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.fillText((ap?'and ':'starring  ')+nm,x0+slide+16,y0+17); c.fillStyle='#f6ecd8'; c.font='italic '+tf+'px Georgia,serif'; c.fillText(tag,x0+slide+16,y0+38); c.globalAlpha=1; }
   // wipes between beats
   for(const k of [SEC.doors,SEC.time,SEC.turn,SEC.back,SEC.curtain]){ const u=(t-k+0.35)/0.7; if(u>0&&u<1){ const x=lerp(-W*0.2,W*1.2,u); c.fillStyle='#0b1220'; c.beginPath(); c.moveTo(x-W*0.6,0); c.lineTo(x+60,0); c.lineTo(x-60,Hh); c.lineTo(x-W*0.6-120,Hh); c.fill(); } }
+  if(sn.lyric!=null){ const L=['♪  Six signatures before midnight  ♪','♪  Nine DCs and one old machine  ♪','♪  Show up for the people who count on you  ♪','♪  ...and LOCK YOUR SCREEN!  ♪'], k=Math.min(3,Math.floor(sn.lyric/1.5)), u=(sn.lyric-k*1.5)/1.5, line=L[k];
+    const tf=D.fitFont(c,line,'700 ','"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif',Math.min(24,W/22),W*0.86), y=Hh*(W<Hh?0.18:0.26); c.textAlign='center'; c.textBaseline='middle'; c.font='700 '+tf+'px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif';
+    const tw=c.measureText(line).width; c.fillStyle='rgba(11,18,32,.7)'; rr(c,W/2-tw/2-16,y-tf*0.8,tw+32,tf*1.6,10); c.fill(); c.fillStyle='rgba(246,236,216,.55)'; c.fillText(line,W/2,y);
+    c.save(); c.beginPath(); c.rect(W/2-tw/2,y-tf,tw*clamp(u*1.15,0,1),tf*2); c.clip(); c.fillStyle=k===3?'#e0563a':'#f2b544'; c.fillText(line,W/2,y); c.restore(); }
   if(sn.era){ const e=sn.era, T=t-e.t0, a=clamp(Math.min(T/0.4,(e.len-T)/0.4),0,1), tf=D.fitFont(c,e.title,'700 ','"IBM Plex Mono",monospace',Math.min(22,W/26),W*0.8);
     c.globalAlpha=a; c.textAlign='center'; c.textBaseline='middle'; c.font='700 '+tf+'px "IBM Plex Mono",monospace'; const tw=c.measureText(e.title).width+28; c.fillStyle='rgba(11,18,32,.75)'; rr(c,W/2-tw/2,Math.max(14,Hh*0.04),tw,tf+16,6); c.fill(); c.fillStyle='#f2b544'; c.fillText(e.title,W/2,Math.max(14,Hh*0.04)+tf/2+8); c.globalAlpha=1; }
   if(sn.set==='curtain'&&t>SEC.curtain+3.4){ const a=clamp((t-SEC.curtain-3.4)/0.8,0,1), tf=D.fitFont(c,'HECKTOWN ROAD','700 ','"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif',Math.min(56,Hh/7),W*0.84);
