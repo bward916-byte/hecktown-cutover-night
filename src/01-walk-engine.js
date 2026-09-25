@@ -271,6 +271,15 @@ function overlay(w,dt){
   if(w.mode==='air'){ const up=w.vy<0, fwd=Math.abs(w.vx)>20;
     if(up){ set(0,2.2,0.2); set(1,2.55,0.15); } else { set(0,1.0,0.55); set(1,1.35,0.5); }
     o.lean=fwd?(up?0.14:-0.06):0; o.rate=16; o.prop=null; }
+  const I=w.idle;
+  if(I&&w.mode==='walk'&&!w.reading&&!w.dancing&&!w.jump&&!w.act&&Math.abs(w.vx)<6){ I.t+=dt; const t=I.t, e=Math.min(1,t/0.45,Math.max(0,(I.dur-t)/0.45));
+    if(I.name==='type'){ set(0,0.95,1.3+0.07*Math.sin(t*13),e); set(1,1.0,1.28+0.07*Math.sin(t*15+1),e); o.head=0.2*e; }
+    else if(I.name==='sip'){ const lift=t<0.7?t/0.7:(t<2.0?1:Math.max(0,1-(t-2.0)/0.7)); set(1,0.55+0.75*lift,1.4+1.0*lift,e); set(0,0.1,0.35,e*0.5); o.head=-0.1*lift; o.prop='cup'; }
+    else if(I.name==='phone'){ set(1,0.32,1.85,e); set(0,0.22,1.7,e*0.8); o.head=0.36*e; o.prop='phone'; }
+    else if(I.name==='stretch'){ const up=Math.sin(Math.min(1,t/I.dur)*Math.PI); set(0,2.7*up,0.25,e); set(1,2.8*up,0.2,e); o.lean=-0.07*up; o.head=-0.12*up; o.rate=6; }
+    else if(I.name==='fold'){ set(0,0.16,2.15,e); set(1,0.22,2.1,e); o.lean=-0.025*e; }
+    else if(I.name==='shift'){ o.sway=1.7*Math.sin(t*0.9); o.head=0.07*Math.sin(t*0.6); o.lean=0.02*Math.sin(t*0.9); }
+    if(t>=I.dur) w.idle=null; }
   const A=w.act;
   if(A){ A.t+=dt;
     if(A.name==='throw'){
