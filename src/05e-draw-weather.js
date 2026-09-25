@@ -45,7 +45,14 @@ D.HOOKS.push(function(c,G,now,V){
   const t=now/1000, N=G.cur.node, gy=x=>MAP.nodes.ground.world.yAt(x);
   const f=G.lift; if(f&&f.x>V.x0-40&&f.x<V.x1+40) forklift(c,f.x,gy(f.x),f.dir,f.beep||0,t);
   if(G.portalOpen&&PORTAL_VIS(V)){ const y=MAP.nodes.hq_b1.world.yAt(GM.PORTAL_X)-40; portal(c,GM.PORTAL_X,y,t,0.8+0.1*Math.sin(t*2)); }
-  const rain=(G.wx&&G.wx.rain)||0; if(rain<0.02) return;
+  const wx=G.wx||{}, wind=wx.wind||0, pud=wx.puddle||0, rain=wx.rain||0;
+  if(pud>0.02&&N&&N.id==='ground'){ const night=G.S?clamp(((/(\d+):(\d+) (AM|PM)/.exec(GM.clock(G.S)||'')||[])[3]==='PM'?1:0),0,1):0;                   // puddles on the lot and the yard, with a glint under each lamp
+    for(const px of [-140,-30,110,320,600,1990,2130,3320]){ if(px<V.x0-60||px>V.x1+60) continue; const y=gy(px); c.fillStyle='rgba(120,150,190,'+(0.35*pud).toFixed(3)+')'; c.beginPath(); c.ellipse(px,y+1.2,26+((px*7)%13),2.6,0,0,7); c.fill();
+      c.fillStyle='rgba(255,236,190,'+(0.25*pud).toFixed(3)+')'; c.beginPath(); c.ellipse(px+6,y+1,7,0.9,0,0,7); c.fill(); if(rain>0.3) for(let k=0;k<3;k++){ const ph=((now/1000)*1.3+k*0.33+px*0.01)%1; c.strokeStyle='rgba(200,220,240,'+(0.4*(1-ph)*rain).toFixed(2)+')'; c.lineWidth=0.6; c.beginPath(); c.ellipse(px-15+k*15,y+1,1+ph*7,0.3+ph*1.6,0,0,7); c.stroke(); } } }
+  if(wind>0.05&&N&&N.id==='ground'){ const nL=Math.floor(22*wind); c.fillStyle='#8a6a3a';                                                          // leaves on the wind
+    for(let i=0;i<nL;i++){ const sp=60+rnd(i+41)*80, x=V.x0-40+(((rnd(i+13)*(V.x1-V.x0+80))+now*0.001*sp*60)%(V.x1-V.x0+80)), y=gy(x)-6-rnd(i+17)*70-Math.sin(now/300+i)*10*wind; if(inside(x,y)) continue;
+      c.save(); c.translate(x,y); c.rotate(now/200+i); c.fillStyle=['#8a6a3a','#c2622a','#b8932a'][i%3]; c.beginPath(); c.ellipse(0,0,3,1.4,0,0,7); c.fill(); c.restore(); } }
+  if(rain<0.02) return;
   c.strokeStyle='rgba(200,215,235,'+(0.35*rain).toFixed(3)+')'; c.lineWidth=0.7; c.beginPath(); const n=Math.floor(260*rain), w=V.x1-V.x0+60, h=V.y1-V.y0+40;
   for(let i=0;i<n;i++){ const sp=0.9+rnd(i+11)*0.5, y=V.y0-20+((rnd(i+3)*h+now*0.26*sp)%h), x=V.x0-30+((rnd(i)*w-(now*0.03)%w+w)%w);
     if(inside(x,y)||y>gy(x)-1) continue; c.moveTo(x,y); c.lineTo(x-2.4,y+8); } c.stroke();
