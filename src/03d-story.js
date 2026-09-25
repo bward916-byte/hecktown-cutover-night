@@ -16,6 +16,7 @@ const VIG={
   ash:[['ash','Salesforce just DM\'d me an apology.'],['hero','Salesforce can\'t DM you.'],['ash','It can now. I built a flow for it.']],
   dave:[['dave','Green screen\'s back. Forty years and it finally blinked first.'],['hero','Did you win?'],['dave','Nobody wins against a green screen. You just outlast it.']],
   umesh:[['umesh','Every 850 in the queue, back where it belongs.'],['hero','And the 997s?'],['umesh','It can keep the 997s. Nobody wants the 997s.']],
+  fares:[['fares','Umesh, your 850s are showing.'],['umesh','Those are YOUR 850s.'],['fares','...they are my 850s.'],['hero','I\'ll come back.']],
   john:[['john','I looked at the scheduler.'],['hero','And?'],['john','Nothing runs at midnight tonight unless we say so. I made sure.']],
   ryan:[['ryan','Pipeline\'s green.'],['hero','You checked already?'],['ryan','I check while I walk. It\'s a condition.']],
   brians:[['brians','It changed the admin console wallpaper to a picture of itself.'],['hero','That\'s... actually kind of sad.'],['brians','I changed it back to the dog.']],
@@ -23,6 +24,15 @@ const VIG={
   bret:[['bret','Hang on, one sec.'],['bret','...he\'s asleep. Look at that face.'],['hero','Is that the baby?'],['bret','That\'s the baby. Okay. Okay, let\'s go.']],
   hero:[['hero','The database is fine.'],['hero','It\'s everything around it that isn\'t.']],
 };
+const BANTER={
+  bret:['Lock your screen.','Is that a USB stick? Put it down.','Firewall rules are a love language.','Sixty-eight degrees. Perfect.','MFA. On everything.','Patch Tuesday waits for no one.','Who left the server room door propped?'],
+  rianan:['Has anyone fed Milo?','Every month on my cat calendar is the best month.','Cats understand cutovers. They also knock things over.','Pspspsps.'],
+  brians:['Nationally ranked. Just saying.','Nudge it, don\'t shove it.','Multiball tonight.','I could rebuild that. I won\'t. I could.'],
+  dave:['What is ENDSBS?','I\'ll take Midrange Systems for 400.','That\'s a Daily Double if I ever saw one.'],
+  aaron:['Class IV. Saturday.','Pick your line early.','Switches green. Paddles ready.'],
+  greg:['Fiscal.','Counting.','That number is wrong. Not yours. The other one.'],
+  fares:['Umesh! Your 850s!','The 997s are never fine.','EDI: Every Day, Interesting.'], umesh:['Fares, those are YOUR 850s.','The 997s are fine.','Fares owes me a coffee.'],
+  ryan:['Pipeline\'s green.','I checked. I\'m checking again.'], jose:['The dragon is load-bearing.'], ash:['There\'s a flow for that.'], cathy:['Coffee run in five.'], john:['Nothing runs at midnight unless we say so.'] };
 const comic=(title,sub,panels)=>({card:title,sub:sub,dur:5.5,style:'comic',panels:panels});
 
 function st(G){ return G.story||(G.story={ap:null,apq:[],bub:[],vig:null,vigT:0,lastSO:-1,reveal:0}); }
@@ -43,7 +53,7 @@ function bridgeCall(G,n){
     {fn:G=>{ G.S.flags.network=1; G.events.push({type:'banner',text:'The whole team, on one call. The Phillips truck is in The Yard.'}); }}];
 }
 function reveal(G){
-  const s=st(G); return [{fn:G=>{ s.reveal=3.5; G.events.push({type:'sfx',name:'door'}); }},
+  const s=st(G); return [{fn:G=>{ s.reveal=3.5; G.events.push({type:'sfx',name:'door'}); G.events.push({type:'sfx',name:'roar'}); }},
     GM.dlg(APLUS,['SO. YOU FOUND WHERE I LIVE.','I HAVE SHIPPED EVERY ORDER THIS COMPANY HAS TAKEN SINCE 1985. FROM THIS ROOM. FROM THESE FANS.','DAVE KEEPS ME COMPANY. DAVE IS A GOOD OPERATOR.','YOU ARE HERE FOR SIGNATURES. I KNOW. THE DOORS TELL ME EVERYTHING.'])];
 }
 
@@ -73,6 +83,15 @@ function tick(G,dt){
   if(s.vig){ s.vigT-=dt; if(s.vigT<=0){ const v=s.vig; v.i++; if(v.i>=v.lines.length) s.vig=null; else{ const [id,text]=v.lines[v.i]; s.bub=s.bub.filter(b=>b.id!==id); s.vigT=2.2+text.length*0.035; s.bub.push({id:id,text:text,t:s.vigT+(v.i===v.lines.length-1?1.2:0.1)}); } } }
   else if(free&&N){ if(F.ch1&&flag(S,'vig_hero')) s.vig={lines:VIG.hero,i:-1};
     else for(const q of G.npcs){ const id=q.def.id; if(VIG[id]&&q.node===N&&S.met[id]&&Math.abs(q.w.x-h.x)<80&&!F['vig_'+id]){ F['vig_'+id]=1; s.vig={lines:VIG[id],i:-1}; s.vigT=0.6; break; } } }
+  // banter: now and then someone near you says something, a comic line, never twice in a row
+  s.banT=(s.banT==null?4:s.banT)-dt;
+  if(free&&N&&!s.vig&&s.banT<=0){ s.banT=5+Math.random()*7; let pick=null,pd=110; for(const q of G.npcs){ const id=q.def.id, d=Math.abs(q.w.x-h.x); if(BANTER[id]&&q.node===N&&S.met[id]&&d<pd&&!q.crew&&(q.banCD||0)<=0){ pd=d; pick=q; } }
+    if(pick){ const L=BANTER[pick.def.id]; pick.banI=((pick.banI==null?Math.floor(Math.random()*L.length):pick.banI)+1)%L.length; s.bub=s.bub.filter(b=>b.id!==pick.def.id); s.bub.push({id:pick.def.id,text:L[pick.banI],t:3.4}); pick.banCD=28+Math.random()*20;
+      if(pick.def.id==='fares'&&Math.random()<0.6){ const u=G.npcs.find(q=>q.def.id==='umesh'); if(u&&u.node===N) s.after={id:'umesh',text:BANTER.umesh[0],t:1.6}; } } }
+  if(s.after){ s.after.t-=dt; if(s.after.t<=0){ s.bub.push({id:s.after.id,text:s.after.text,t:3.2}); s.after=null; } }
+  for(const q of G.npcs) if(q.banCD>0) q.banCD-=dt;
+  // the pinball machine in the War Room
+  if(N&&N.id==='hq_f2'&&!G.dialog&&Math.abs(1543-h.x)<22){ const b=G.target, bd=b?Math.abs(b.x-h.x)+(b.kind==='item'||b.kind==='page'?-40:0):1e9; if(Math.abs(1543-h.x)-5<bd) G.target={kind:'pinball',label:'Play',name:'the pinball machine',x:1543}; }
   // the SKU hunt: extra things to use on the warehouse floor
   if(F.skuOn&&!F.skuDone&&N&&N.id==='ground'&&!G.dialog){ let best=G.target, bd=best?Math.abs(best.x-h.x)+(best.kind==='item'||best.kind==='page'?-40:0):1e9;
     for(const k of SKUS) if(!F['sku_'+k.id]){ const d=Math.abs(k.x-h.x); if(d<26&&d-40<bd){ bd=d-40; best={kind:'sku',label:'Scan',name:k.label,x:k.x,k:k}; } }
@@ -91,6 +110,9 @@ GM.update=function(G,ix,iy,dt){ base.update(G,ix,iy,dt); tick(G,dt); };
 GM.interact=function(G){ const t=G.target, S=G.S;
   if(!G.dialog&&!G.card&&t&&!G.p38){
     if(t.kind==='sku'){ skuScan(G,t.k); return; }
+    if(t.kind==='pinball'){ const s=st(G), n=(S.flags.pinball|0)+1; S.flags.pinball=n; G.events.push({type:'sfx',name:'pinball'});
+      const R=['TILT!','MULTIBALL!','Replay!','Ball saved.','TILT! Again.','Extra ball!'], bs=G.npcs.find(q=>q.def.id==='brians');
+      G.events.push({type:'hint',text:R[(n-1)%R.length]}); if(bs&&bs.node===G.cur.node){ s.bub=s.bub.filter(b=>b.id!=='brians'); s.bub.push({id:'brians',text:n%2?'Nudge it, don\'t shove it.':'Nationally ranked. I\'m just saying.',t:3.2}); } return; }
     if(t.kind==='talk'&&(t.q.def.id==='pam'||t.q.def.id==='melissa')&&S.signoffs.Catalog&&S.met[t.q.def.id]&&!S.flags.skuDone){ skuTalk(G); return; } }
   base.interact(G); };
 GM.advance=function(G,choice){ const d=G.dialog;
