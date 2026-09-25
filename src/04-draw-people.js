@@ -53,17 +53,19 @@ function head(ctx,P,look,C,opt){
   if(st==='cap'){ ctx.beginPath(); ctx.arc(0,-0.6,R+0.6,Math.PI*1.02,Math.PI*1.98); ctx.closePath(); ctx.fillStyle=look.shirt; ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(R-0.5,-1.4); ctx.lineTo(R+5.4,-0.6); ctx.lineWidth=2.2; ctx.stroke(); ctx.lineWidth=1.1; }
   // eye: white, iris, lid; it blinks, and closes in a smile
   const ex=3.5, ey=0.35+f.eye, blink=(t%3.7)<0.12||opt.happy&&(t%0.9)<0.45;
-  if(blink){ ctx.beginPath(); ctx.moveTo(ex-1.5,ey+0.2); ctx.quadraticCurveTo(ex,ey+(opt.happy?-0.7:0.8),ex+1.5,ey+0.2); ctx.lineWidth=0.9; ctx.stroke(); }
-  else{ ctx.beginPath(); ctx.ellipse(ex,ey,1.5,1.05,0,0,7); ctx.fillStyle='#fbf7ee'; ctx.fill(); ctx.lineWidth=0.35; ctx.stroke();
+  if(blink&&!opt.surprise){ ctx.beginPath(); ctx.moveTo(ex-1.5,ey+0.2); ctx.quadraticCurveTo(ex,ey+(opt.happy?-0.7:0.8),ex+1.5,ey+0.2); ctx.lineWidth=0.9; ctx.stroke(); }
+  else{ ctx.beginPath(); ctx.ellipse(ex,ey,opt.surprise?1.6:1.5,opt.surprise?1.45:1.05,0,0,7); ctx.fillStyle='#fbf7ee'; ctx.fill(); ctx.lineWidth=0.35; ctx.stroke();
     const gx=ex+0.55+(opt.lookBack?-0.9:0), gy=ey+(opt.lookDown?0.35:0.05); ctx.beginPath(); ctx.arc(gx,gy,0.85,0,7); ctx.fillStyle=look.eye||'#4a3424'; ctx.fill(); ctx.beginPath(); ctx.arc(gx+0.1,gy,0.4,0,7); ctx.fillStyle=INK; ctx.fill();
     ctx.beginPath(); ctx.arc(gx+0.35,gy-0.35,0.22,0,7); ctx.fillStyle='#fff'; ctx.fill();
-    ctx.beginPath(); ctx.moveTo(ex-1.55,ey-0.35); ctx.quadraticCurveTo(ex,ey-1.45,ex+1.55,ey-0.3); ctx.lineWidth=0.75; ctx.strokeStyle=INK; ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(ex-1.55,ey-0.35); ctx.quadraticCurveTo(ex,ey-1.45,ex+1.55,ey-0.3); ctx.lineWidth=0.75; ctx.strokeStyle=INK; ctx.stroke();
+    if(opt.tired){ ctx.beginPath(); ctx.moveTo(ex-1.7,ey-0.2); ctx.quadraticCurveTo(ex,ey-1.6,ex+1.7,ey-0.1); ctx.quadraticCurveTo(ex,ey+0.05,ex-1.7,ey-0.2); ctx.fillStyle=C.skin; ctx.fill(); ctx.lineWidth=0.6; ctx.stroke(); } }   // heavy lids after eleven
   // brow
-  const bt=f.brow+(opt.happy?-0.35:0)+(opt.talk?-0.15*Math.sin(t*5):0); ctx.beginPath(); ctx.moveTo(ex-1.9,ey-2.3+bt*0.4); ctx.quadraticCurveTo(ex,ey-3.0+bt,ex+2.2,ey-2.0-bt*0.3); ctx.lineWidth=1.1; ctx.strokeStyle=st==='cap'?INK:f.hairDark; ctx.lineCap='round'; ctx.stroke(); ctx.strokeStyle=INK;
+  const bt=f.brow+(opt.happy?-0.35:0)+(opt.surprise?-0.85:0)+(opt.tired?0.25:0)+(opt.talk?-0.15*Math.sin(t*5):0); ctx.beginPath(); ctx.moveTo(ex-1.9,ey-2.3+bt*0.4); ctx.quadraticCurveTo(ex,ey-3.0+bt,ex+2.2,ey-2.0-bt*0.3); ctx.lineWidth=1.1; ctx.strokeStyle=st==='cap'?INK:f.hairDark; ctx.lineCap='round'; ctx.stroke(); ctx.strokeStyle=INK;
   // nostril and mouth: talks, smiles, otherwise rests
   ctx.fillStyle=f.dark; ctx.beginPath(); ctx.arc(6.6+f.nose*0.4,2.85,0.32,0,7); ctx.fill();
   if(st!=='beard'||opt.talk){ const open=opt.talk?Math.max(0,Math.sin(t*13))*1.3+0.25:0, my=4.5;
-    if(open>0.3){ ctx.beginPath(); ctx.ellipse(5.2,my+0.2,1.2,open,0.1,0,7); ctx.fillStyle='#5a1f1f'; ctx.fill(); ctx.lineWidth=0.7; ctx.stroke(); }
+    if(opt.surprise){ ctx.beginPath(); ctx.ellipse(5.2,my+0.3,0.75,0.95,0,0,7); ctx.fillStyle='#5a1f1f'; ctx.fill(); ctx.lineWidth=0.7; ctx.stroke(); }
+    else if(open>0.3){ ctx.beginPath(); ctx.ellipse(5.2,my+0.2,1.2,open,0.1,0,7); ctx.fillStyle='#5a1f1f'; ctx.fill(); ctx.lineWidth=0.7; ctx.stroke(); }
     else{ ctx.beginPath(); ctx.moveTo(6.2,my); ctx.quadraticCurveTo(5.0,my+(opt.happy?1.5:0.35+f.lip*0.4),3.7,my+(opt.happy?-0.2:0.25)); ctx.lineWidth=0.9; ctx.stroke(); } }
   if(look.stache){ ctx.beginPath(); ctx.moveTo(6.8,3.3); ctx.quadraticCurveTo(5.3,2.8,3.5,3.8); ctx.quadraticCurveTo(3.3,4.7,4.1,4.5); ctx.quadraticCurveTo(5.3,4.0,6.7,4.2); ctx.closePath(); ctx.fillStyle=look.hair; ctx.fill(); ctx.lineWidth=0.6; ctx.strokeStyle=INK; ctx.stroke(); }
   if(look.acc==='glasses'||look.glasses){ ctx.beginPath(); ctx.arc(ex+0.2,ey,2.3,0,7); ctx.moveTo(ex-2.1,ey-0.3); ctx.lineTo(-0.6,0.1); ctx.lineWidth=0.55; ctx.stroke(); ctx.fillStyle='rgba(200,230,255,.16)'; ctx.beginPath(); ctx.arc(ex+0.2,ey,2.3,0,7); ctx.fill(); }
@@ -115,9 +117,8 @@ function shoeKind(ctx,L,F,o){ const c=Math.cos(L.pitch), sn=Math.sin(L.pitch), P
    and a thin rim on the lit edge. Default: soft key light from the left. */
 let lightAt=null, L0={dir:-1,k:0.45,col:'255,240,215',rim:0.35}, LNOW=L0;
 function lightShape(ctx,path,x0,x1,y0,y1,strength){ const L=LNOW, lit=L.dir<0; ctx.save(); path(); ctx.clip();
-  const g=ctx.createLinearGradient(x0,0,x1,0), hi='rgba('+L.col+','+((0.05+0.2*L.k)*strength).toFixed(3)+')', lo='rgba(10,14,26,'+((0.16+0.16*(1-L.k))*strength).toFixed(3)+')';
-  g.addColorStop(0,lit?hi:lo); g.addColorStop(0.55,'rgba(0,0,0,0)'); g.addColorStop(1,lit?lo:hi); ctx.fillStyle=g; ctx.fillRect(x0-3,y0-3,x1-x0+6,y1-y0+6);
-  const v=ctx.createLinearGradient(0,y0,0,y1); v.addColorStop(0,'rgba('+L.col+','+(0.07*strength*L.k).toFixed(3)+')'); v.addColorStop(1,'rgba(10,14,26,'+(0.12*strength).toFixed(3)+')'); ctx.fillStyle=v; ctx.fillRect(x0-3,y0-3,x1-x0+6,y1-y0+6);
+  const dy=(y1-y0)*0.25, g=ctx.createLinearGradient(lit?x0:x1,y0-dy,lit?x1:x0,y1+dy), hi='rgba('+L.col+','+((0.06+0.2*L.k)*strength).toFixed(3)+')', lo='rgba(10,14,26,'+((0.2+0.16*(1-L.k))*strength).toFixed(3)+')';
+  g.addColorStop(0,hi); g.addColorStop(0.5,'rgba(0,0,0,0)'); g.addColorStop(1,lo); ctx.fillStyle=g; ctx.fillRect(x0-3,y0-3,x1-x0+6,y1-y0+6);   // one diagonal pass: lit side and top, shadow side and bottom
   if(L.rim>0.02){ ctx.translate(-L.dir*1.25,0.9); path(); ctx.strokeStyle='rgba('+L.col+','+(L.rim*strength).toFixed(3)+')'; ctx.lineWidth=1.5; ctx.stroke(); }
   ctx.restore(); }
 /* a limb as one tapered shape through its joints: no ball joints, no seams */
@@ -198,10 +199,10 @@ function person(ctx,P,look,opt){
     else { const fx=A.hx-A.ex, fy=A.hy-A.ey, cx=A.ex+fx*0.84, cy=A.ey+fy*0.84, fl=Math.hypot(fx,fy)||1, nx=-fy/fl*5, ny=fx/fl*5; ctx.strokeStyle=o.top==='blazer'?'rgba(236,232,222,.9)':shade(o.sleeve,far?0.5:0.68); ctx.lineWidth=1.1; ctx.beginPath(); ctx.moveTo(cx+nx,cy+ny); ctx.lineTo(cx-nx,cy-ny); ctx.stroke();
       const ex=A.ex, ey=A.ey; ctx.strokeStyle='rgba(10,14,26,.22)'; ctx.lineWidth=0.6; ctx.beginPath(); ctx.moveTo(ex-nx*0.4,ey-ny*0.4); ctx.quadraticCurveTo(ex+fx*0.08,ey+fy*0.08,ex+fx*0.14+nx*0.2,ey+fy*0.14+ny*0.2); ctx.stroke(); }   // a crease at the elbow
     ctx.restore();
-    lightShape(ctx,path,bb[0],bb[1],bb[2],bb[3],far?0.6:0.9); path(); ctx.strokeStyle=INK; ctx.lineWidth=1.05; ctx.lineJoin='round'; ctx.stroke();
+    if(!far) lightShape(ctx,path,bb[0],bb[1],bb[2],bb[3],0.9); path(); ctx.strokeStyle=INK; ctx.lineWidth=1.05; ctx.lineJoin='round'; ctx.stroke();
     hand(ctx,A,F,sk,o.long?(o.top==='blazer'?'#ece8de':sc):null,curl(i),flat); };
   const leg=(i,far)=>{ const L=P.legs[i], col=far?C.pantsFar:C.pants, pts=[[P.hip.x,P.hip.y],[L.kx,L.ky],[L.ax,L.ay]], ws=[6.6*lw,4.6*Math.pow(B.d,0.4),3.9];
-    const path=()=>limbPath(ctx,pts,ws,false), bb=bbox(pts,3); path(); ctx.fillStyle=col; ctx.fill(); lightShape(ctx,path,bb[0],bb[1],bb[2],bb[3],far?0.6:0.85);
+    const path=()=>limbPath(ctx,pts,ws,false), bb=bbox(pts,3); path(); ctx.fillStyle=col; ctx.fill(); if(!far) lightShape(ctx,path,bb[0],bb[1],bb[2],bb[3],0.85);
     ctx.save(); path(); ctx.clip(); const kx=L.kx, ky=L.ky; ctx.strokeStyle='rgba(10,14,26,.2)'; ctx.lineWidth=0.6; ctx.beginPath(); ctx.moveTo(kx-L.face*1.6,ky-1.2); ctx.quadraticCurveTo(kx,ky+0.6,kx+L.face*1.8,ky-0.4); ctx.stroke(); ctx.restore();   // the knee folds, it doesn't hinge
     path(); ctx.strokeStyle=INK; ctx.lineWidth=1.05; ctx.lineJoin='round'; ctx.stroke();
     ctx.lineCap='round'; if(o.bottom==='jeans') line(ctx,[P.hip.x+(L.kx-P.hip.x)*0.15,P.hip.y+(L.ky-P.hip.y)*0.15],[L.kx+(L.ax-L.kx)*0.8,L.ky+(L.ay-L.ky)*0.8],'rgba(210,160,90,.45)',0.4);
@@ -218,7 +219,7 @@ function person(ctx,P,look,opt){
   if(opt.scarf){ const pts=[]; for(const p of opt.scarf) pts.push(p.x,p.y); stroke(ctx,pts,2.6,'#f2b544'); }
   { const np=[[P.neck.x-ux*1.6,P.neck.y-uy*1.6],[P.neck.x+(P.head.x-P.neck.x)*0.6,P.neck.y+(P.head.y-P.neck.y)*0.6]], nw=[4.2*Math.pow(B.d,0.4),3.4], path=()=>limbPath(ctx,np,nw,false), bb=bbox(np,3);
     path(); ctx.fillStyle=C.skin; ctx.fill(); lightShape(ctx,path,bb[0],bb[1],bb[2],bb[3],0.9); ctx.save(); path(); ctx.clip(); ctx.fillStyle='rgba(10,14,26,.18)'; ctx.fillRect(np[1][0]-4,np[1][1]-0.5,8,2.2); ctx.restore(); path(); ctx.strokeStyle=INK; ctx.lineWidth=1; ctx.stroke(); }
-  head(ctx,P,look,C,{t:opt.t,talk:opt.talk,happy:opt.happy||w.dancing||act==='clap',lookDown:w.reading||flat});
+  head(ctx,P,look,C,{t:opt.t,talk:opt.talk,happy:opt.happy||opt.mood==='happy'||w.dancing||act==='clap',lookDown:w.reading||flat||(w.idle&&(w.idle.name==='phone'||w.idle.name==='type')),surprise:opt.mood==='surprise'&&!opt.talk,tired:opt.mood==='tired'&&!opt.talk});
   if(opt.scarf) stroke(ctx,[P.neck.x-uy*2.8-ux*0.9,P.neck.y+ux*2.8-uy*0.9,P.neck.x+uy*2.7-ux*1.6,P.neck.y-ux*2.7-uy*1.6],3.2,'#f2b544');
   const H=P.arms[1];
   if(P.prop==='book'){ ctx.save(); ctx.translate(H.hx+F*1.6,H.hy-2.4); ctx.rotate(-F*0.5); ctx.lineWidth=1; ctx.strokeStyle=INK; ctx.fillStyle='#7a3b2a'; ctx.fillRect(-5.2,-3.6,10.4,7.2); ctx.strokeRect(-5.2,-3.6,10.4,7.2);
