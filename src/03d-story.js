@@ -37,7 +37,7 @@ const comic=(title,sub,panels)=>({card:title,sub:sub,dur:5.5,style:'comic',panel
 
 function st(G){ return G.story||(G.story={ap:null,apq:[],bub:[],vig:null,vigT:0,lastSO:-1,reveal:0}); }
 function aplusSay(G,text,dur){ const s=st(G); s.apq.push({text:text,dur:dur||Math.max(4,text.length/14),t:0,typed:0}); }
-function aplusMood(text){ if(!text) return 'idle'; if(/ARCHIVED|THANK YOU|\.\.\.$|GOOD NIGHT|COMPANY|OPERATOR/.test(text)) return 'quiet'; if(/\?|WHO |WHY |WHAT /.test(text)) return 'confused'; if(/DENIED|MINE|NO\.|NEVER|GET OUT|CANNOT/.test(text)) return 'mean'; if(/ONE |TWO|THREE|FOUR|SIX|COUNTING|WE WILL SEE|WARM/.test(text)) return 'smug'; return 'talk'; }
+function aplusMood(text){ if(!text) return 'idle'; if(/ARCHIVED|THANK YOU|\.\.\.$|GOOD NIGHT|COMPANY|OPERATOR/.test(text)) return 'quiet'; if(/\?|WHO |WHY |WHAT /.test(text)) return 'confused'; if(/DENIED|MINE|NO\.|NEVER|GET OUT|CANNOT|\bAI\b|CHATBOT|WEBSITE/.test(text)) return 'mean'; if(/ONE |TWO|THREE|FOUR|SIX|COUNTING|WE WILL SEE|WARM/.test(text)) return 'smug'; return 'talk'; }
 function flag(S,k){ if(S.flags[k]) return false; S.flags[k]=1; return true; }
 
 function bridgeCall(G,n){
@@ -70,12 +70,22 @@ function tick(G,dt){
   if(free){
     if(S.flags.started&&flag(S,'ch1')){ G.cine.push(comic('CHAPTER ONE','Six signatures before midnight',[{i:'☕',c:'6:00 PM. Rianan\'s checklist'},{i:'✍',c:'Six system owners'},{i:'A+',c:'One very old system'}])); aplusSay(G,'I HEARD THAT. SIX SIGNATURES. WE WILL SEE.'); }
     else if(so>=3&&flag(S,'halfway')) G.cine.push(...bridgeCall(G,so));
+    else if(so>=1&&N&&N.id==='hq_f2'&&h.x>1340&&h.x<1550&&flag(S,'monthly')){ const R=who('rianan'), A=who('aaron'), B=who('brians'), J=who('john');
+      G.cine.push(GM.dlg(R,['Rianan: "Since we\'re all here: the monthly. Thirty seconds each on your department. Go."']),
+        GM.dlg(A,['Aaron: "Network. Every DC answers on the new path, the switches are green, and nobody has unplugged anything today. Yet."','Aaron: "Also it\'s a rafting weekend. Class IV. That\'s not network, that\'s just news."']),
+        GM.dlg(B,['Brian S: "Systems. This month I rebuilt the render box, the flippers on the pinball machine, and A+\'s attitude. Two out of three."']),
+        GM.dlg(R,['Rianan: "Projects. The new website launched this afternoon. Orders are flowing. It has an AI assistant, and the old system has opinions about that."','Rianan: "John. You\'re in this too. Jobs?"']),
+        GM.dlg(J,['John: "Jobs. Nothing runs at midnight unless we say so. That includes the monthly. That includes me."']),
+        GM.dlg(APLUS,['A MEETING. ABOUT ME. WITHOUT ME. ABOUT THE "AI". WITH ME LISTENING.']),
+        GM.dlg(R,['Rianan: "Good monthly. Back to work."']), {fn:G=>G.events.push({type:'banner',text:'The monthly, done in ninety seconds'})}); }
     else if(so>=6&&flag(S,'ch3')) G.cine.push(comic('CHAPTER THREE','Six of six',[{i:'✍',c:'Every owner signed'},{i:'🔑',c:'Greg has the only key'},{i:'⬇',c:'A+ is waiting, all the way down'}]));
     else if(S.inv.tunnelkey&&flag(S,'ch4')){ G.cine.push(comic('CHAPTER FOUR','Down',[{i:'🧱',c:'A door bricked over in \'91'},{i:'🕯',c:'Tunnels older than the building'},{i:'A+',c:'The machine room'}])); aplusSay(G,'GREG. OF COURSE IT WAS GREG.'); }
     else if(N&&N.id==='hq_b1'&&MAP.rooms.some(r=>r.name==='Server Room'&&S.rooms[r.id])&&flag(S,'reveal')) G.cine.push(...reveal(G));
   }
   if(so!==s.lastSO){ if(s.lastSO>=0&&so>s.lastSO&&SO_LINES[so]&&flag(S,'ap_so'+so)) aplusSay(G,SO_LINES[so]); s.lastSO=so; }
   if(S.inv.badge&&flag(S,'ap_badge')) aplusSay(G,'LEVEL 2. THE DOORS REPORT TO ME, YOU KNOW.');
+  if(S.signoffs.Storefront&&flag(S,'ap_ai')) aplusSay(G,'THE NEW WEBSITE HAS AN "AI". IT WRITES ITS OWN REPORTS. I WROTE MINE BY HAND. IN RPG. ON A FRIDAY.',7);
+  if(S.signoffs.Storefront&&S.signoffs.EDI&&flag(S,'ap_ai2')) aplusSay(G,'THE AI ANSWERS QUESTIONS. I ANSWERED QUESTIONS. NOBODY ASKED THE AI TO DO IT FOR FORTY YEARS.',6);
   if(GM.count(S.pages)>=1&&flag(S,'ap_page')) aplusSay(G,'THAT LEDGER IS OLDER THAN ME. I READ IT ANYWAY.');
   if(N&&N.id==='tun_2'&&flag(S,'ap_tun')) aplusSay(G,'YOU ARE GETTING WARMER. I RUN WARM.');
   // vignettes: speech bubbles, one exchange at a time, once per person
