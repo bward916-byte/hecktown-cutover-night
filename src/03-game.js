@@ -190,9 +190,9 @@ function talkLines(G,p){
      return ['Bay 2\'s waiting on that kibble. Trucks roll at dawn whether the system\'s up or not.'];
    case 'ash':
      if(S.done) return ['Don\'t ask.','...Fine. I built a flow that triggers when everything ships. Everything shipped. I don\'t know where it took me. I was gone eleven minutes.'];
-     if(S.signoffs.Storefront) return ['Salesforce is talking to me again. It apologized. We\'re fine.','Call me Ash. And yes, the flow will hold.'];
+     if(S.signoffs.Storefront) return ['Salesforce is talking to me again. It apologized. We\'re fine.','The new website launched today. It has an AI assistant on it. Please don\'t mention that near the basement.'];
      if(I.coffee){ delete I.coffee; signoff(G,'Storefront'); return ['You are a good person. ...Okay. Orders are flowing end to end. Storefront is signed.']; }
-     F.sfAsked=1; return ['I have been staring at this flow since lunch. I will sign Storefront the second there is coffee in my hand.','Tina\'s truck is still open tonight. West lot, past the garage.'];
+     F.sfAsked=1; return ['The new website launched this afternoon. Orders are flowing. My flow is what the orders flow through.','I have been staring at this flow since lunch. I will sign Storefront the second there is coffee in my hand.','Tina\'s truck is still open tonight. West lot, past the garage.'];
    case 'tina':
      if(F.sfAsked&&!I.coffee&&!S.signoffs.Storefront){ I.coffee=1; G.events.push({type:'banner',text:'Got a coffee for Ash'}); return ['For Ash? Large, no room. On the house, it\'s cutover night.']; }
      if(F.miloAsked&&!I.taco){ I.taco=1; G.events.push({type:'banner',text:'Got a taco for Milo'}); return ['A taco for the cat? He tips better than you do.']; }
