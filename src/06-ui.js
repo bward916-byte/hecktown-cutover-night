@@ -206,7 +206,7 @@ function frame(now){
     G.events.length=0;
     autosave+=dt; if(autosave>20){ autosave=0; save(); }
     for(const f of EXT.tick) f(dt);
-    typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); } dialogUI(); document.body.classList.toggle('card',!!(G.card||G.board||G.drive));
+    typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); } dialogUI(); document.body.classList.toggle('card',!!(G.card||G.board||G.drive||G.pin));
   } else { readInput(); queue.length=0; acc=0; }
   if(saveBlip>0){ saveBlip-=dt; if(saveBlip<=0) $('saved').classList.remove('on'); }
   if(AC){ tickMusic(); tickRain(); tickAmbience(); }
