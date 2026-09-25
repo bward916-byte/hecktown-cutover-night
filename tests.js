@@ -143,6 +143,12 @@ section('people do things while they wait');
   const H=newGame(); H.S.flags.started=1; H.S.met.pam=1; H.S.met.melissa=1; H.S.flags.catalogAsked=1; H.S.inv.label=1; talkTo(H,'melissa'); ok(H.S.signoffs.Catalog,'Catalog signs');
   const who=new Set(); for(let i=0;i<120*2;i++){ step2(H); for(const q of H.npcs) if(q.w.act&&q.w.act.name==='clap') who.add(q.def.id); } ok(who.size>=2,'the room applauds a sign-off ('+[...who].join(',')+')'); }
 
+section('banter, pinball, Fares');
+{ const G=newGame(), S=G.S; for(const p of GM.PEOPLE) S.met[p.id]=1; Object.assign(S.flags,{started:1,ch1:1,vig_hero:1}); for(const k in GM.STORY.VIG) S.flags['vig_'+k]=1;
+  ok(GM.PEOPLE.some(p=>p.id==='fares'&&p.node==='hq_f2'),'Fares works in EDI');
+  ok(goTo(G,'hq_f2',1543),'reach the pinball machine'); walkTo(G,1543); ok(G.target&&G.target.kind==='pinball','pinball is playable'); GM.interact(G); ok(S.flags.pinball===1,'played a ball');
+  let said=new Set(); for(let i=0;i<120*60;i++){ step2(G); for(const b of G.story.bub) said.add(b.id); if(i%(120*6)===0) walkTo(G,1300+((i/720)%4)*120); } ok(said.size>=2,'people banter as you pass ('+[...said].join(',')+')'); }
+
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
 for(const L of MAP.links){ const s=L.world.s; for(let i=1;i<s.length;i++) ok(Math.abs(s[i].x0-s[i-1].x1)<1e-6,'contiguous '+L.id);
