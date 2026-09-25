@@ -43,6 +43,8 @@ $('bMap').onclick=()=>{ O.map=!O.map; saveOpts(); };
 H.openOptions=openOpts;
 
 /* ---------------- speedrun clock ---------------- */
+/* a short musical sting for each chapter card */
+let lastCard=null; EXT.tick.push(()=>{ const k=H.G&&H.G.card; if(k&&k!==lastCard&&k.style==='comic'&&H.audio&&H.audio.ctx()){ const N=n=>440*Math.pow(2,(n-69)/12); [60,64,67,72,67,72].forEach((n,i)=>H.audio.tone(N(n),i===5?0.7:0.13,0.035,'triangle',null,i*0.12)); H.audio.burst(120,0.7,0.05,0.08); } lastCard=k; });
 let runT=0; EXT.tick.push(dt=>{ runT-=dt; if(runT>0) return; runT=0.25; const S=H.G.S, el=$('hRun'); el.classList.toggle('hide',!O.run); if(O.run) el.textContent='run '+GM.fmtRun(S.runEnd!=null?S.runEnd:S.run)+(S.runEnd!=null?' ✓':''); });
 
 /* ---------------- minimap ---------------- */
