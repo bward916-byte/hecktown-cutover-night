@@ -21,7 +21,7 @@ const PEOPLE=[
  P('aaron','Aaron','Network Specialist',['#d9a77c','#1f1a17','hoodie','#4a4f6b','#1f2330','cable'],'hq_roof',1300,{wander:[1180,1480]}),
  P('dave','Dave','iSeries Guru',['#eec2a0','#8e8e8e','beard','#8a4a3a','#3a3d47','flannel'],'hq_b1',1820),
  P('john','John','iSeries Manager',['#e9bb95','#3a2c22','short','#2f5f8f','#2b2f3a','keys'],'hq_f2',1512),
- P('greg','Greg','Number Scientist',['#9a9a9a','#777777','wavy','#8a8a8a','#5a5a5a','cardigan'],'hq_b1',1440,{wander:[1350,1530]}),
+ P('greg','Greg','Number Scientist',['#9a9a9a','#777777','wavy','#8a8a8a','#5a5a5a','cardigan'],'hq_b1',1440,{wander:[1400,1530]}),
  P('pam','Pam','Item Maintenance (PIM)',['#f1c9a5','#6a4a3a','bun','#7a5a8a','#2b2f3a','lanyard'],'hq_f2',1236,{busy:true}),
  P('melissa','Melissa','Item Maintenance (PIM)',['#e8b48e','#2a1e18','ponytail','#3f7f8f','#2b2f3a','lanyard'],'hq_f2',1284,{busy:true}),
  P('cathy','Cathy','PIM Assistant',['#f0c7a3','#b07a4a','wavy','#c25a7a','#2b2f3a','lanyard'],'hq_f2',1320,{lines:['I\'m Pam and Melissa\'s assistant. They\'re in the PIM. They are always in the PIM. I bring them things.','Four hundred attributes on a bag of kibble. I have opinions about every one of them.','If you need them, talk loud. They won\'t look up from the grid, but they\'re listening.']}),
