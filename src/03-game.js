@@ -54,15 +54,21 @@ const WARDROBE={rianan:{top:'blazer'},brians:{top:'polo'},ryan:{top:'tee'},ash:{
   dee:{top:'button',bottom:'slacks'},lou:{top:'tee',bottom:'work',shoe:'boot'},ben:{top:'tee',bottom:'work',shoe:'boot'},priya:{top:'tee',shoe:'sneaker'},frank:{top:'flannel',bottom:'work'},walt:{top:'button',bottom:'work',shoe:'boot'}};
 for(const p of PEOPLE) if(WARDROBE[p.id]) Object.assign(p.look,WARDROBE[p.id]);
 /* what people do while they wait: a few habits each, picked at random now and then */
-const HABITS={rianan:['phone','fold','shift'],brians:['fold','sip','shift'],ryan:['phone','shift'],ash:['type','sip'],umesh:['type','sip','shift'],jose:['type','fold'],andrew:['type','phone','sip'],aaron:['stretch','fold','shift'],
+const HABITS={rianan:['phone','fold','shift'],brians:['fold','sip','shift'],ryan:['phone','shift','dance'],ash:['type','sip'],umesh:['type','sip','shift'],jose:['type','fold'],andrew:['type','phone','sip'],aaron:['stretch','fold','shift','roll'],
   dave:['sip','fold','stretch'],john:['fold','phone','sip'],greg:['shift','fold'],pam:['type'],melissa:['type'],cathy:['sip','phone','shift'],bret:['phone','stretch','shift'],blaine:['fold','sip'],nick:['phone','fold'],kim:['type','sip'],
   ashley:['type','phone'],jessica:['phone','fold'],jennifer:['type','sip'],josh:['type','phone'],stephanie:['type','phone'],wendy:['type','sip'],marc:['type','sip'],dee:['fold','shift'],lou:['stretch','sip'],ben:['stretch','shift'],
-  priya:['stretch'],rosa:['phone','stretch','shift'],dot:['phone','stretch'],sal:['phone','shift'],marisol:['phone','stretch'],tina:['sip','fold'],frank:['fold','shift'],walt:['sip','shift']};
+  priya:['stretch','roll'],rosa:['phone','stretch','shift'],dot:['phone','stretch'],sal:['phone','shift'],marisol:['phone','stretch'],tina:['sip','fold'],frank:['fold','shift'],walt:['sip','shift']};
 const IDLE_LEN={type:[6,12],sip:[2.8,3.2],phone:[5,9],stretch:[2.2,2.6],fold:[5,10],shift:[6,10]};
-function idleTick(q,dt){ const w=q.w; if(w.act||w.reading||w.dancing||w.mode!=='walk') return; if(w.idle) return;
+const IDLE_MOVES={dance:[4,8],clap:[1.5,1.5],roll:[1,1]};
+function idleTick(q,dt,world,party){ const w=q.w;
+  if(q.mood){ q.mood.t-=dt; if(q.mood.t<=0) q.mood=null; }
+  if(w.dancing){ q.danceT=(q.danceT||0)-dt; if(q.danceT<=0) w.dancing=false; return; }
+  if(w.act||w.reading||w.mode!=='walk'||w.idle) return;
   q.idleT=(q.idleT==null?1+Math.random()*4:q.idleT)-dt; if(q.idleT>0) return;
-  const L=(q.def&&(q.def.habits||HABITS[q.def.id]))||['shift','fold','phone'], n=L[Math.floor(Math.random()*L.length)], r=IDLE_LEN[n];
-  w.idle={name:n,t:0,dur:r[0]+Math.random()*(r[1]-r[0])}; q.idleT=(q.def&&q.def.busy)?0.2:2+Math.random()*5; }
+  let L=(q.def&&(q.def.habits||HABITS[q.def.id]))||['shift','fold','phone']; if(party&&!(q.def&&q.def.busy)) L=L.concat(['dance','dance','clap']);
+  const n=L[Math.floor(Math.random()*L.length)]; q.idleT=(q.def&&q.def.busy)?0.2:2+Math.random()*5;
+  if(IDLE_MOVES[n]){ if(!world) return; if(n==='dance'){ if(E.command(w,world,'dance')) q.danceT=4+Math.random()*4; } else E.command(w,world,n); return; }
+  const r=IDLE_LEN[n]; w.idle={name:n,t:0,dur:r[0]+Math.random()*(r[1]-r[0])}; }
 const BISCUIT={id:'biscuit',name:'Biscuit',node:'ground',x:340,homeX:2740};
 
 /* ---------------- things to pick up or use ---------------- */
@@ -141,7 +147,8 @@ function create(save){
 }
 function award(G,pts,text){ G.S.points+=pts; G.events.push({type:'banner',text:text,pts:pts}); }
 function say(G,who,pages,opt){ G.dialog=Object.assign({who:who.name,role:who.role||'',look:who.look||null,pages:pages,i:0},opt||{}); G.events.push({type:'sfx',name:'talk'}); }
-function signoff(G,name){ G.S.signoffs[name]=1; award(G,PTS.signoff,'Sign-off: '+name+' ('+count(G.S.signoffs)+' of 6)'); G.events.push({type:'sfx',name:'good'}); G.events.push({type:'save'}); }
+function signoff(G,name){ G.S.signoffs[name]=1; award(G,PTS.signoff,'Sign-off: '+name+' ('+count(G.S.signoffs)+' of 6)'); G.events.push({type:'sfx',name:'good'}); G.events.push({type:'save'});
+  for(const q of G.npcs) if(q.node===G.cur.node&&Math.abs(q.w.x-G.hero.x)<220&&!q.crew){ q.clap=0.15+Math.random()*0.6; q.mood={name:'happy',t:4}; } }   // the room applauds
 
 /* What each person says, and what it changes. Returns an array of lines. */
 function talkLines(G,p){
@@ -311,12 +318,11 @@ function setLimits(G){
     if(h.mode!=='crawl') for(const d of MAP.ducts) if(d.node===N.id){ if(h.x<=d.x0) x1=Math.min(x1,d.x0-10); else if(h.x>=d.x1) x0=Math.max(x0,d.x1+10); } }
   w.x0=x0; w.x1=x1;
 }
-function command(G,name){
+function command(G,name){ if(name==='dance'||name==='clap'||name==='roll') return false;
   if(G.dialog) return false; const h=G.hero;
   if(h.mode==='crawl'&&(name==='crawl'||name==='jump')&&inDuct(G,16)){ G.events.push({type:'hint',text:'Too low to stand up in here.'}); return false; }
   const ok=E.command(h,G.cur.world,name);
-  if(ok&&(name==='dance'||name==='clap')&&!G.S.eggs[name]){ for(const q of G.npcs) if(q.node===G.cur.node&&Math.abs(q.w.x-h.x)<90){ G.S.eggs[name]=1; award(G,0,name==='dance'?'Morale: danced for '+q.def.name:'Morale: a round of applause for '+q.def.name); q.clap=0.5; break; } }
-  if(ok&&name==='roll'&&!G.S.eggs.roll){ G.S.eggs.roll=1; award(G,0,'Stop, drop and roll'); }
+  // dance, clap and roll belong to the cast now (idle habits, sign-offs, the party)
   return ok;
 }
 
@@ -359,8 +365,10 @@ function update(G,ix,iy,dt){
     if(q.clap>0){ q.clap-=dt; if(q.clap<=0) E.command(q.w,q.node.world,'clap'); }
     if(same&&Math.abs(dx)<70){ if(!p.busy&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); q.wait=Math.max(q.wait,1.5); if(!p.busy&&q.w.idle&&q.w.idle.name!=='shift'){ q.w.idle=null; q.idleT=2; } }   // busy people keep their eyes on the screen
     else if(p.wander){ q.wait-=dt; if(q.wait<=0){ if(Math.abs(q.goal-q.w.x)<6){ q.goal=p.wander[0]+Math.random()*(p.wander[1]-p.wander[0]); q.wait=2+Math.random()*7; } else inp=Math.sign(q.goal-q.w.x)*0.5*((q.w.gait&&q.w.gait.pace)||1); } }
-    if(inp===0) idleTick(q,dt); else if(q.w.idle) q.w.idle=null;
-    q.pose=E.updateWalker(q.w,q.node.world,inp,dt); q.w.events.length=0;
+    if(inp===0) idleTick(q,dt,q.node.world,!!S.done); else{ if(q.w.idle) q.w.idle=null; if(q.w.dancing) q.w.dancing=false; }
+    q.pose=E.updateWalker(q.w,q.node.world,inp,dt);
+    if(same&&Math.abs(dx)<170) for(const ev of q.w.events) if(ev.type==='step'){ const lk=p.look; G.events.push({type:'npcstep',shoe:lk.shoe||(lk.top==='blazer'||lk.top==='button'?'dress':'sneaker'),heavy:root.HBODY?root.HBODY.buildOf(lk).d:1,d:Math.abs(dx)}); }
+    q.w.events.length=0;
   }
   // Biscuit
   const b=G.biscuit; b.t+=dt; if(b.run){ b.x+=260*dt; if(b.x>=BISCUIT.homeX){ b.x=BISCUIT.homeX; b.run=0; } }
