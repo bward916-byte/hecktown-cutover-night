@@ -40,6 +40,8 @@ function portal(c,x,y,t,a){ c.save(); c.globalCompositeOperation='lighter';
   for(let k=0;k<8;k++){ const an=t*3+k*0.8; c.fillStyle='rgba(120,255,140,'+0.8*a+')'; c.fillRect(x+Math.cos(an)*32*a,y+Math.sin(an)*52*a,2,2); }
   c.restore(); }
 D.HOOKS.push(function(c,G,now,V){
+  if(G.fx) for(const f of G.fx){ c.fillStyle='rgba(200,206,214,'+(0.4*(1-f.a)).toFixed(3)+')'; c.beginPath(); c.arc(f.x,f.y,f.r+f.a*4,0,7); c.fill(); }
+  if(G.hero.mode==='run'&&G.pose){ const h=G.hero, P=G.pose, s=clamp(Math.abs(h.vx)/150,0,1); c.strokeStyle='rgba(246,236,216,'+(0.3*s).toFixed(3)+')'; c.lineWidth=1.1; for(let k=0;k<3;k++){ const y=P.hip.y-4-k*7, x=h.x-h.facing*(9+k*3); c.beginPath(); c.moveTo(x,y); c.lineTo(x-h.facing*(12+k*4)*s,y); c.stroke(); } }
   const t=now/1000, N=G.cur.node, gy=x=>MAP.nodes.ground.world.yAt(x);
   const f=G.lift; if(f&&f.x>V.x0-40&&f.x<V.x1+40) forklift(c,f.x,gy(f.x),f.dir,f.beep||0,t);
   if(G.portalOpen&&PORTAL_VIS(V)){ const y=MAP.nodes.hq_b1.world.yAt(GM.PORTAL_X)-40; portal(c,GM.PORTAL_X,y,t,0.8+0.1*Math.sin(t*2)); }
