@@ -14,6 +14,7 @@ function checkPose(G){
   for(const L of P.legs){ const th=Math.hypot(L.kx-P.hip.x,L.ky-P.hip.y), sh=Math.hypot(L.ax-L.kx,L.ay-L.ky); stats.maxLeg=Math.max(stats.maxLeg,Math.abs(th-15),Math.abs(sh-15)); }
   if(G.hero.mode==='walk'&&!G.hero.fade){ const s=P.hip.y-w.yAt(P.hip.x); if(s>-8) stats.sink++;
     for(const f of G.hero.feet){ stats.reach=Math.max(stats.reach,Math.hypot(f.ax-G.hero.x,f.ay-G.hero.y)); if(f.planted&&Math.abs(w.s[f.si].y-f.py)>0.01) stats.offTread++; } }
+  if(G.hero.mode==='run'){ stats.runFrames=(stats.runFrames||0)+1; for(const L of P.legs) if(L.ay>w.yAt(L.ax)-2.1) stats.runSink=(stats.runSink||0)+1; }
   for(const k of ['x','y']) if(!isFinite(G.hero[k])) throw new Error('NaN in hero');
 }
 
@@ -218,4 +219,5 @@ section('random input soak (10 game-minutes)');
 console.log('\nrig: '+stats.steps+' steps, worst bone-length error '+stats.maxLeg.toFixed(3)+', longest leg reach '+stats.reach.toFixed(2)+' of '+E.LEG+', feet off their tread '+stats.offTread+', hips-near-ground frames '+stats.sink);
 ok(stats.reach<=E.LEG+0.01,'no leg over-extension'); ok(stats.offTread===0,'planted feet sit on their tread');
 ok(stats.maxLeg<0.6,'bones keep their length');
+console.log('running: '+(stats.runFrames||0)+' frames, feet through the floor '+(stats.runSink||0)); ok((stats.runFrames||0)>1000,'the player runs on open floor'); ok(!stats.runSink,'running feet never go through the floor');
 console.log(fails?('\n'+fails+' FAILED'):'\nALL PASSED'); process.exit(fails?1:0);
