@@ -4,16 +4,19 @@
 const E=WalkEngine, GM=HGAME, MAP=HMAP, DRAW=HDRAW, PP=HPEOPLE, CFG=E.CFG;
 const $=id=>document.getElementById(id), clamp=(v,a,b)=>v<a?a:(v>b?b:v);
 const cv=$('c'), ctx=cv.getContext('2d');
-const KEY='hecktown2.save.v1';
+const KEY='hecktown2.save.v1', CHK='hecktown2.chapter';
+let CH='cutover'; try{ CH=localStorage.getItem(CHK)||'cutover'; }catch(_){ }
+const keyFor=id=>KEY+(id==='cutover'?'':'.'+id);
+function setChapter(id){ CH=id; try{ localStorage.setItem(CHK,id); }catch(_){ } }
 const V={W:0,H:0,DPR:1,zoom:2,camx:1150,camy:-34,touch:false};
 const zoomStops=[310,420,235]; let zi=0;
 let G=null, state='title', soundOn=true;
 
 /* ---------------- saving ---------------- */
-function loadSave(){ try{ const s=JSON.parse(localStorage.getItem(KEY)||'null'); return s&&s.v===1?s:null; }catch(_){ return null; } }
+function loadSave(id){ try{ const s=JSON.parse(localStorage.getItem(keyFor(id||CH))||'null'); return s&&s.v===1?s:null; }catch(_){ return null; } }
 let saveBlip=0;
-function save(){ if(!G||state==='title') return; try{ localStorage.setItem(KEY,JSON.stringify(G.S)); saveBlip=1.6; $('saved').classList.add('on'); }catch(_){ } }
-function wipe(){ try{ localStorage.removeItem(KEY); }catch(_){ } }
+function save(){ if(!G||state==='title') return; try{ localStorage.setItem(keyFor(G.S.chapter||'cutover'),JSON.stringify(G.S)); saveBlip=1.6; $('saved').classList.add('on'); }catch(_){ } }
+function wipe(id){ try{ localStorage.removeItem(keyFor(id||CH)); }catch(_){ } }
 addEventListener('pagehide',save); document.addEventListener('visibilitychange',()=>{ if(document.hidden) save(); });
 
 /* ---------------- input ---------------- */
@@ -36,7 +39,7 @@ addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code.startsWith('Arrow')
   if(state==='title'){ if(e.code==='Enter') (loadSave()?$('bContinue'):$('bNew')).click(); return; }
   const a=actionOf(e.code);
   if(a==='journal'){ toggleJournal(); return; }
-  if(e.code==='Escape'){ if(G&&G.board){ G.board=null; return; } if(state==='journal') toggleJournal(); else if(state==='ending') closeEnding(); return; }
+  if(e.code==='Escape'){ if(state==='chapters'){ $('chClose').click(); return; } if(G&&G.board){ G.board=null; return; } if(state==='journal') toggleJournal(); else if(state==='ending') closeEnding(); return; }
   if(a==='zoom'){ $('bZoom').click(); return; } if(a==='sound'){ $('bSnd').click(); return; }
   if(state!=='play') return;
   if(G.card&&(a==='jump'||a==='use')){ queue.push('use'); return; }
@@ -164,19 +167,26 @@ function keysHTML(){ return V.touch?'Drag a thumb on the left to walk. Push up o
 function toggleJournal(){ if(state==='play'){ state='journal'; $('jBody').innerHTML=journalHTML(); $('journal').classList.remove('hide'); $('journal').scrollTop=0; $('jClose').onclick=toggleJournal; $('jOpts').onclick=()=>{ toggleJournal(); if(window.__hecktown.openOptions) window.__hecktown.openOptions(); }; save(); }
   else if(state==='journal'){ state='play'; $('journal').classList.add('hide'); } }
 function showEnding(){ state='ending'; const S=G.S;
-  $('eBody').innerHTML='<h1>Good night, A+</h1><div class="sub">ENDSBS *ALL  ·  completed normally  ·  '+esc(GM.clock(S))+'</div><p style="font-size:16px;line-height:1.6;max-width:56ch">Forty years of orders, archived with six signatures and nobody raising their voice. Upstairs the new system takes its first order without ceremony. The trucks roll at dawn.</p>'+statsHTML(S)+
+  const ce=GM.chapterEnding&&GM.chapterEnding(S);
+  $('eBody').innerHTML='<h1>'+esc(ce?ce.title:'Good night, A+')+'</h1><div class="sub">'+esc(ce?ce.sub:'ENDSBS *ALL  ·  completed normally  ·  '+GM.clock(S))+'</div><p style="font-size:16px;line-height:1.6;max-width:56ch">'+esc(ce?ce.body:'Forty years of orders, archived with six signatures and nobody raising their voice. Upstairs the new system takes its first order without ceremony. The trucks roll at dawn.')+'</p>'+statsHTML(S)+
    '<p class="sub" style="margin-top:16px">'+(GM.percent(S)>=100?'Every room, every page, every person. Hecktown Legend.':'There is more campus out there: '+(MAP.rooms.length-GM.count(S.rooms))+' places, '+(GM.PAGES.length-GM.count(S.pages))+' ledger pages and '+(GM.PEOPLE.length-GM.count(S.met))+' people you have not found yet.')+'</p><div class="btns"><button class="btn" id="eGo">Keep exploring</button></div>';
   $('ending').classList.remove('hide'); $('eGo').onclick=closeEnding; SFX.good(); }
 function closeEnding(){ state='play'; $('ending').classList.add('hide'); }
 
 /* ---------------- title ---------------- */
 function snapCam(){ V.camx=G.hero.x; V.camy=G.cur.world.yAt(G.hero.x)-34; }
-function begin(saveData){ G=GM.create(saveData||undefined); state='play'; document.body.classList.add('play'); $('title').classList.add('hide'); $('hud').classList.remove('hide'); $('tools').classList.remove('hide');
+function begin(saveData,chapter){ if(chapter) setChapter(chapter); G=GM.create(saveData||GM.freshSave(chapter||CH)); setChapter(G.S.chapter||'cutover'); state='play'; document.body.classList.add('play'); $('title').classList.add('hide'); $('hud').classList.remove('hide'); $('tools').classList.remove('hide');
   V.camx=G.hero.x; V.camy=G.cur.world.yAt(G.hero.x)-34; hud(); save(); }
-function refreshTitle(){ const s=loadSave(); $('bContinue').classList.toggle('hide',!s); $('bNew').classList.toggle('ghost',!!s);
-  $('resume').textContent=s?('Saved game: '+GM.percent(s)+'%, '+GM.rank(s)+', '+GM.clock(s)+' on cutover night.'):''; $('keysHelp').innerHTML=keysHTML(); }
+function refreshTitle(){ const s=loadSave(); $('bContinue').classList.toggle('hide',!s); $('bNew').classList.toggle('ghost',!!s); $('bNew').textContent='Chapters';
+  const cn=(GM.CHAPTERS||[]).find(c=>c.id===CH); $('resume').textContent=s?('Chapter '+(cn?cn.num+' · '+cn.title:'')+': '+GM.percent(s)+'%, '+GM.rank(s)+', '+GM.clock(s)+'.'):''; $('keysHelp').innerHTML=keysHTML(); }
 $('bContinue').onclick=()=>{ wake(); begin(loadSave()); };
-let armNew=false; $('bNew').onclick=()=>{ wake(); if(loadSave()&&!armNew){ armNew=true; $('bNew').textContent='Erase the save and start over?'; return; } wipe(); begin(null); };
+$('bNew').onclick=()=>{ wake(); openChapters(); };
+/* the chapter menu: one card per chapter, each with its own save */
+function openChapters(){ const el=$('chapters'), list=$('chList'); let h='';
+  for(const c of GM.CHAPTERS||[]){ const s=loadSave(c.id); h+='<div class="chap"><div class="num">CHAPTER '+c.num+'</div><h2>'+esc(c.title)+'</h2><p>'+esc(c.blurb)+'</p><div class="goal">'+esc(c.goal)+'</div>'+(s?'<div class="prog">Saved: '+GM.percent(s)+'%, '+esc(GM.rank(s))+'</div>':'')+'<div class="btns">'+(s?'<button class="btn" data-ch="'+c.id+'" data-mode="continue">Continue</button><button class="btn ghost" data-ch="'+c.id+'" data-mode="new">Start over</button>':'<button class="btn" data-ch="'+c.id+'" data-mode="new">Play</button>')+'</div></div>'; }
+  list.innerHTML=h; el.classList.remove('hide'); $('title').classList.add('hide'); state='chapters';
+  for(const b of list.querySelectorAll('button[data-ch]')) b.onclick=()=>{ const id=b.dataset.ch; if(b.dataset.mode==='new'){ if(loadSave(id)&&!b.dataset.armed){ b.dataset.armed=1; b.textContent='Erase and start over?'; return; } wipe(id); el.classList.add('hide'); begin(null,id); } else { el.classList.add('hide'); begin(loadSave(id),id); } };
+  $('chClose').onclick=()=>{ el.classList.add('hide'); $('title').classList.remove('hide'); state='title'; refreshTitle(); }; }
 $('score').onclick=toggleJournal; $('bJournal').onclick=toggleJournal;
 $('bZoom').onclick=()=>{ zi=(zi+1)%zoomStops.length; };
 $('bSnd').onclick=function(){ soundOn=!soundOn; this.textContent=soundOn?'Sound on':'Sound off'; wake(); if(master) master.gain.value=soundOn?1:0; };
