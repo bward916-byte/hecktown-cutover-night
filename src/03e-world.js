@@ -25,7 +25,7 @@ function tick(G,dt){
   if(G.portalOpen&&!S.flags.ap_portal&&GM.STORY){ S.flags.ap_portal=1; GM.STORY.aplusSay(G,'YOU READ THE WHOLE LEDGER. NOBODY READS THE LEDGER. I OPENED A DOOR IN THE ARCHIVE. GO SEE WHERE IT STARTED.'); }
   const N=G.cur.node, h=G.hero;
   if(G.portalOpen&&N&&N.id==='hq_b1'&&!G.dialog&&!G.p38){ const d=Math.abs(PORTAL_X-h.x); let best=G.target, bd=best?Math.abs(best.x-h.x)+(best.kind==='item'||best.kind==='page'?-40:0):1e9;
-    if(d<28&&d-40<bd) best={kind:'portal',label:'Step through',name:'1938',x:PORTAL_X}; G.target=best; }
+    if(d<28&&d<bd) best={kind:'portal',label:'Step through',name:'1938',x:PORTAL_X}; G.target=best; }
 }
 const base={update:GM.update,interact:GM.interact};
 GM.update=function(G,ix,iy,dt){ base.update(G,ix,iy,dt); tick(G,dt); };
