@@ -49,7 +49,7 @@ let runT=0; EXT.tick.push(dt=>{ runT-=dt; if(runT>0) return; runT=0.25; const S=
 
 /* ---------------- minimap ---------------- */
 const MX0=-200, MX1=3560, MY0=-235, MY1=420;
-function minimap(c,V,G){ const N=G.cur.node; if(!N||N.era||N.dc||N.show||G.card||G.board||G.drive||G.p38) return;
+function minimap(c,V,G){ const N=G.cur.node; if(!N||N.era||N.dc||N.show||N.river||G.card||G.board||G.drive||G.p38) return;
   const w=Math.min(200,V.W*0.34), h=w*(MY1-MY0)/(MX1-MX0)*2.8, x0=V.W-w-10, y0=V.touch?V.H-h-150:118, sx=w/(MX1-MX0), sy=h/(MY1-MY0), P=(x,y)=>[x0+(x-MX0)*sx,y0+(y-MY0)*sy], S=G.S;
   c.setTransform(V.DPR,0,0,V.DPR,0,0); c.fillStyle='rgba(11,18,32,.72)'; rr(c,x0-6,y0-6,w+12,h+12,8); c.fill();
   for(const b of MAP.buildings){ const [a1,b1]=P(b.x0,b.top), [a2,b2]=P(b.x1,b.basement||b.base); c.fillStyle='rgba(246,236,216,.07)'; c.fillRect(a1,b1,a2-a1,b2-b1); }
