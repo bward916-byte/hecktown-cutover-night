@@ -224,6 +224,8 @@ function person(ctx,P,look,opt){
   if(P.prop==='book'){ ctx.save(); ctx.translate(H.hx+F*1.6,H.hy-2.4); ctx.rotate(-F*0.5); ctx.lineWidth=1; ctx.strokeStyle=INK; ctx.fillStyle='#7a3b2a'; ctx.fillRect(-5.2,-3.6,10.4,7.2); ctx.strokeRect(-5.2,-3.6,10.4,7.2);
     ctx.fillStyle='#f6ecd8'; ctx.fillRect(-4.4,-3.6,8.8,6.2); ctx.lineWidth=0.6; ctx.beginPath(); ctx.moveTo(0,-3.6); ctx.lineTo(0,2.6); ctx.stroke(); ctx.restore(); }
   if(P.prop==='stone') treat(ctx,H.hx+F*1.2,H.hy+0.6,0,1);
+  if(P.prop==='cup'){ ctx.save(); ctx.translate(H.hx+F*1.8,H.hy-1.2); ctx.fillStyle='#f6f2e8'; ctx.strokeStyle=INK; ctx.lineWidth=0.7; ctx.beginPath(); ctx.moveTo(-1.8,-2.6); ctx.lineTo(1.8,-2.6); ctx.lineTo(1.4,2.2); ctx.lineTo(-1.4,2.2); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle='#c25a3a'; ctx.fillRect(-1.7,-0.6,3.3,1.3); ctx.restore(); }
+  if(P.prop==='phone'){ ctx.save(); ctx.translate(H.hx+F*1.2,H.hy-2); ctx.rotate(F*0.35); ctx.fillStyle='#14171d'; ctx.fillRect(-1.3,-2.4,2.6,4.6); ctx.fillStyle='rgba(150,200,255,.85)'; ctx.fillRect(-0.9,-2,1.8,3.6); ctx.restore(); }
   { const A=P.arms[1]; ctx.save(); torsoPath(ctx,at,B.d,B.belly,B.sh); ctx.clip(); ctx.strokeStyle='rgba(10,14,26,.2)'; ctx.lineCap='round'; ctx.lineWidth=4.2; ctx.beginPath(); ctx.moveTo(P.sh.x-LNOW.dir*1.4,P.sh.y+1); ctx.lineTo(A.ex-LNOW.dir*1.6,A.ey+1.2); ctx.stroke(); ctx.restore(); }
   arm(1,false);
   ctx.restore();
