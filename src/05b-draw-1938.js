@@ -93,10 +93,10 @@ function render38(c,view,G,now,dt){
 function drawCard(c,view,G){
   const k=G.card; if(!k) return; if(k.style&&D.drawCardStyle&&D.drawCardStyle(c,view,G,k)) return; const a=clamp(Math.min(k.t/0.5,(k.dur-k.t)/0.5),0,1); ctx=c; V=view;
   ctx.setTransform(V.DPR,0,0,V.DPR,0,0); ctx.globalAlpha=Math.max(a,0.001); ctx.fillStyle='#1c140c'; ctx.fillRect(0,0,V.W,V.H);
-  const small=k.title.length>18, fs=small?Math.min(34,V.W/18):Math.min(64,V.W/7);
-  ctx.fillStyle='#f0e0c0'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=(small?'italic ':'700 ')+fs+'px Georgia,"Times New Roman",serif';
+  const small=k.title.length>18, fam=(small?'italic ':'700 '), fs=D.fitFont(ctx,k.title,fam,'Georgia,"Times New Roman",serif',small?Math.min(30,V.H/12):Math.min(46,V.H/8,V.W/16),V.W*0.82);
+  ctx.fillStyle='#f0e0c0'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=fam+fs+'px Georgia,"Times New Roman",serif';
   ctx.fillText(k.title,V.W/2,V.H/2-(k.sub?14:0));
-  if(k.sub){ ctx.font='500 '+Math.min(16,V.W/28)+'px "IBM Plex Sans",system-ui,sans-serif'; ctx.fillStyle='#c9b48a'; ctx.fillText(k.sub,V.W/2,V.H/2+fs*0.55+6); }
+  if(k.sub){ ctx.font='500 '+D.fitFont(ctx,k.sub,'500 ','"IBM Plex Sans",system-ui,sans-serif',16,V.W*0.9)+'px "IBM Plex Sans",system-ui,sans-serif'; ctx.fillStyle='#c9b48a'; ctx.fillText(k.sub,V.W/2,V.H/2+fs*0.55+6); }
   ctx.font='500 11px "IBM Plex Sans",system-ui,sans-serif'; ctx.fillStyle='rgba(240,224,192,.45)'; ctx.fillText(V.touch?'tap to continue':'E or Space to continue',V.W/2,V.H-30);
   ctx.globalAlpha=1;
 }
@@ -105,5 +105,7 @@ const baseRender=D.render;
 const ALTS=[];                                            // other stages add whole scenes here (the DCs, the drive)
 D.render=function(c,view,G,now,dt){ const alt=ALTS.find(a=>a.test(view,G)); if(alt) alt.render(c,view,G,now,dt); else if(view.camx<ERA_X) render38(c,view,G,now,dt); else baseRender(c,view,G,now,dt); drawCard(c,view,G); };
 D.ALTS=ALTS;
+/* the biggest font size, up to max, at which text fits in maxW */
+D.fitFont=function(c,text,weight,family,max,maxW){ c.font=weight+max+'px '+family; const w=c.measureText(text).width; return Math.max(10,Math.floor(w>maxW?max*maxW/w:max)); };
 D.ERA_X=ERA_X; D.ERA_HOOKS=ERA_HOOKS; D.ERA_POST=ERA_POST;
 })(typeof globalThis!=='undefined'?globalThis:this);
