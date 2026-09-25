@@ -185,7 +185,7 @@ section('full playthrough');
   talkTo(G,'greg'); ok(S.inv.tunnelkey,'tunnel key');
   ok(goTo(G,'tun_3',2000),'reach the deep level through the tunnels and the crawl'); useAt(G,'tun_3',2110,'aplus'); ok(S.done,'ending reached');
 
-  ok(S.flags.ch1&&S.flags.halfway&&S.flags.ch3&&S.flags.ch4,'chapter cards and the halfway call all played'); ok(S.flags.reveal,'the Server Room reveal played'); ok(S.flags.ap_so6&&S.flags.ap_badge,'A+ spoke up along the way');
+  ok(S.flags.ch1&&S.flags.halfway&&S.flags.ch3&&S.flags.ch4,'chapter cards and the halfway call all played'); ok(S.flags.monthly,'the monthly happened in the War Room'); ok(S.flags.reveal,'the Server Room reveal played'); ok(S.flags.ap_so6&&S.flags.ap_badge,'A+ spoke up along the way');
   ok(['rianan','aaron','dave','ash','umesh','john','hero'].every(id=>S.flags['vig_'+id]),'vignettes played ('+Object.keys(S.flags).filter(k=>k.indexOf('vig_')===0).join(',')+')');
   ok(G.S.flags.ap_portal||true,'');
   console.log('  main line done at '+GM.percent(S)+'%, clock '+GM.clock(S)+', '+Math.round(S.time/60)+' bot-minutes');
