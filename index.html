@@ -147,6 +147,7 @@ const CFG = {
   crouchIdle:0.5, crouchWalk:1.1,             // how far below "legs locked straight" the hips ride
   heelOff:0.6, heelStrike:0.25, toeFirstUp:0.12, toeFirstDown:0.35,    // foot pitch, radians
   leanSpeed:0.07, leanAccel:0.06, leanClimb:0.17, leanDescend:-0.03,
+  runSpeed:150, runAfter:0.45,                // hold a direction on open level floor this long and you run
   armSwing:0.045, elbowRest:0.22, stoop:0, bobK:480, bobD:26,
   // jumping
   jumpV:165, gravity:520, jumpRun:78, jumpPrep:0.13, squatJump:7,
@@ -594,6 +595,7 @@ function blendPose(A,B,t,dx){
 
 /* =====================  COMMANDS and the one update everything goes through  ===================== */
 function command(w,world,name){
+  if(w.mode==='run') endRun(w,world);                                  // a running jump starts from a walk, a stride later
   if(w.mode==='roll') return false;
   if(w.mode==='crawl'){ if(name==='crawl'||name==='jump'){ standUp(w,world); return true; } return false; }
   if(w.mode==='air'){ if(name==='throw'&&!w.act){ w.act={name:'throw',t:0,done:false}; return true; } return false; }
@@ -609,13 +611,41 @@ function command(w,world,name){
   return false;
 }
 
+/* =====================  RUN: open, level floor and a held direction  =====================
+   Running is its own little mode: the body moves at run speed and the legs follow a run cycle (flight phase, knees up,
+   arms pumping) instead of planting footholds. Anything that isn't open level floor, or letting go, drops back to the walk
+   with the feet re-planted under the hips and a short blend. Only walkers allowed to run do (the player, the crew). */
+function flatAhead(w,world,dir,dist){ const y=world.yAt(w.x); for(let k=4;k<=dist;k+=5){ const px=w.x+dir*k; if(px<world.x0||px>world.x1||Math.abs(world.yAt(px)-y)>0.5) return false; } return true; }
+function plantFeet(w,world){ const si=world.indexAt(w.x), gy=world.s[si].y;
+  w.feet.forEach((f,i)=>{ const px=w.x+(i?1.8:-1.8); Object.assign(f,{px:px,py:gy,si:si,face:w.facing,planted:true,pitch:0,heel:0,landPitch:0,ax:px,ay:gy-CFG.ankleH,settle:false,back:0,t:0,T:1,tx:px,ty:gy,tsi:si,tax:px,tay:gy-CFG.ankleH,tp:0,lift:0,prof:'flat'}); });
+  w.y=w.des=w.by=gy-(CFG.ankleH+LEG-CFG.crouchIdle); w.bv=0; }
+function endRun(w,world){ if(w.mode!=='run') return; startFade(w,0.2); w.mode='walk'; w.vx=clamp(w.vx,-CFG.walkSpeed,CFG.walkSpeed); plantFeet(w,world); }
+function stepRun(w,world,input,dt){ const dir=w.facing;
+  if(!(input*dir>0.9)||!flatAhead(w,world,dir,34)||w.act||w.reading||w.dancing){ endRun(w,world); return false; }
+  w.vx+=(dir*CFG.runSpeed-w.vx)*(1-Math.exp(-5*dt)); const nx=w.x+w.vx*dt; if(nx<world.x0||nx>world.x1){ endRun(w,world); return false; }
+  w.x=nx; w.gy=world.yAt(w.x); w.runT+=dt*1.55*clamp(Math.abs(w.vx)/CFG.runSpeed,0.5,1);
+  const ph=Math.floor(w.runT*2); if(ph!==w.runPh){ w.runPh=ph; w.events.push({type:'step',speed:Math.abs(w.vx),prof:'flat'}); }
+  w.lean+=(0.3-w.lean)*(1-Math.exp(-8*dt)); w.y=w.gy-(CFG.ankleH+LEG*0.93); w.des=w.by=w.y; return true; }
+function runPose(w){ const F=w.facing, ph=w.runT*Math.PI*2, s=clamp(Math.abs(w.vx)/CFG.runSpeed,0,1), lean=w.lean*s;
+  const legs=[], lows=[]; for(let i=0;i<2;i++){ const p=ph+i*Math.PI, th=0.9*s*Math.sin(p), k=0.3+1.45*s*Math.max(0,Math.sin(p+0.9));
+    const kx=Math.sin(th)*F*CFG.thigh, ky=Math.cos(th)*CFG.thigh, ax=kx+Math.sin(th-k)*F*CFG.shin, ay=ky+Math.cos(th-k)*CFG.shin; legs.push([kx,ky,ax,ay,0.3*Math.sin(p)]); lows.push(ay); }
+  const hy=w.gy-CFG.ankleH-Math.max(lows[0],lows[1])-3*s*(0.5+0.5*Math.cos(2*ph)), hip={x:w.x,y:hy}, dx=Math.sin(lean)*F, dy=-Math.cos(lean);
+  const neck={x:hip.x+dx*CFG.torso,y:hy+dy*CFG.torso}, sh={x:hip.x+dx*(CFG.torso-2.4),y:hy+dy*(CFG.torso-2.4)}, hl=CFG.neck+CFG.headR;
+  const head={x:neck.x+dx*hl,y:neck.y+dy*hl,a:F*lean*0.5}, arms=[];
+  for(let i=0;i<2;i++){ const a=-1.05*s*Math.sin(ph+i*Math.PI)+lean*0.6, b=a+1.7; const ex=sh.x+Math.sin(a)*F*CFG.upperArm, ey=sh.y+Math.cos(a)*CFG.upperArm; arms.push({ex:ex,ey:ey,hx:ex+Math.sin(b)*F*CFG.foreArm,hy:ey+Math.cos(b)*CFG.foreArm}); }
+  return {hip:hip,neck:neck,head:head,sh:sh,face:F,prop:null,arms:arms,legs:legs.map(l=>({kx:hip.x+l[0],ky:hy+l[1],ax:hip.x+l[2],ay:hy+l[3],pitch:l[4],face:F}))}; }
+function maybeRun(w,world,input,dt){ if(!(w.canRun)||w.mode!=='walk'||w.jump||w.act||w.reading||w.dancing||w.stair>0.05){ w.runHold=0; return; }
+  if(Math.abs(input)>0.95&&Math.sign(input)===w.facing&&Math.abs(w.vx)>CFG.walkSpeed*0.8&&flatAhead(w,world,w.facing,50)) w.runHold=(w.runHold||0)+dt; else w.runHold=0;
+  if(w.runHold>CFG.runAfter){ startFade(w,0.22); w.mode='run'; w.runT=0; w.runPh=0; w.gy=world.yAt(w.x); w.runHold=0; } }
+
 function updateWalker(w,world,input,dt){
   w.time+=dt;
   input=Math.abs(input)<0.06?0:clamp(input,-1,1);
   let P;
-  if(w.mode==='crawl') P=stepCrawl(w,world,input,dt);
+  if(w.mode==='run'&&stepRun(w,world,input,dt)) P=runPose(w);
+  else if(w.mode==='crawl') P=stepCrawl(w,world,input,dt);
   else if(w.mode==='roll') P=stepRoll(w,world,input,dt);
-  else{ const o=overlay(w,dt); if(w.mode==='air') stepAir(w,world,input,dt,o); else stepWalk(w,world,input,dt,o); P=poseOf(w,o); }
+  else{ const o=overlay(w,dt); if(w.mode==='air') stepAir(w,world,input,dt,o); else{ stepWalk(w,world,input,dt,o); maybeRun(w,world,input,dt); } P=poseOf(w,o); }
   if(w.fade){ const f=w.fade; f.t+=dt;
     if(f.t>=f.dur) w.fade=null;
     else{ P=blendPose(f.from,P,ss(f.t/f.dur),w.x-f.x0);
@@ -644,7 +674,7 @@ function updateWalker(w,world,input,dt){
   return P;
 }
 
-root.WalkEngine={CFG:CFG,LEG:LEG,makeWorld:makeWorld,surfaces:surfaces,rehome:rehome,standUp:standUp,createWalker:createWalker,updateWalker:updateWalker,command:command,poseOf:poseOf,footRange:footRange};
+root.WalkEngine={endRun:endRun,CFG:CFG,LEG:LEG,makeWorld:makeWorld,surfaces:surfaces,rehome:rehome,standUp:standUp,createWalker:createWalker,updateWalker:updateWalker,command:command,poseOf:poseOf,footRange:footRange};
 })(typeof globalThis!=='undefined'?globalThis:this);
 
 /* ==== 01b-body.js ==== */
@@ -1799,7 +1829,19 @@ GM.goShow=G=>enterShow(G);
 /* everyone walks their own way: give each person's walker its gait (the hero keeps the rig's) */
 function gaits(G){ if(!root.HBODY) return; const give=q=>{ if(q&&q.w&&q.def&&q.def.look&&q.w.gait===undefined) q.w.gait=root.HBODY.gaitFor(q.def.look); };
   G.npcs.forEach(give); if(G.net) G.net.locals.forEach(give); if(G.showS) G.showS.npcs.forEach(give); if(G.p38) G.p38.npcs.forEach(give); }
-const upd2=GM.update; GM.update=function(G,ix,iy,dt){ gaits(G); upd2(G,ix,iy,dt); };
+/* running past people gets a comment; A+ keeps an eye on you from its wall monitors */
+const RUN_BARK={bret:'No running near the racks!',rianan:'Walk! ...no, run. It\'s cutover.',dave:'In my day we walked. Uphill. In the snow.',greg:'Hurry is a variance.',andrew:'Running is not an approved change.',
+  brians:'Nice line. Lose the ball on the left flipper, though.',aaron:'Pick your line early!',umesh:'Is that an 850 or are you just in a hurry?',fares:'Umesh! He\'s running! Log it!',ash:'I could build a flow for that.',pam:'...',melissa:'We felt that in the PIM.',cathy:'Coffee\'s not going anywhere!',blaine:'Show up. Doesn\'t mean sprint.'};
+const PEEK=['I SEE YOU.','NICE BADGE.','...CARRY ON.','YOU WALK FUNNY.','I AM NOT WATCHING. I AM ALWAYS WATCHING.','ARE THOSE MY STAIRS?'];
+function gags(G,dt){ const S=G.S, h=G.hero, N=G.cur.node, st=GM.STORY?GM.STORY.st(G):null; if(!N||!st||G.dialog||G.card||G.p38) return;
+  G.gag=G.gag||{cool:{},peek:12};
+  if(h.mode==='run') for(const q of G.npcs){ const id=q.def.id; if(q.node!==N||q.crew||!RUN_BARK[id]||Math.abs(q.w.x-h.x)>45) continue; if((G.gag.cool[id]||0)>S.time) continue;
+    G.gag.cool[id]=S.time+90; st.bub=st.bub.filter(b=>b.id!==id); st.bub.push({id:id,text:RUN_BARK[id],t:2.6}); break; }
+  G.gag.peek-=dt; if(G.gag.peek<=0&&!S.done&&S.flags.started&&!st.ap&&!st.apq.length){ const m=MAP.props.find(p=>p.type==='aplus_wall'&&p.node===N.id&&Math.abs(p.x-h.x)<90);
+    if(m){ G.gag.peek=45+Math.random()*40; GM.STORY.aplusSay(G,h.mode==='run'?'NO RUNNING IN MY HALLS.':PEEK[Math.floor(Math.random()*PEEK.length)],2.4); } else G.gag.peek=2; } }
+const upd2=GM.update; GM.update=function(G,ix,iy,dt){ gags(G,dt); gaits(G); G.hero.canRun=true; for(const q of G.npcs) q.w.canRun=!!q.crew;
+  if(G.hero.mode==='run'&&(iy||G.dialog||G.card||G.board||G.drive)) E.endRun(G.hero,G.cur.world);        // stairs, talking and cutscenes start from a walk
+  upd2(G,ix,iy,dt); };
 const bObj=GM.objective, bClock=GM.clock;
 GM.objective=S=>S.pos.node==='show'?'The Buying Show. Everyone is here. Talk to people; the shuttle home is by the door.':bObj(S);
 GM.clock=S=>S.pos.node==='show'?'9:00 AM':bClock(S);
@@ -3045,7 +3087,7 @@ function journalHTML(){
   h+='<h3>Controls</h3><div class="keys">'+keysHTML()+'</div>'; return h;
 }
 function keysHTML(){ return V.touch?'Drag a thumb on the left to walk. Push up or down on a stair landing to take the stairs. The big button talks, takes and opens, and says which.'
-  :'<kbd>←</kbd> <kbd>→</kbd> walk (<kbd>Shift</kbd> stroll)  ·  <kbd>↑</kbd> <kbd>↓</kbd> take the stairs from a landing  ·  <kbd>E</kbd> talk, take, open  ·  <kbd>Space</kbd> jump  ·  <kbd>C</kbd> crawl  ·  <kbd>F</kbd> throw  ·  <kbd>R</kbd> read  ·  <kbd>J</kbd> journal  ·  <kbd>Z</kbd> zoom  ·  <kbd>M</kbd> sound. Controllers work too.'; }
+  :'<kbd>←</kbd> <kbd>→</kbd> walk, hold to run (<kbd>Shift</kbd> stroll)  ·  <kbd>↑</kbd> <kbd>↓</kbd> take the stairs from a landing  ·  <kbd>E</kbd> talk, take, open  ·  <kbd>Space</kbd> jump  ·  <kbd>C</kbd> crawl  ·  <kbd>F</kbd> throw  ·  <kbd>R</kbd> read  ·  <kbd>J</kbd> journal  ·  <kbd>Z</kbd> zoom  ·  <kbd>M</kbd> sound. Controllers work too.'; }
 function toggleJournal(){ if(state==='play'){ state='journal'; $('jBody').innerHTML=journalHTML(); $('journal').classList.remove('hide'); $('journal').scrollTop=0; $('jClose').onclick=toggleJournal; $('jOpts').onclick=()=>{ toggleJournal(); if(window.__hecktown.openOptions) window.__hecktown.openOptions(); }; save(); }
   else if(state==='journal'){ state='play'; $('journal').classList.add('hide'); } }
 function showEnding(){ state='ending'; const S=G.S;
@@ -3150,6 +3192,8 @@ $('bMap').onclick=()=>{ O.map=!O.map; saveOpts(); };
 H.openOptions=openOpts;
 
 /* ---------------- speedrun clock ---------------- */
+/* a short musical sting for each chapter card */
+let lastCard=null; EXT.tick.push(()=>{ const k=H.G&&H.G.card; if(k&&k!==lastCard&&k.style==='comic'&&H.audio&&H.audio.ctx()){ const N=n=>440*Math.pow(2,(n-69)/12); [60,64,67,72,67,72].forEach((n,i)=>H.audio.tone(N(n),i===5?0.7:0.13,0.035,'triangle',null,i*0.12)); H.audio.burst(120,0.7,0.05,0.08); } lastCard=k; });
 let runT=0; EXT.tick.push(dt=>{ runT-=dt; if(runT>0) return; runT=0.25; const S=H.G.S, el=$('hRun'); el.classList.toggle('hide',!O.run); if(O.run) el.textContent='run '+GM.fmtRun(S.runEnd!=null?S.runEnd:S.run)+(S.runEnd!=null?' ✓':''); });
 
 /* ---------------- minimap ---------------- */
