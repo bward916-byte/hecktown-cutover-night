@@ -859,15 +859,21 @@ const WARDROBE={rianan:{top:'blazer'},brians:{top:'polo'},ryan:{top:'tee'},ash:{
   dee:{top:'button',bottom:'slacks'},lou:{top:'tee',bottom:'work',shoe:'boot'},ben:{top:'tee',bottom:'work',shoe:'boot'},priya:{top:'tee',shoe:'sneaker'},frank:{top:'flannel',bottom:'work'},walt:{top:'button',bottom:'work',shoe:'boot'}};
 for(const p of PEOPLE) if(WARDROBE[p.id]) Object.assign(p.look,WARDROBE[p.id]);
 /* what people do while they wait: a few habits each, picked at random now and then */
-const HABITS={rianan:['phone','fold','shift'],brians:['fold','sip','shift'],ryan:['phone','shift'],ash:['type','sip'],umesh:['type','sip','shift'],jose:['type','fold'],andrew:['type','phone','sip'],aaron:['stretch','fold','shift'],
+const HABITS={rianan:['phone','fold','shift'],brians:['fold','sip','shift'],ryan:['phone','shift','dance'],ash:['type','sip'],umesh:['type','sip','shift'],jose:['type','fold'],andrew:['type','phone','sip'],aaron:['stretch','fold','shift','roll'],
   dave:['sip','fold','stretch'],john:['fold','phone','sip'],greg:['shift','fold'],pam:['type'],melissa:['type'],cathy:['sip','phone','shift'],bret:['phone','stretch','shift'],blaine:['fold','sip'],nick:['phone','fold'],kim:['type','sip'],
   ashley:['type','phone'],jessica:['phone','fold'],jennifer:['type','sip'],josh:['type','phone'],stephanie:['type','phone'],wendy:['type','sip'],marc:['type','sip'],dee:['fold','shift'],lou:['stretch','sip'],ben:['stretch','shift'],
-  priya:['stretch'],rosa:['phone','stretch','shift'],dot:['phone','stretch'],sal:['phone','shift'],marisol:['phone','stretch'],tina:['sip','fold'],frank:['fold','shift'],walt:['sip','shift']};
+  priya:['stretch','roll'],rosa:['phone','stretch','shift'],dot:['phone','stretch'],sal:['phone','shift'],marisol:['phone','stretch'],tina:['sip','fold'],frank:['fold','shift'],walt:['sip','shift']};
 const IDLE_LEN={type:[6,12],sip:[2.8,3.2],phone:[5,9],stretch:[2.2,2.6],fold:[5,10],shift:[6,10]};
-function idleTick(q,dt){ const w=q.w; if(w.act||w.reading||w.dancing||w.mode!=='walk') return; if(w.idle) return;
+const IDLE_MOVES={dance:[4,8],clap:[1.5,1.5],roll:[1,1]};
+function idleTick(q,dt,world,party){ const w=q.w;
+  if(q.mood){ q.mood.t-=dt; if(q.mood.t<=0) q.mood=null; }
+  if(w.dancing){ q.danceT=(q.danceT||0)-dt; if(q.danceT<=0) w.dancing=false; return; }
+  if(w.act||w.reading||w.mode!=='walk'||w.idle) return;
   q.idleT=(q.idleT==null?1+Math.random()*4:q.idleT)-dt; if(q.idleT>0) return;
-  const L=(q.def&&(q.def.habits||HABITS[q.def.id]))||['shift','fold','phone'], n=L[Math.floor(Math.random()*L.length)], r=IDLE_LEN[n];
-  w.idle={name:n,t:0,dur:r[0]+Math.random()*(r[1]-r[0])}; q.idleT=(q.def&&q.def.busy)?0.2:2+Math.random()*5; }
+  let L=(q.def&&(q.def.habits||HABITS[q.def.id]))||['shift','fold','phone']; if(party&&!(q.def&&q.def.busy)) L=L.concat(['dance','dance','clap']);
+  const n=L[Math.floor(Math.random()*L.length)]; q.idleT=(q.def&&q.def.busy)?0.2:2+Math.random()*5;
+  if(IDLE_MOVES[n]){ if(!world) return; if(n==='dance'){ if(E.command(w,world,'dance')) q.danceT=4+Math.random()*4; } else E.command(w,world,n); return; }
+  const r=IDLE_LEN[n]; w.idle={name:n,t:0,dur:r[0]+Math.random()*(r[1]-r[0])}; }
 const BISCUIT={id:'biscuit',name:'Biscuit',node:'ground',x:340,homeX:2740};
 
 /* ---------------- things to pick up or use ---------------- */
@@ -946,7 +952,8 @@ function create(save){
 }
 function award(G,pts,text){ G.S.points+=pts; G.events.push({type:'banner',text:text,pts:pts}); }
 function say(G,who,pages,opt){ G.dialog=Object.assign({who:who.name,role:who.role||'',look:who.look||null,pages:pages,i:0},opt||{}); G.events.push({type:'sfx',name:'talk'}); }
-function signoff(G,name){ G.S.signoffs[name]=1; award(G,PTS.signoff,'Sign-off: '+name+' ('+count(G.S.signoffs)+' of 6)'); G.events.push({type:'sfx',name:'good'}); G.events.push({type:'save'}); }
+function signoff(G,name){ G.S.signoffs[name]=1; award(G,PTS.signoff,'Sign-off: '+name+' ('+count(G.S.signoffs)+' of 6)'); G.events.push({type:'sfx',name:'good'}); G.events.push({type:'save'});
+  for(const q of G.npcs) if(q.node===G.cur.node&&Math.abs(q.w.x-G.hero.x)<220&&!q.crew){ q.clap=0.15+Math.random()*0.6; q.mood={name:'happy',t:4}; } }   // the room applauds
 
 /* What each person says, and what it changes. Returns an array of lines. */
 function talkLines(G,p){
@@ -1116,12 +1123,11 @@ function setLimits(G){
     if(h.mode!=='crawl') for(const d of MAP.ducts) if(d.node===N.id){ if(h.x<=d.x0) x1=Math.min(x1,d.x0-10); else if(h.x>=d.x1) x0=Math.max(x0,d.x1+10); } }
   w.x0=x0; w.x1=x1;
 }
-function command(G,name){
+function command(G,name){ if(name==='dance'||name==='clap'||name==='roll') return false;
   if(G.dialog) return false; const h=G.hero;
   if(h.mode==='crawl'&&(name==='crawl'||name==='jump')&&inDuct(G,16)){ G.events.push({type:'hint',text:'Too low to stand up in here.'}); return false; }
   const ok=E.command(h,G.cur.world,name);
-  if(ok&&(name==='dance'||name==='clap')&&!G.S.eggs[name]){ for(const q of G.npcs) if(q.node===G.cur.node&&Math.abs(q.w.x-h.x)<90){ G.S.eggs[name]=1; award(G,0,name==='dance'?'Morale: danced for '+q.def.name:'Morale: a round of applause for '+q.def.name); q.clap=0.5; break; } }
-  if(ok&&name==='roll'&&!G.S.eggs.roll){ G.S.eggs.roll=1; award(G,0,'Stop, drop and roll'); }
+  // dance, clap and roll belong to the cast now (idle habits, sign-offs, the party)
   return ok;
 }
 
@@ -1164,8 +1170,10 @@ function update(G,ix,iy,dt){
     if(q.clap>0){ q.clap-=dt; if(q.clap<=0) E.command(q.w,q.node.world,'clap'); }
     if(same&&Math.abs(dx)<70){ if(!p.busy&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); q.wait=Math.max(q.wait,1.5); if(!p.busy&&q.w.idle&&q.w.idle.name!=='shift'){ q.w.idle=null; q.idleT=2; } }   // busy people keep their eyes on the screen
     else if(p.wander){ q.wait-=dt; if(q.wait<=0){ if(Math.abs(q.goal-q.w.x)<6){ q.goal=p.wander[0]+Math.random()*(p.wander[1]-p.wander[0]); q.wait=2+Math.random()*7; } else inp=Math.sign(q.goal-q.w.x)*0.5*((q.w.gait&&q.w.gait.pace)||1); } }
-    if(inp===0) idleTick(q,dt); else if(q.w.idle) q.w.idle=null;
-    q.pose=E.updateWalker(q.w,q.node.world,inp,dt); q.w.events.length=0;
+    if(inp===0) idleTick(q,dt,q.node.world,!!S.done); else{ if(q.w.idle) q.w.idle=null; if(q.w.dancing) q.w.dancing=false; }
+    q.pose=E.updateWalker(q.w,q.node.world,inp,dt);
+    if(same&&Math.abs(dx)<170) for(const ev of q.w.events) if(ev.type==='step'){ const lk=p.look; G.events.push({type:'npcstep',shoe:lk.shoe||(lk.top==='blazer'||lk.top==='button'?'dress':'sneaker'),heavy:root.HBODY?root.HBODY.buildOf(lk).d:1,d:Math.abs(dx)}); }
+    q.w.events.length=0;
   }
   // Biscuit
   const b=G.biscuit; b.t+=dt; if(b.run){ b.x+=260*dt; if(b.x>=BISCUIT.homeX){ b.x=BISCUIT.homeX; b.run=0; } }
@@ -1622,13 +1630,13 @@ function termUse(G,d){ const S=G.S, A={name:'A+',role:d.name,look:null};
   if(S.flags['dc_'+d.id]){ G.dialog={who:'A+',role:d.name,look:null,pages:['ARCHIVED. '+d.name.toUpperCase()+' SHIPS WITHOUT ME NOW.'],i:0}; return; }
   if(!taskDone(S,d)){ G.dialog={who:'A+',role:d.name,look:null,pages:[d.a,'DOOR LOCKED. '+(d.task==='dogs'?'THREE DOGS UNACCOUNTED FOR.':(d.task==='hold'?'GO-LIVE GATE CLOSED.':'THREE '+d.label.toUpperCase()+'S FROZEN.'))],i:0}; return; }
   const q=helper(G,d); if(!q){ const nm=d.id==='merge'?'Jose, Umesh, Ash or Dave':person(d.needs[0]).name; G.dialog={who:'A+',role:d.name,look:null,pages:['YOU ARE NOT ON MY LIST.','(This one needs '+nm+'. Bring them from Easton in the truck.)'],i:0}; return; }
-  S.flags['dc_'+d.id]=1; S.points+=GM.PTS_DC;
+  S.flags['dc_'+d.id]=1; S.points+=GM.PTS_DC; for(const q of net(G).locals){ q.clap=0.3+Math.random()*0.8; q.mood={name:'happy',t:5}; }
   G.cine.push(GM.dlg({name:'A+',role:d.name,look:null},[d.a,'...FINE.']),GM.dlg({name:q.def.name,role:q.def.role,look:q.def.look},[d.clear]),
     {fn:G=>{ G.events.push({type:'banner',text:d.name+' is back on the network',pts:GM.PTS_DC}); G.events.push({type:'sfx',name:'good'}); G.events.push({type:'save'});
       const all=DCS.every(z=>G.S.flags['dc_'+z.id]); if(all&&GM.STORY&&!G.S.flags.ap_net){ G.S.flags.ap_net=1; GM.STORY.aplusSay(G,'NINE BUILDINGS. NINE TERMINALS. ALL OF THEM SAID THANK YOU. I DID NOT TEACH THEM THAT.'); } }}); }
 function tickDC(G,dt,d){
   const S=G.S, n=net(G), h=G.hero; if(n.built!==d.id) buildDC(G,d); n.t+=dt;
-  for(const q of n.locals){ let inp=0; const dx=h.x-q.w.x; if(Math.abs(dx)<70&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); if(inp===0) GM.idleTick(q,dt); q.pose=E.updateWalker(q.w,d.node.world,G.dialog?0:inp,dt); q.w.events.length=0; }
+  for(const q of n.locals){ let inp=0; const dx=h.x-q.w.x; if(Math.abs(dx)<70&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); if(q.clap>0){ q.clap-=dt; if(q.clap<=0) E.command(q.w,d.node.world,'clap'); } if(inp===0) GM.idleTick(q,dt,d.node.world,false); q.pose=E.updateWalker(q.w,d.node.world,G.dialog?0:inp,dt); q.w.events.length=0; }
   if(d.task==='dogs'&&!S.flags['dc_'+d.id+'_dogs']){ let k=0; for(const g of n.dogs){ g.t+=dt; if(g.home) continue; if(!g.follow&&Math.abs(g.x-h.x)<40){ g.follow=true; G.events.push({type:'sfx',name:'bark'}); }
       if(g.follow){ const goal=h.x-h.facing*(18+k*16); g.x+=clamp(goal-g.x,-120*dt,120*dt); k++; if(Math.abs(g.x-(d.x0+X.lead))<46){ g.home=true; g.x=d.x0+X.lead-30-n.dogs.filter(z=>z.home).length*14; G.events.push({type:'hint',text:'Checked in: '+n.dogs.filter(z=>z.home).length+' of 3'}); } } }
     if(n.dogs.every(z=>z.home)){ S.flags['dc_'+d.id+'_dogs']=1; G.events.push({type:'banner',text:'All three shelter dogs checked in'}); G.events.push({type:'save'}); } }
@@ -1747,7 +1755,7 @@ GM.create=function(save){ const G=base.create(save); if(G.cur.node&&G.cur.node.i
 GM.update=function(G,ix,iy,dt){ const S=G.S; if(!S.done) S.run=(S.run||0)+dt; else if(S.runEnd==null) S.runEnd=S.run||0;
   base.update(G,ix,iy,dt); const N=G.cur.node, h=G.hero; if(!N||G.dialog) return;
   if(N.id==='show'){ const s=show(G); if(!s.npcs.length) buildShow(G);
-    for(const q of s.npcs){ let inp=0; const dx=h.x-q.w.x; if(Math.abs(dx)<70&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); if(inp===0) GM.idleTick(q,dt); q.pose=E.updateWalker(q.w,N.world,inp,dt); q.w.events.length=0; }
+    for(const q of s.npcs){ let inp=0; const dx=h.x-q.w.x; if(Math.abs(dx)<70&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); if(inp===0) GM.idleTick(q,dt,N.world,true); q.pose=E.updateWalker(q.w,N.world,inp,dt); q.w.events.length=0; }
     let best=null, bd=1e9; const take=(d,t)=>{ if(d<bd){bd=d;best=t;} };
     const de=Math.abs(SX+90-h.x); if(de<34) take(de-30,{kind:'showexit',label:'Take the shuttle',name:'back to Easton',x:SX+90});
     const da=Math.abs(BX(9)+60-h.x); if(da<30) take(da-10,{kind:'showaplus',label:'Read',name:'A+, 1985–2026',x:BX(9)+60});
@@ -1830,17 +1838,19 @@ function head(ctx,P,look,C,opt){
   if(st==='cap'){ ctx.beginPath(); ctx.arc(0,-0.6,R+0.6,Math.PI*1.02,Math.PI*1.98); ctx.closePath(); ctx.fillStyle=look.shirt; ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(R-0.5,-1.4); ctx.lineTo(R+5.4,-0.6); ctx.lineWidth=2.2; ctx.stroke(); ctx.lineWidth=1.1; }
   // eye: white, iris, lid; it blinks, and closes in a smile
   const ex=3.5, ey=0.35+f.eye, blink=(t%3.7)<0.12||opt.happy&&(t%0.9)<0.45;
-  if(blink){ ctx.beginPath(); ctx.moveTo(ex-1.5,ey+0.2); ctx.quadraticCurveTo(ex,ey+(opt.happy?-0.7:0.8),ex+1.5,ey+0.2); ctx.lineWidth=0.9; ctx.stroke(); }
-  else{ ctx.beginPath(); ctx.ellipse(ex,ey,1.5,1.05,0,0,7); ctx.fillStyle='#fbf7ee'; ctx.fill(); ctx.lineWidth=0.35; ctx.stroke();
+  if(blink&&!opt.surprise){ ctx.beginPath(); ctx.moveTo(ex-1.5,ey+0.2); ctx.quadraticCurveTo(ex,ey+(opt.happy?-0.7:0.8),ex+1.5,ey+0.2); ctx.lineWidth=0.9; ctx.stroke(); }
+  else{ ctx.beginPath(); ctx.ellipse(ex,ey,opt.surprise?1.6:1.5,opt.surprise?1.45:1.05,0,0,7); ctx.fillStyle='#fbf7ee'; ctx.fill(); ctx.lineWidth=0.35; ctx.stroke();
     const gx=ex+0.55+(opt.lookBack?-0.9:0), gy=ey+(opt.lookDown?0.35:0.05); ctx.beginPath(); ctx.arc(gx,gy,0.85,0,7); ctx.fillStyle=look.eye||'#4a3424'; ctx.fill(); ctx.beginPath(); ctx.arc(gx+0.1,gy,0.4,0,7); ctx.fillStyle=INK; ctx.fill();
     ctx.beginPath(); ctx.arc(gx+0.35,gy-0.35,0.22,0,7); ctx.fillStyle='#fff'; ctx.fill();
-    ctx.beginPath(); ctx.moveTo(ex-1.55,ey-0.35); ctx.quadraticCurveTo(ex,ey-1.45,ex+1.55,ey-0.3); ctx.lineWidth=0.75; ctx.strokeStyle=INK; ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(ex-1.55,ey-0.35); ctx.quadraticCurveTo(ex,ey-1.45,ex+1.55,ey-0.3); ctx.lineWidth=0.75; ctx.strokeStyle=INK; ctx.stroke();
+    if(opt.tired){ ctx.beginPath(); ctx.moveTo(ex-1.7,ey-0.2); ctx.quadraticCurveTo(ex,ey-1.6,ex+1.7,ey-0.1); ctx.quadraticCurveTo(ex,ey+0.05,ex-1.7,ey-0.2); ctx.fillStyle=C.skin; ctx.fill(); ctx.lineWidth=0.6; ctx.stroke(); } }   // heavy lids after eleven
   // brow
-  const bt=f.brow+(opt.happy?-0.35:0)+(opt.talk?-0.15*Math.sin(t*5):0); ctx.beginPath(); ctx.moveTo(ex-1.9,ey-2.3+bt*0.4); ctx.quadraticCurveTo(ex,ey-3.0+bt,ex+2.2,ey-2.0-bt*0.3); ctx.lineWidth=1.1; ctx.strokeStyle=st==='cap'?INK:f.hairDark; ctx.lineCap='round'; ctx.stroke(); ctx.strokeStyle=INK;
+  const bt=f.brow+(opt.happy?-0.35:0)+(opt.surprise?-0.85:0)+(opt.tired?0.25:0)+(opt.talk?-0.15*Math.sin(t*5):0); ctx.beginPath(); ctx.moveTo(ex-1.9,ey-2.3+bt*0.4); ctx.quadraticCurveTo(ex,ey-3.0+bt,ex+2.2,ey-2.0-bt*0.3); ctx.lineWidth=1.1; ctx.strokeStyle=st==='cap'?INK:f.hairDark; ctx.lineCap='round'; ctx.stroke(); ctx.strokeStyle=INK;
   // nostril and mouth: talks, smiles, otherwise rests
   ctx.fillStyle=f.dark; ctx.beginPath(); ctx.arc(6.6+f.nose*0.4,2.85,0.32,0,7); ctx.fill();
   if(st!=='beard'||opt.talk){ const open=opt.talk?Math.max(0,Math.sin(t*13))*1.3+0.25:0, my=4.5;
-    if(open>0.3){ ctx.beginPath(); ctx.ellipse(5.2,my+0.2,1.2,open,0.1,0,7); ctx.fillStyle='#5a1f1f'; ctx.fill(); ctx.lineWidth=0.7; ctx.stroke(); }
+    if(opt.surprise){ ctx.beginPath(); ctx.ellipse(5.2,my+0.3,0.75,0.95,0,0,7); ctx.fillStyle='#5a1f1f'; ctx.fill(); ctx.lineWidth=0.7; ctx.stroke(); }
+    else if(open>0.3){ ctx.beginPath(); ctx.ellipse(5.2,my+0.2,1.2,open,0.1,0,7); ctx.fillStyle='#5a1f1f'; ctx.fill(); ctx.lineWidth=0.7; ctx.stroke(); }
     else{ ctx.beginPath(); ctx.moveTo(6.2,my); ctx.quadraticCurveTo(5.0,my+(opt.happy?1.5:0.35+f.lip*0.4),3.7,my+(opt.happy?-0.2:0.25)); ctx.lineWidth=0.9; ctx.stroke(); } }
   if(look.stache){ ctx.beginPath(); ctx.moveTo(6.8,3.3); ctx.quadraticCurveTo(5.3,2.8,3.5,3.8); ctx.quadraticCurveTo(3.3,4.7,4.1,4.5); ctx.quadraticCurveTo(5.3,4.0,6.7,4.2); ctx.closePath(); ctx.fillStyle=look.hair; ctx.fill(); ctx.lineWidth=0.6; ctx.strokeStyle=INK; ctx.stroke(); }
   if(look.acc==='glasses'||look.glasses){ ctx.beginPath(); ctx.arc(ex+0.2,ey,2.3,0,7); ctx.moveTo(ex-2.1,ey-0.3); ctx.lineTo(-0.6,0.1); ctx.lineWidth=0.55; ctx.stroke(); ctx.fillStyle='rgba(200,230,255,.16)'; ctx.beginPath(); ctx.arc(ex+0.2,ey,2.3,0,7); ctx.fill(); }
@@ -1892,9 +1902,8 @@ function shoeKind(ctx,L,F,o){ const c=Math.cos(L.pitch), sn=Math.sin(L.pitch), P
    and a thin rim on the lit edge. Default: soft key light from the left. */
 let lightAt=null, L0={dir:-1,k:0.45,col:'255,240,215',rim:0.35}, LNOW=L0;
 function lightShape(ctx,path,x0,x1,y0,y1,strength){ const L=LNOW, lit=L.dir<0; ctx.save(); path(); ctx.clip();
-  const g=ctx.createLinearGradient(x0,0,x1,0), hi='rgba('+L.col+','+((0.05+0.2*L.k)*strength).toFixed(3)+')', lo='rgba(10,14,26,'+((0.16+0.16*(1-L.k))*strength).toFixed(3)+')';
-  g.addColorStop(0,lit?hi:lo); g.addColorStop(0.55,'rgba(0,0,0,0)'); g.addColorStop(1,lit?lo:hi); ctx.fillStyle=g; ctx.fillRect(x0-3,y0-3,x1-x0+6,y1-y0+6);
-  const v=ctx.createLinearGradient(0,y0,0,y1); v.addColorStop(0,'rgba('+L.col+','+(0.07*strength*L.k).toFixed(3)+')'); v.addColorStop(1,'rgba(10,14,26,'+(0.12*strength).toFixed(3)+')'); ctx.fillStyle=v; ctx.fillRect(x0-3,y0-3,x1-x0+6,y1-y0+6);
+  const dy=(y1-y0)*0.25, g=ctx.createLinearGradient(lit?x0:x1,y0-dy,lit?x1:x0,y1+dy), hi='rgba('+L.col+','+((0.06+0.2*L.k)*strength).toFixed(3)+')', lo='rgba(10,14,26,'+((0.2+0.16*(1-L.k))*strength).toFixed(3)+')';
+  g.addColorStop(0,hi); g.addColorStop(0.5,'rgba(0,0,0,0)'); g.addColorStop(1,lo); ctx.fillStyle=g; ctx.fillRect(x0-3,y0-3,x1-x0+6,y1-y0+6);   // one diagonal pass: lit side and top, shadow side and bottom
   if(L.rim>0.02){ ctx.translate(-L.dir*1.25,0.9); path(); ctx.strokeStyle='rgba('+L.col+','+(L.rim*strength).toFixed(3)+')'; ctx.lineWidth=1.5; ctx.stroke(); }
   ctx.restore(); }
 /* a limb as one tapered shape through its joints: no ball joints, no seams */
@@ -1975,10 +1984,10 @@ function person(ctx,P,look,opt){
     else { const fx=A.hx-A.ex, fy=A.hy-A.ey, cx=A.ex+fx*0.84, cy=A.ey+fy*0.84, fl=Math.hypot(fx,fy)||1, nx=-fy/fl*5, ny=fx/fl*5; ctx.strokeStyle=o.top==='blazer'?'rgba(236,232,222,.9)':shade(o.sleeve,far?0.5:0.68); ctx.lineWidth=1.1; ctx.beginPath(); ctx.moveTo(cx+nx,cy+ny); ctx.lineTo(cx-nx,cy-ny); ctx.stroke();
       const ex=A.ex, ey=A.ey; ctx.strokeStyle='rgba(10,14,26,.22)'; ctx.lineWidth=0.6; ctx.beginPath(); ctx.moveTo(ex-nx*0.4,ey-ny*0.4); ctx.quadraticCurveTo(ex+fx*0.08,ey+fy*0.08,ex+fx*0.14+nx*0.2,ey+fy*0.14+ny*0.2); ctx.stroke(); }   // a crease at the elbow
     ctx.restore();
-    lightShape(ctx,path,bb[0],bb[1],bb[2],bb[3],far?0.6:0.9); path(); ctx.strokeStyle=INK; ctx.lineWidth=1.05; ctx.lineJoin='round'; ctx.stroke();
+    if(!far) lightShape(ctx,path,bb[0],bb[1],bb[2],bb[3],0.9); path(); ctx.strokeStyle=INK; ctx.lineWidth=1.05; ctx.lineJoin='round'; ctx.stroke();
     hand(ctx,A,F,sk,o.long?(o.top==='blazer'?'#ece8de':sc):null,curl(i),flat); };
   const leg=(i,far)=>{ const L=P.legs[i], col=far?C.pantsFar:C.pants, pts=[[P.hip.x,P.hip.y],[L.kx,L.ky],[L.ax,L.ay]], ws=[6.6*lw,4.6*Math.pow(B.d,0.4),3.9];
-    const path=()=>limbPath(ctx,pts,ws,false), bb=bbox(pts,3); path(); ctx.fillStyle=col; ctx.fill(); lightShape(ctx,path,bb[0],bb[1],bb[2],bb[3],far?0.6:0.85);
+    const path=()=>limbPath(ctx,pts,ws,false), bb=bbox(pts,3); path(); ctx.fillStyle=col; ctx.fill(); if(!far) lightShape(ctx,path,bb[0],bb[1],bb[2],bb[3],0.85);
     ctx.save(); path(); ctx.clip(); const kx=L.kx, ky=L.ky; ctx.strokeStyle='rgba(10,14,26,.2)'; ctx.lineWidth=0.6; ctx.beginPath(); ctx.moveTo(kx-L.face*1.6,ky-1.2); ctx.quadraticCurveTo(kx,ky+0.6,kx+L.face*1.8,ky-0.4); ctx.stroke(); ctx.restore();   // the knee folds, it doesn't hinge
     path(); ctx.strokeStyle=INK; ctx.lineWidth=1.05; ctx.lineJoin='round'; ctx.stroke();
     ctx.lineCap='round'; if(o.bottom==='jeans') line(ctx,[P.hip.x+(L.kx-P.hip.x)*0.15,P.hip.y+(L.ky-P.hip.y)*0.15],[L.kx+(L.ax-L.kx)*0.8,L.ky+(L.ay-L.ky)*0.8],'rgba(210,160,90,.45)',0.4);
@@ -1995,7 +2004,7 @@ function person(ctx,P,look,opt){
   if(opt.scarf){ const pts=[]; for(const p of opt.scarf) pts.push(p.x,p.y); stroke(ctx,pts,2.6,'#f2b544'); }
   { const np=[[P.neck.x-ux*1.6,P.neck.y-uy*1.6],[P.neck.x+(P.head.x-P.neck.x)*0.6,P.neck.y+(P.head.y-P.neck.y)*0.6]], nw=[4.2*Math.pow(B.d,0.4),3.4], path=()=>limbPath(ctx,np,nw,false), bb=bbox(np,3);
     path(); ctx.fillStyle=C.skin; ctx.fill(); lightShape(ctx,path,bb[0],bb[1],bb[2],bb[3],0.9); ctx.save(); path(); ctx.clip(); ctx.fillStyle='rgba(10,14,26,.18)'; ctx.fillRect(np[1][0]-4,np[1][1]-0.5,8,2.2); ctx.restore(); path(); ctx.strokeStyle=INK; ctx.lineWidth=1; ctx.stroke(); }
-  head(ctx,P,look,C,{t:opt.t,talk:opt.talk,happy:opt.happy||w.dancing||act==='clap',lookDown:w.reading||flat});
+  head(ctx,P,look,C,{t:opt.t,talk:opt.talk,happy:opt.happy||opt.mood==='happy'||w.dancing||act==='clap',lookDown:w.reading||flat||(w.idle&&(w.idle.name==='phone'||w.idle.name==='type')),surprise:opt.mood==='surprise'&&!opt.talk,tired:opt.mood==='tired'&&!opt.talk});
   if(opt.scarf) stroke(ctx,[P.neck.x-uy*2.8-ux*0.9,P.neck.y+ux*2.8-uy*0.9,P.neck.x+uy*2.7-ux*1.6,P.neck.y-ux*2.7-uy*1.6],3.2,'#f2b544');
   const H=P.arms[1];
   if(P.prop==='book'){ ctx.save(); ctx.translate(H.hx+F*1.6,H.hy-2.4); ctx.rotate(-F*0.5); ctx.lineWidth=1; ctx.strokeStyle=INK; ctx.fillStyle='#7a3b2a'; ctx.fillRect(-5.2,-3.6,10.4,7.2); ctx.strokeRect(-5.2,-3.6,10.4,7.2);
@@ -2238,7 +2247,9 @@ function render(c,view,G,now,dt){
   const drawHero=()=>{ for(const s of h.shots) PP.treat(ctx,s.x,s.y,s.a,clamp(s.life,0,1)); PP.person(ctx,G.pose,HERO_LOOK,{scarf:h.scarf,ground:x=>world.yAt(x),mode:h.mode,w:h,t:now/1000}); };
   if(heroBack) drawHero();
   structure(G); pickups(G,now);
-  for(const q of G.npcs){ if(!vis(q.w.x-40,q.w.x+40)||!q.pose) continue; PP.person(ctx,q.pose,q.def.look,{ground:x=>q.node.world.yAt(x),mode:q.w.mode,w:q.w,t:now/1000,talk:!!(G.dialog&&(G.dialog.who===q.def.name||(G.dialog.pages[G.dialog.i]||'').indexOf(q.def.name+':')===0))}); }
+  const late=/^(11:|12:)\d\d PM|AM/.test(GM.clock(G.S)||''), startled=!!(G.story&&G.story.ap&&G.story.ap.t<2.4);
+  const moodOf=q=>q.mood?q.mood.name:(startled&&q.node===G.cur.node?'surprise':(late&&(q.def.id.charCodeAt(0)+q.def.id.length)%3===0?'tired':null));
+  for(const q of G.npcs){ if(!vis(q.w.x-40,q.w.x+40)||!q.pose) continue; PP.person(ctx,q.pose,q.def.look,{mood:moodOf(q),ground:x=>q.node.world.yAt(x),mode:q.w.mode,w:q.w,t:now/1000,talk:!!(G.dialog&&(G.dialog.who===q.def.name||(G.dialog.pages[G.dialog.i]||'').indexOf(q.def.name+':')===0))}); }
   const b=G.biscuit; if(vis(b.x-30,b.x+30)) PP.dog(ctx,b.x,MAP.nodes.ground.world.yAt(b.x),b.t,b.run,b.run||h.x>b.x?1:-1);
   for(const f of HOOKS) f(ctx,G,now,V);                  // later stages draw their creatures here
   if(!heroBack) drawHero();
@@ -2653,7 +2664,7 @@ function renderDC(c,V,G,now,dt){
   if(n.dogs) for(const g of n.dogs) dog(c,g.x,0,g.col,g.t,g.follow&&!g.home,g.follow?(G.hero.x>g.x?1:-1):1);
   // people
   const talking=name=>!!(G.dialog&&(G.dialog.who===name||(G.dialog.pages[G.dialog.i]||'').indexOf(name+':')===0)), gy=()=>0;
-  for(const q of n.locals) PP.person(c,q.pose,q.def.look,{ground:gy,mode:q.w.mode,w:q.w,t:t,talk:talking(q.def.name)});
+  for(const q of n.locals) PP.person(c,q.pose,q.def.look,{ground:gy,mode:q.w.mode,w:q.w,t:t,talk:talking(q.def.name),mood:q.mood&&q.mood.name});
   for(const q of G.npcs) if(q.node===G.cur.node&&q.pose) PP.person(c,q.pose,q.def.look,{ground:gy,mode:q.w.mode,w:q.w,t:t,talk:talking(q.def.name)});
   PP.person(c,G.pose,D.HERO_LOOK,{scarf:G.hero.scarf,ground:gy,mode:G.hero.mode,w:G.hero,t:t});
   // weather, in screen space
@@ -2812,7 +2823,7 @@ addEventListener('pagehide',save); document.addEventListener('visibilitychange',
 /* ---------------- input ---------------- */
 const keys={}, queue=[]; let stick=null;
 /* keys are rebindable (Options): each action has a list of codes, the first is the one you can change */
-const DEF_KEYS={left:['ArrowLeft','KeyA'],right:['ArrowRight','KeyD'],up:['ArrowUp','KeyW'],down:['ArrowDown','KeyS'],use:['KeyE','Enter'],jump:['Space'],roll:['KeyX'],crawl:['KeyC'],throw:['KeyF'],read:['KeyR'],dance:['KeyG'],clap:['KeyV'],
+const DEF_KEYS={left:['ArrowLeft','KeyA'],right:['ArrowRight','KeyD'],up:['ArrowUp','KeyW'],down:['ArrowDown','KeyS'],use:['KeyE','Enter'],jump:['Space'],crawl:['KeyC'],throw:['KeyF'],read:['KeyR'],
   stroll:['ShiftLeft','ShiftRight'],journal:['KeyJ','Tab'],zoom:['KeyZ'],sound:['KeyM'],map:['KeyN'],photo:['KeyP']};
 const KEYS_KEY='hecktown2.keys';
 let KEYS=loadKeys();
@@ -2821,7 +2832,7 @@ function bindKey(k,a,code){ for(const b in k) if(b!==a) k[b]=k[b].filter(c=>c!==
 function setKey(a,code){ bindKey(KEYS,a,code); try{ const o={}; for(const b in KEYS) if(KEYS[b][0]!==DEF_KEYS[b][0]) o[b]=KEYS[b][0]; localStorage.setItem(KEYS_KEY,JSON.stringify(o)); }catch(_){ } }
 function resetKeys(){ KEYS=JSON.parse(JSON.stringify(DEF_KEYS)); try{ localStorage.removeItem(KEYS_KEY); }catch(_){ } }
 const actionOf=code=>{ for(const a in KEYS) if(KEYS[a].indexOf(code)>=0) return a; return null; }, held=a=>KEYS[a].some(c=>keys[c]);
-const ACTS={jump:1,roll:1,crawl:1,throw:1,read:1,dance:1,clap:1,use:1};
+const ACTS={jump:1,crawl:1,throw:1,read:1,use:1};
 const EXT={keys:[],after:[],camera:null,ending:null,tick:[]};          // 06b-extras plugs in here
 addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code.startsWith('Arrow')||e.code==='Space'||e.code==='Tab')e.preventDefault(); wake();
   if(e.repeat) return;
@@ -2844,7 +2855,7 @@ const endStick=e=>{ if(stick&&e.pointerId===stick.id) stick=null; }; cv.addEvent
 function setTouch(){ if(!V.touch){ V.touch=true; document.body.classList.add('touch'); } }
 if(matchMedia('(pointer:coarse)').matches) setTouch();
 for(const b of document.querySelectorAll('#pad button[data-act]')) b.addEventListener('pointerdown',e=>{ e.preventDefault(); wake(); queue.push(b.dataset.act); });
-const padMap={0:'use',1:'roll',2:'jump',3:'crawl',4:'read',5:'dance',6:'clap',7:'throw'}, padWas={};
+const padMap={0:'use',2:'jump',3:'crawl',4:'read',7:'throw'}, padWas={};
 function readInput(){
   let ix=0, iy=0;
   if(held('right')) ix+=1; if(held('left')) ix-=1; if(held('up')) iy-=1; if(held('down')) iy+=1;
@@ -2869,6 +2880,7 @@ function tone(freq,dur,vol,type,to,delay){ if(!AC)return; const o=AC.createOscil
   g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+0.012); g.gain.exponentialRampToValueAtTime(0.0008,t+dur); o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.05); }
 function footfall(ev,hard){
   switch(ev.type){
+    case 'npcstep':{ const v=(1-ev.d/170)*0.05*(0.8+0.4*(ev.heavy-1)); if(ev.shoe==='dress') burst(1500,1.6,v*0.9,0.04); else if(ev.shoe==='boot') burst(Math.max(260,420-120*(ev.heavy-1)),1,v*1.3,0.09); else burst(650,0.8,v*0.7,0.06); } break;
     case 'step':  burst(hard||ev.stone?950:520,hard||ev.stone?1.4:0.8,(0.04+0.09*clamp(ev.speed/CFG.walkSpeed,0,1))*(ev.prof==='down'?1.25:1),hard||ev.stone?0.07:0.11); break;
     case 'land':  burst(360,0.8,0.12+0.14*clamp(ev.speed/200,0,1),0.14); break;
     case 'jump':  burst(500,0.7,0.06,0.12,1400); break;   case 'roll': burst(300,0.6,0.10,0.16,700); break;
@@ -2888,6 +2900,13 @@ let rainG=null;
 function tickRain(){ if(!G) return; if(!rainG){ const s=AC.createBufferSource(), b=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; s.buffer=b; s.loop=true; const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1400; f.Q.value=0.4; rainG=AC.createGain(); rainG.gain.value=0; s.connect(f); f.connect(rainG); rainG.connect(master); s.start(); }
   const N=G.cur.node, id=N?N.id:'', indoor=N&&(['hq_f2','hq_b1','tun_2','tun_3','wh_mezz','wh_cat','gar_loft'].indexOf(id)>=0||(id==='ground'&&((G.hero.x>1100&&G.hero.x<1900)||(G.hero.x>2200&&G.hero.x<3160)))), era=G.p38&&G.p38.scene==='yard'&&(G.S.flags.p38|0)>=2&&(G.S.flags.p38|0)<4;
   const want=state==='play'?(era?0.07:(G.p38?0:((G.wx&&G.wx.rain)||0)*(indoor?0.025:0.08))):0; rainG.gain.setTargetAtTime(want,AC.currentTime,0.6); }
+let humG=null, nextChirp=0, nextRing=0;
+function tickAmbience(){ if(!G||!AC) return; const N=G.cur.node, id=N?N.id:'', x=G.hero.x, t=AC.currentTime, play=state==='play';
+  if(!humG){ humG=AC.createGain(); humG.gain.value=0; for(const f of [55,110,165]){ const o=AC.createOscillator(); o.type='sine'; o.frequency.value=f; const g=AC.createGain(); g.gain.value=f===55?1:0.35; o.connect(g); g.connect(humG); o.start(); } humG.connect(master); }
+  const server=play&&id==='hq_b1'&&x>1724, near=play&&id==='hq_b1'&&x>1500; humG.gain.setTargetAtTime(server?0.035:(near?0.012:0),t,0.5);
+  const m=/(\d+):\d+ (AM|PM)/.exec(GM.clock(G.S)||''), hr=m?(+m[1]%12)+(m[2]==='PM'?12:24):18, outside=play&&id==='ground'&&(x<1100||(x>1900&&x<2200)||x>3160);
+  if(outside&&hr>=20&&!(G.wx&&G.wx.rain>0.3)&&t>nextChirp){ nextChirp=t+0.6+Math.random()*2.2; for(let k=0;k<3;k++) tone(4300+Math.random()*300,0.03,0.008,'sine',null,k*0.07); }
+  if(play&&id==='hq_f2'&&x>1330&&x<1556&&!G.S.done&&t>nextRing){ if(nextRing) for(let k=0;k<2;k++){ tone(440,0.35,0.012,'sine',null,k*0.5); tone(480,0.35,0.012,'sine',null,k*0.5); } nextRing=t+22+Math.random()*25; } }
 function startMusic(){ const g=AC.createGain(); g.gain.value=0.0; g.connect(master); const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=700; f.connect(g);
   const o1=AC.createOscillator(), o2=AC.createOscillator(); o1.type='sawtooth'; o2.type='triangle'; o1.connect(f); o2.connect(f); o1.start(); o2.start(); music={g:g,o1:o1,o2:o2,root:0,next:0}; }
 function tickMusic(){ if(!music||!G) return; const t=AC.currentTime, n=G.cur.node?G.cur.node.id:(G.cur.link.id.indexOf('tun')===0?'tun_2':'hq'); 
@@ -2943,8 +2962,8 @@ function journalHTML(){
   h+='<h3>The ledger</h3>'; let any=false; GM.PAGES.forEach((p,i)=>{ if(S.pages[i]){ any=true; h+='<div class="page">'+esc(p[2])+'</div>'; } }); if(!any) h+='<div class="sub">No pages yet. They turn up in corners, lofts and places you have to crawl into.</div>';
   h+='<h3>Controls</h3><div class="keys">'+keysHTML()+'</div>'; return h;
 }
-function keysHTML(){ return V.touch?'Drag a thumb on the left to walk. Push up or down on a stair landing to take the stairs. Use talks, takes and opens. More holds roll, throw, read, dance and clap.'
-  :'<kbd>←</kbd> <kbd>→</kbd> walk (<kbd>Shift</kbd> stroll)  ·  <kbd>↑</kbd> <kbd>↓</kbd> take the stairs from a landing  ·  <kbd>E</kbd> talk, take, open  ·  <kbd>Space</kbd> jump  ·  <kbd>C</kbd> crawl  ·  <kbd>X</kbd> roll  ·  <kbd>F</kbd> throw  ·  <kbd>R</kbd> read  ·  <kbd>G</kbd> dance  ·  <kbd>V</kbd> clap  ·  <kbd>J</kbd> journal  ·  <kbd>Z</kbd> zoom  ·  <kbd>M</kbd> sound. Controllers work too.'; }
+function keysHTML(){ return V.touch?'Drag a thumb on the left to walk. Push up or down on a stair landing to take the stairs. The big button talks, takes and opens, and says which.'
+  :'<kbd>←</kbd> <kbd>→</kbd> walk (<kbd>Shift</kbd> stroll)  ·  <kbd>↑</kbd> <kbd>↓</kbd> take the stairs from a landing  ·  <kbd>E</kbd> talk, take, open  ·  <kbd>Space</kbd> jump  ·  <kbd>C</kbd> crawl  ·  <kbd>F</kbd> throw  ·  <kbd>R</kbd> read  ·  <kbd>J</kbd> journal  ·  <kbd>Z</kbd> zoom  ·  <kbd>M</kbd> sound. Controllers work too.'; }
 function toggleJournal(){ if(state==='play'){ state='journal'; $('jBody').innerHTML=journalHTML(); $('journal').classList.remove('hide'); $('journal').scrollTop=0; $('jClose').onclick=toggleJournal; $('jOpts').onclick=()=>{ toggleJournal(); if(window.__hecktown.openOptions) window.__hecktown.openOptions(); }; save(); }
   else if(state==='journal'){ state='play'; $('journal').classList.add('hide'); } }
 function showEnding(){ state='ending'; const S=G.S;
@@ -2983,7 +3002,7 @@ function frame(now){
     typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); } dialogUI(); document.body.classList.toggle('card',!!(G.card||G.board||G.drive));
   } else { readInput(); queue.length=0; acc=0; }
   if(saveBlip>0){ saveBlip-=dt; if(saveBlip<=0) $('saved').classList.remove('on'); }
-  if(AC){ tickMusic(); tickRain(); }
+  if(AC){ tickMusic(); tickRain(); tickAmbience(); }
 
   const h=G.hero, w=G.cur.world, target=Math.min(V.H/zoomStops[zi],V.W/250); zoomNow=zoomNow?zoomNow+(target-zoomNow)*(1-Math.exp(-6*dt)):target; V.zoom=zoomNow;
   if(EXT.camera&&EXT.camera(state,V,dt)){ }
@@ -3027,7 +3046,7 @@ const applyText=()=>document.documentElement.style.setProperty('--ts',O.text); a
 
 /* ---------------- options ---------------- */
 const ov=document.createElement('div'); ov.id='options'; ov.className='overlay hide'; ov.innerHTML='<div class="sheet" id="oBody"></div>'; document.body.appendChild(ov);
-const NAMES={left:'Walk left',right:'Walk right',up:'Up the stairs',down:'Down the stairs',use:'Talk / use',jump:'Jump',roll:'Roll',crawl:'Crawl',throw:'Throw',read:'Read',dance:'Dance',clap:'Clap',stroll:'Stroll (hold)',journal:'Journal',zoom:'Zoom',sound:'Sound',map:'Minimap',photo:'Photo mode'};
+const NAMES={left:'Walk left',right:'Walk right',up:'Up the stairs',down:'Down the stairs',use:'Talk / use',jump:'Jump',crawl:'Crawl',throw:'Throw',read:'Read',stroll:'Stroll (hold)',journal:'Journal',zoom:'Zoom',sound:'Sound',map:'Minimap',photo:'Photo mode'};
 const keyName=c=>({Space:'Space',Enter:'Enter',Tab:'Tab',ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓',ShiftLeft:'Shift',ShiftRight:'R-Shift',Escape:'Esc'}[c]||c.replace(/^Key|^Digit/,''));
 let rebind=null, prevState='play';
 function renderOpts(){ const K=H.keys.get(), T=[['90%',0.9],['100%',1],['115%',1.15],['130%',1.3]];
