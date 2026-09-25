@@ -375,6 +375,6 @@ function update(G,ix,iy,dt){
   const b=G.biscuit; b.t+=dt; if(b.run){ b.x+=260*dt; if(b.x>=BISCUIT.homeX){ b.x=BISCUIT.homeX; b.run=0; } }
 }
 
-root.HGAME={idleTick:idleTick,create:create,update:update,interact:interact,advance:advance,command:command,freshSave:freshSave,objective:objective,tasks:tasks,percent:percent,rank:rank,clock:clock,count:count,
+root.HGAME={idleTick:idleTick,CFG_WALK:E.CFG.walkSpeed,create:create,update:update,interact:interact,advance:advance,command:command,freshSave:freshSave,objective:objective,tasks:tasks,percent:percent,rank:rank,clock:clock,count:count,
   PEOPLE:PEOPLE,PAGES:PAGES,ITEMS:ITEMS,TERMS:TERMS,SIGNOFFS:SIGNOFFS,MAXPTS:MAXPTS,BISCUIT:BISCUIT,needMet:needMet};
 })(typeof globalThis!=='undefined'?globalThis:this);
