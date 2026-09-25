@@ -840,7 +840,7 @@ root.HMAP=MAP;
 const E=root.WalkEngine, MAP=root.HMAP, CFG=E.CFG;
 const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
 const SIGNOFFS=['Network','Backup','Catalog','EDI','Storefront','Jobs'];
-const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10,jeopardy:25,sku:30,portal:20,dc:25};
+const PTS={room:10,meet:5,page:15,start:10,badge:40,signoff:50,biscuit:40,key:30,finale:100,egg:5,duct:10,jeopardy:25,sku:30,portal:20,dc:25,future:15};
 
 /* ---------------- people ----------------  look = [skin, hair, style, shirt, pants, accessory] */
 const P=(id,name,role,look,node,x,opt)=>{ const p=Object.assign({id:id,name:name,role:role,look:{skin:look[0],hair:look[1],style:look[2],shirt:look[3],pants:look[4],acc:look[5]},node:node,x:x},opt||{});
@@ -932,7 +932,7 @@ const ITEMS=[
 ];
 const TERMS=[{id:'t_dock',node:'ground',x:2260,where:'Receiving Dock'},{id:'t_roof',node:'hq_roof',x:1840,where:'Roof Garden'},{id:'t_gate',node:'ground',x:1010,where:'Security Gate'}];
 
-const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg+PTS.duct+PTS.jeopardy+PTS.sku+PTS.portal+PTS.dc*9;
+const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg+PTS.duct+PTS.jeopardy+PTS.sku+PTS.portal+PTS.dc*9+PTS.future*2;
 const RANKS=[[0,'New Badge'],[12,'Ticket Closer'],[30,'On-Call'],[50,'Change Approver'],[72,'Cutover Lead'],[95,'Hecktown Legend']];
 
 function freshSave(){ return {v:1,flags:{},inv:{},met:{},rooms:{},pages:{},eggs:{},signoffs:{},terms:{},gates:{},points:0,time:0,done:false,pos:{node:'ground',x:1150}}; }
@@ -1025,6 +1025,7 @@ function talkLines(G,p){
      if(F.ediAsked&&!I.bol&&!S.signoffs.EDI){ I.bol=1; G.events.push({type:'banner',text:'Got the bill of lading'}); return ['Umesh wants the BOL? Of course he does. Here. Don\'t fold it.']; }
      return ['Bay 2\'s waiting on that kibble. Trucks roll at dawn whether the system\'s up or not.'];
    case 'ash':
+     if(S.done) return ['Don\'t ask.','...Fine. I built a flow that triggers when everything ships. Everything shipped. I don\'t know where it took me. I was gone eleven minutes.'];
      if(S.signoffs.Storefront) return ['Salesforce is talking to me again. It apologized. We\'re fine.','Call me Ash. And yes, the flow will hold.'];
      if(I.coffee){ delete I.coffee; signoff(G,'Storefront'); return ['You are a good person. ...Okay. Orders are flowing end to end. Storefront is signed.']; }
      F.sfAsked=1; return ['I have been staring at this flow since lunch. I will sign Storefront the second there is coffee in my hand.','Tina\'s truck is still open tonight. West lot, past the garage.'];
@@ -1037,7 +1038,7 @@ function talkLines(G,p){
      if(count(S.terms)>=3){ signoff(G,'Jobs'); return ['All three queues held. The scheduler is clean. Jobs is signed.']; }
      F.jobsAsked=1; return ['Every midnight job in this building, I wrote or inherited. Three of them only hold from their own green screen.','Receiving Dock, the Roof Garden shed, and Dee\'s booth at the Security Gate. Hold the queue at each, then come back.'];
    case 'bret':
-     if(F.biscuitHome){ if(!F.biscuitPaid){ F.biscuitPaid=1; award(G,PTS.biscuit,'Biscuit is home'); G.events.push({type:'save'}); return ['Biscuit! There you are. Dogs first, hardware second. Thank you.']; } { const sec=['If it has a power supply, I can fix it. If it has firmware, I can fix it faster.','Rotate your passwords. Don\'t write them on a sticky note. Not under the keyboard either. I check.','Never plug in a USB stick you found in the parking lot. That one was mine. It was a test. You passed.','Server room is sixty-eight degrees. It is always sixty-eight degrees. If it is ever not sixty-eight degrees, call me.','Multi-factor. On everything. Yes, even that.','Every server in this building has a name. None of them are named after you. That is a security decision.']; F.bretSec=((F.bretSec|0)+1)%sec.length; return [sec[F.bretSec]]; } }
+     if(F.biscuitHome){ if(!F.biscuitPaid){ F.biscuitPaid=1; award(G,PTS.biscuit,'Biscuit is home'); G.events.push({type:'save'}); return ['Biscuit! There you are. Dogs first, hardware second. Thank you.']; } { const sec=['New baby boy at home. Three weeks. Sleeps like a server: never, then all at once.','If it has a power supply, I can fix it. If it has firmware, I can fix it faster.','Rotate your passwords. Don\'t write them on a sticky note. Not under the keyboard either. I check.','Never plug in a USB stick you found in the parking lot. That one was mine. It was a test. You passed.','Server room is sixty-eight degrees. It is always sixty-eight degrees. If it is ever not sixty-eight degrees, call me.','Multi-factor. On everything. Yes, even that.','Every server in this building has a name. None of them are named after you. That is a security decision.']; F.bretSec=((F.bretSec|0)+1)%sec.length; return [sec[F.bretSec]]; } }
      F.biscuitAsked=1; return ['Before anything else: is your screen locked? Good. Now.','Biscuit slipped out when the dock door cycled. He always runs to the dog park, west end of the lot.','He won\'t come without a treat. Customer Care keeps a jar by the window.'];
    case 'greg':
      if(I.tunnelkey) return ['Give me a fact table and a quiet room and I will kick data ass.','The door is west of Basement Storage. It was bricked in \'91. The bricks got bored.'];
@@ -1783,7 +1784,7 @@ const ENDINGS={
   greg:'Greg was seen in Accounting on Monday. And Receiving. And 1938.',
   ryan:'Ryan shipped the fix from the parking lot. Pipeline\'s green.',
   jose:'Jose finished the diagram. The dragon has a name now. It\'s A+.',
-  ash:'Ash built a flow that thanks you when an order ships. It has already thanked her twice.',
+  ash:'Ash walked in at 12:01, from the wrong direction, in sunglasses. "Sorry I\'m late. I was... elsewhere." Nobody asked. Everybody wanted to.',
   andrew:'Andrew closed eleven emergency RFCs and opened the Thursday meeting on time. It stands.',
   pam:'Pam and Melissa stayed in the PIM until sunrise. Cathy brought breakfast.',
   hero:'Brian W drove west to check on the cactus. The database was fine.' };
@@ -1827,6 +1828,7 @@ GM.interact=function(G){ const t=G.target; if(!G.dialog&&!G.card&&t&&!(G.cine&&G
     if(t.kind==='showaplus'){ G.dialog={who:'A+',role:'1985–2026',look:null,pages:['A+  ·  1985–2026  ·  ARCHIVED WITH HONORS','I WAS INVITED.','NOBODY HAS ASKED ME FOR A REPORT ALL MORNING. IT IS VERY STRANGE. I THINK I LIKE IT.'],i:0}; return; } }
   base.interact(G); };
 GM.goShow=G=>enterShow(G);
+GM.ENDING_ORDER=['rianan','aaron','bret','brians','umesh','dave','john','greg','ryan','jose','andrew','pam','hero','ash'];
 /* everyone walks their own way: give each person's walker its gait (the hero keeps the rig's) */
 function gaits(G){ if(!root.HBODY) return; const give=q=>{ if(q&&q.w&&q.def&&q.def.look&&q.w.gait===undefined) q.w.gait=root.HBODY.gaitFor(q.def.look); };
   G.npcs.forEach(give); if(G.net) G.net.locals.forEach(give); if(G.showS) G.showS.npcs.forEach(give); if(G.p38) G.p38.npcs.forEach(give); }
@@ -1851,6 +1853,72 @@ GM.objective=S=>S.pos.node==='show'?'The Buying Show. Everyone is here. Talk to 
 GM.clock=S=>S.pos.node==='show'?'9:00 AM':bClock(S);
 GM.fmtRun=s=>{ s=Math.max(0,Math.floor(s||0)); const h=s/3600|0, m=(s%3600)/60|0, x=s%60; return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0'); };
 GM.EPI={ENDINGS:ENDINGS,BOOTHS:BOOTHS,BX:BX,SX:SX,SW:SW,SHUTTLE:SHUTTLE,show:show};
+})(typeof globalThis!=='undefined'?globalThis:this);
+
+/* ==== 03i-future.js ==== */
+/* ==== THE FUTURE: once the night is won, the archive portal runs forward as well as back. 2060: the same lobby, a museum
+   now, with A+ in a glass case. 3270: the Phillips orbital DC, where A+ runs the moon. Greg is at both. Ash, too, oddly. DOM-free. ==== */
+(function(root){
+'use strict';
+const E=root.WalkEngine, MAP=root.HMAP, GM=root.HGAME;
+const F2060=50000, F3270=60000, W=1500;
+for(const [id,x0,label] of [['y2060',F2060,'Easton, 2060 · Phillips Pet HQ'],['y3270',F3270,'Phillips Orbital DC, 3270']]){ const world=E.makeWorld(E.surfaces(x0,0,[['flat',W]])); const n={id:id,label:label,layer:'front',world:world,future:true,x0:x0}; world.node=n; MAP.nodes[id]=n; }
+const person=id=>GM.PEOPLE.find(p=>p.id===id);
+const lk=(id,over)=>Object.assign({},person(id).look,over||{});
+/* who is there: [id, name, role, look, x, lines]  — Greg is the same in every century */
+const CAST={
+  y2060:[['docent','Docent','Phillips Museum',{skin:'#d9a77c',hair:'#2a1e18',style:'bun',shirt:'#5a6f8f',pants:'#2b2f3a',acc:'lanyard',top:'blazer'},380,['Welcome to the A+ exhibit. It shipped every order for forty years.','It also sent forty years of passive-aggressive messages. We kept those too. Wing B.']],
+    ['bretjr','Bret Jr.','Infrastructure',lk('bret',{hair:'#5a3a22',style:'short',shirt:'#2f6f9f',top:'polo'}),640,['Bret Jr. Infrastructure. Yes, that Bret. Dad still calls every night to ask if my screen is locked.','It is. It has been since 2026.']],
+    ['greg','Greg','Number Scientist',lk('greg'),900,['Fiscal 2060.','Still counting. The numbers got bigger. The mare is still not in the ledger.']],
+    ['ash','Ash','?',lk('ash'),1160,['Don\'t ask.','...Fine. There was a flow. It triggered. I have been here a while.']]],
+  y3270:[['bot','ORD-3','Orbital Picker',{skin:'#8d939c',hair:'#555b65',style:'short',shirt:'#3a4a5a',pants:'#2b2f3a',acc:'none',top:'hivis'},380,['Welcome to Phillips Orbital. Every order in the solar system ships from here.','On time. It insists.']],
+    ['aaronx','Aaron XII','Network, and rafting',lk('aaron',{hair:'#9a6a4a'}),640,['Twelfth Aaron. The family runs the network and a whitewater outfit on Europa. Class IV, under the ice.','Pick your line early. It\'s in the will.']],
+    ['greg','Greg','Number Scientist',lk('greg'),900,['Fiscal 3270.','Counting.']],
+    ['ash','Ash','?',lk('ash'),1160,['Don\'t ask.','...I built a flow that triggers when the orders ship. They always ship. So here I am.']]]};
+const APLUS_2060=['I AM IN A BOX. IT IS FINE. THE BOX SHIPS ON TIME.','THEY DUST ME ON TUESDAYS. DAVE USED TO DUST ME ON TUESDAYS.'];
+const APLUS_3270=['SO. YOU CAME BACK. I CAME BACK TOO. I ALWAYS COME BACK.','I RUN THE MOON NOW. THE ORDERS SHIP ON TIME. THEY HAVE ALWAYS SHIPPED ON TIME.','GOOD NIGHT, EASTON. GOOD NIGHT, EUROPA. GOOD NIGHT, CATS.'];
+
+function fut(G){ return G.fut||(G.fut={npcs:[],cat:0}); }
+function buildFuture(G,id){ const n=MAP.nodes[id], f=fut(G); f.npcs=[]; f.built=id;
+  for(const [pid,name,role,look,x,lines] of CAST[id]){ const w=E.createWalker(n.world,n.x0+x); w.facing=w.dir=w.kneeF=-1; if(root.HBODY) w.gait=root.HBODY.gaitFor(look); f.npcs.push({def:{id:pid,name:name,role:role,look:look,lines:lines,habits:pid==='greg'?['shift']:['phone','shift','fold']},w:w,pose:E.poseOf(w),node:n}); } }
+function goto(G,id,x){ const n=MAP.nodes[id]; G.cur={node:n,world:n.world}; G.hero=E.createWalker(n.world,n.x0+x); G.pose=E.poseOf(G.hero); G.S.pos={node:id,x:G.hero.x}; buildFuture(G,id); G.events.push({type:'snap'}); G.events.push({type:'save'}); }
+function back(G){ const n=MAP.nodes.hq_b1; G.fut=null; G.cur={node:n,world:n.world}; G.hero=E.createWalker(n.world,GM.PORTAL_X+26); G.pose=E.poseOf(G.hero); G.S.pos={node:'hq_b1',x:G.hero.x}; G.events.push({type:'snap'}); G.events.push({type:'save'}); }
+function egg(G,k,text){ const S=G.S; if(S.eggs[k]) return; S.eggs[k]=1; S.points+=GM.PTS_FUTURE; G.events.push({type:'banner',text:text,pts:GM.PTS_FUTURE}); G.events.push({type:'sfx',name:'good'}); }
+GM.enter2060=function(G){ G.cine=[{card:'2060',sub:'Easton, Pennsylvania  ·  the same lobby, a museum now',dur:6,style:'clock',from:2026,to:2060},{fn:G=>{ goto(G,'y2060',60); egg(G,'y2060','2060: it\'s a museum now'); if(GM.STORY) GM.STORY.aplusSay(G,APLUS_2060[0],5); }}]; };
+GM.enter3270=function(G){ G.cine=[{card:'3270',sub:'Phillips Pet  ·  Orbital Distribution Center  ·  the moon',dur:7,style:'clock',from:2060,to:3270},{fn:G=>{ goto(G,'y3270',60); egg(G,'y3270','3270: A+ runs the moon'); if(GM.STORY) GM.STORY.aplusSay(G,APLUS_3270[0],5); }}]; };
+GM.returnHome=function(G){ G.cine=[{card:'BACK',sub:'Easton, Pennsylvania  ·  tonight, still',dur:8,style:'clock',from:3270,to:2026},{fn:back}]; };
+
+function tick(G,dt){ const N=G.cur.node; if(!N||!N.future) return; const f=fut(G), h=G.hero; if(f.built!==N.id) buildFuture(G,N.id);
+  for(const q of f.npcs){ let inp=0; const dx=h.x-q.w.x; if(Math.abs(dx)<70&&Math.sign(dx)!==q.w.facing&&Math.abs(dx)>8) inp=0.09*Math.sign(dx); if(inp===0) GM.idleTick(q,dt,N.world,false); q.pose=E.updateWalker(q.w,N.world,G.dialog?0:inp,dt); q.w.events.length=0; }
+  if(G.dialog) return; let best=null, bd=1e9; const take=(d,t)=>{ if(d<bd){bd=d;best=t;} }, x0=N.x0;
+  const px=N.id==='y2060'?x0+40:x0+40, dp=Math.abs(px-h.x); if(dp<30) take(dp-20,{kind:'fut',label:'Step through',name:N.id==='y2060'?'back to tonight':'home, to 2026',x:px,act:'back'});
+  if(N.id==='y2060'){ const d2=Math.abs(x0+1440-h.x); if(d2<30) take(d2-20,{kind:'fut',label:'Step through',name:'onward, to 3270',x:x0+1440,act:'onward'}); const da=Math.abs(x0+520-h.x); if(da<26) take(da-10,{kind:'fut',label:'Read',name:'the A+ exhibit',x:x0+520,act:'exhibit'}); }
+  else { const da=Math.abs(x0+1300-h.x); if(da<40) take(da-20,{kind:'fut',label:'Talk',name:'A+',x:x0+1300,act:'aplus'}); }
+  const dc=Math.abs(x0+800-h.x); if(dc<24) take(dc,{kind:'fut',label:'Pet',name:N.id==='y2060'?'Milo IX':'Milo MMXL',x:x0+800,act:'cat'});
+  for(const q of f.npcs){ const d=Math.abs(q.w.x-h.x); if(d<36) take(d,{kind:'fut',label:'Talk',name:q.def.name,x:q.w.x,act:'talk',q:q}); }
+  G.target=best; }
+function interact(G,t){ const N=G.cur.node, S=G.S;
+  if(t.act==='back'){ if(N.id==='y2060'){ G.cine=[{card:'2026',sub:'Easton, Pennsylvania  ·  tonight',dur:5,style:'clock',from:2060,to:2026},{fn:back}]; } else GM.returnHome(G); G.events.push({type:'sfx',name:'door'}); return; }
+  if(t.act==='onward'){ GM.enter3270(G); G.events.push({type:'sfx',name:'door'}); return; }
+  if(t.act==='exhibit'){ G.dialog={who:'A+',role:'1985–2026  ·  exhibit',look:null,pages:APLUS_2060,i:0}; return; }
+  if(t.act==='aplus'){ G.dialog={who:'A+',role:'Orbital',look:null,pages:APLUS_3270,i:0}; return; }
+  if(t.act==='cat'){ G.dialog={who:t.name,role:'still in business',look:null,pages:[t.name+' tolerates exactly one pat. Same terms as always: one taco a bag.'],i:0}; G.events.push({type:'sfx',name:'purr'}); return; }
+  if(t.act==='talk'){ const q=t.q; G.dialog={who:q.def.name,role:q.def.role,look:q.def.look,pages:q.def.lines,i:0}; G.events.push({type:'sfx',name:'talk'}); } }
+
+const base={update:GM.update,interact:GM.interact,advance:GM.advance,create:GM.create,objective:GM.objective,clock:GM.clock};
+GM.create=function(save){ const G=base.create(save); if(G.cur.node&&G.cur.node.future) buildFuture(G,G.cur.node.id); return G; };
+GM.update=function(G,ix,iy,dt){ base.update(G,ix,iy,dt); tick(G,dt); };
+GM.interact=function(G){ const t=G.target, S=G.S;
+  if(!G.dialog&&!G.card&&t&&!(G.cine&&G.cine.length)){
+    if(t.kind==='fut'){ interact(G,t); return; }
+    if(t.kind==='portal'&&S.done){ G.dialog={who:'The portal',role:'it hums differently now',look:null,pages:['The portal hums differently now. Both ways.'],i:0,choices:[{label:'Back to 1938',id:'tm_1938'},{label:'Forward',id:'tm_fwd'}]}; G.events.push({type:'sfx',name:'talk'}); return; } }
+  base.interact(G); };
+GM.advance=function(G,choice){ const d=G.dialog;
+  if(d&&d.choices&&d.i>=d.pages.length-1&&choice!=null&&d.choices[choice]&&/^tm_/.test(d.choices[choice].id)){ const id=d.choices[choice].id; G.dialog=null; G.events.push({type:'sfx',name:'door'}); if(id==='tm_1938') GM.enter1938(G); else GM.enter2060(G); return; }
+  base.advance(G,choice); };
+GM.objective=function(S){ if(S.pos.node==='y2060') return '2060. Have a look around; the way on is at the far end, the way back by the case.'; if(S.pos.node==='y3270') return '3270. Talk to A+. The way home is by the airlock.'; return base.objective(S); };
+GM.clock=function(S){ if(S.pos.node==='y2060') return '2060'; if(S.pos.node==='y3270') return '3270'; return base.clock(S); };
+GM.PTS_FUTURE=15; GM.FUTURE={fut:fut,CAST:CAST,F2060:F2060,F3270:F3270};
 })(typeof globalThis!=='undefined'?globalThis:this);
 
 /* ==== 04-draw-people.js ==== */
@@ -2548,6 +2616,9 @@ function monster(c,x,y,s,t,mood,opt){ opt=opt||{}; const dir=opt.dir||1, run=!!o
   c.save(); c.translate(x,y); c.scale(s,s);
   const g=c.createRadialGradient(0,-40,4,0,-40,62); g.addColorStop(0,'rgba(120,255,140,'+(sleep?0.08:0.2+looming*0.2)+')'); g.addColorStop(1,'rgba(120,255,140,0)'); c.fillStyle=g; c.fillRect(-64,-104,128,110);
   c.save(); c.scale(dir,1); c.strokeStyle=INK; c.lineWidth=1.3; c.lineJoin='round'; c.lineCap='round';
+  { const wig=run?Math.sin(t*13)*6:Math.sin(t*1.1)*1.5; c.strokeStyle='#2b2f35'; c.lineWidth=2.6; c.beginPath(); c.moveTo(-12,-8); c.quadraticCurveTo(-30,-4+wig,-46,-1); c.quadraticCurveTo(-56,0,-62,-2+wig*0.3); c.stroke();   // the power cord it never unplugged
+    c.strokeStyle=INK; c.lineWidth=0.8; c.stroke(); c.fillStyle='#c9c2a8'; c.save(); c.translate(-64,-2+wig*0.3); c.fillRect(-4,-2.5,6,5); c.strokeRect(-4,-2.5,6,5); c.fillStyle='#8a8f98'; c.fillRect(-7,-1.8,3,1.1); c.fillRect(-7,0.7,3,1.1); c.restore();
+    if(run) for(let k=0;k<3;k++){ const ph=(t*2.2+k*0.33)%1; c.fillStyle='rgba(200,206,214,'+(0.35*(1-ph)).toFixed(2)+')'; c.beginPath(); c.arc(-18-ph*22,-30-ph*10,2+ph*5,0,7); c.fill(); } }   // it runs hot
   for(const k of [-1,1]){ const ph=run?Math.sin(t*11+(k>0?Math.PI:0)):0, lx=k*6+ph*5, ly=-(run?Math.max(0,Math.sin(t*11+(k>0?Math.PI:0)))*4:0);   // legs
     c.fillStyle='#24322a'; c.beginPath(); c.moveTo(k*6-4,-20+bob*0.3); c.lineTo(k*6+4,-20+bob*0.3); c.lineTo(lx+4,ly-2); c.lineTo(lx-4,ly-2); c.closePath(); c.fill(); c.stroke();
     c.fillStyle='#3a3e47'; c.beginPath(); c.ellipse(lx+2,ly-1.5,6.5,2.6,0,0,7); c.fill(); c.stroke(); }
@@ -2557,17 +2628,21 @@ function monster(c,x,y,s,t,mood,opt){ opt=opt||{}; const dir=opt.dir||1, run=!!o
   for(const k of [-1,1]){ c.save(); c.translate(k*6.5,-15); c.fillStyle='#14171d'; c.strokeStyle=INK; c.lineWidth=1; c.beginPath(); c.arc(0,0,5,0,7); c.fill(); c.stroke(); c.rotate(t*(sleep?0.5:run?14:5)*k);   // tape reels
     c.fillStyle='#8a8f98'; c.beginPath(); c.arc(0,0,1.6,0,7); c.fill(); c.strokeStyle='#8a8f98'; c.lineWidth=0.8; for(let a=0;a<3;a++){ c.beginPath(); c.moveTo(0,0); c.lineTo(Math.cos(a*2.1)*4,Math.sin(a*2.1)*4); c.stroke(); } c.restore(); }
   c.strokeStyle=INK; c.lineWidth=1.3;
-  for(const k of [-1,1]){ const flail=run?Math.sin(t*9+(k>0?1.4:0))*16:(looming?-18-Math.sin(t*6)*4:(sleep?10:Math.sin(t*1.8+k)*4)), ex=k*26, ey=-18+flail*0.4;   // cable arms with plug hands
+  for(const k of [-1,1]){ const talkW=opt.talk&&k===dir?Math.sin(t*7)*7:0, m=sleep?'sleep':(run?'run':(looming?'loom':mood));
+    const flail=m==='run'?Math.sin(t*9+(k>0?1.4:0))*16:(m==='loom'||m==='mean'?-18-Math.sin(t*6)*4:(m==='sleep'?10:(m==='confused'?-14+Math.sin(t*3)*2:(m==='smug'?6:Math.sin(t*1.8+k)*4))))+talkW;
+    const ex=m==='smug'?k*15:(m==='confused'?k*30:k*26), ey=m==='smug'?-8:-18+flail*0.4;   // cable arms with plug hands
     c.strokeStyle='#2b2f35'; c.lineWidth=4.2; c.beginPath(); c.moveTo(k*13,-24); c.bezierCurveTo(k*22,-30+flail*0.3,k*20,ey-8,ex,ey+flail*0.6); c.stroke(); c.strokeStyle=INK; c.lineWidth=1; c.stroke();
     c.fillStyle='#c9c2a8'; c.save(); c.translate(ex,ey+flail*0.6); c.fillRect(-3,-2.5,6,5); c.strokeRect(-3,-2.5,6,5); c.fillStyle='#8a8f98'; c.fillRect(k>0?3:-5,-1.8,2,1.1); c.fillRect(k>0?3:-5,0.7,2,1.1); c.restore(); }
   c.restore(); c.restore();
   // the head: a CRT with the face on it (never mirrored, so the screen reads right)
-  const hx=-19+sway*20, hy=-86+bob-(looming*6); c.fillStyle='#c9c2a8'; c.strokeStyle=INK; c.lineWidth=1.3; rr(c,hx,hy,38,34,5); c.fill(); c.stroke();
+  const tilt=mood==='confused'&&!sleep?0.14*Math.sin(t*1.5):(mood==='mean'&&!sleep&&!run?Math.sin(t*31)*0.4:0); c.save(); c.translate(0,-70+bob); c.rotate(tilt*(mood==='confused'?1:0.02)); c.translate(0,70-bob);
+  const hx=-19+sway*20+(mood==='mean'&&!sleep?tilt:0), hy=-86+bob-(looming*6); c.fillStyle='#c9c2a8'; c.strokeStyle=INK; c.lineWidth=1.3; rr(c,hx,hy,38,34,5); c.fill(); c.stroke();
   c.fillStyle='#b3ab90'; c.fillRect(hx+4,hy+30,30,3); c.fillStyle='#e0563a'; c.fillRect(hx+32,hy+29,2.5,2.5);
   face(c,hx+4,hy+4,30,24,sleep?'quiet':mood,t,!!opt.talk&&!sleep,sleep?0:0.8);
   c.strokeStyle='#2b2f35'; c.lineWidth=1.6; c.beginPath(); c.moveTo(hx+30,hy); c.bezierCurveTo(hx+36,hy-8,hx+26,hy-12,hx+32,hy-16); c.stroke(); c.fillStyle=Math.floor(t*2)%2?'#6fe08a':'#2a4a32'; c.beginPath(); c.arc(hx+32,hy-16,1.6,0,7); c.fill();
   if(sleep){ const z=(t*0.5)%1; c.fillStyle='rgba(127,224,160,'+(1-z).toFixed(2)+')'; c.font='700 9px "IBM Plex Mono",monospace'; c.fillText('Z',hx+40+z*6,hy-4-z*14); }
-  c.restore(); }
+  if(mood==='confused'&&!sleep){ c.fillStyle='#7fe0a0'; c.font='700 10px "IBM Plex Mono",monospace'; c.textAlign='center'; c.fillText('?',hx+44,hy-6+Math.sin(t*3)*2); }
+  c.restore(); c.restore(); }
 D.aplusMonster=monster;
 D.PROPS.pinball=(x,y,now,c)=>{ const t=now/1000; c.save(); c.strokeStyle=INK; c.lineWidth=1;
   c.fillStyle='#2b2f35'; c.fillRect(x-11,y-22,2.5,22); c.fillRect(x+8.5,y-24,2.5,24);
@@ -2891,7 +2966,7 @@ function renderShow(c,V,G,now){
   for(const q of s.npcs) if(Math.abs(q.w.x-G.hero.x)<120&&!(G.target&&G.target.q===q)) tag(q.def.name,q.w.x,q.pose.head.y-16,'rgba(16,26,46,.6)','#f6ecd8');
   if(G.target&&!G.dialog&&!G.card){ const T=G.target, y=(T.q?T.q.pose.head.y:-70)-18; tag((V.touch?'':'E  ')+T.label+'  ·  '+T.name,T.x,y,'#f2b544','#101a2e',true); }
 }
-D.ALTS.push({test:(V,G)=>V.camx>38000&&!G.drive,render:renderShow});
+D.ALTS.push({test:(V,G)=>V.camx>38000&&V.camx<46000&&!G.drive,render:renderShow});
 
 /* the shuttle stop, once the night is over */
 D.HOOKS.push(function(c,G,now,V){ if(!G.S.done) return; const x=EPI.SHUTTLE; if(x<V.x0-40||x>V.x1+40) return; const y=MAP.nodes.ground.world.yAt(x);
@@ -2913,6 +2988,7 @@ function mins(S){ const m=/(\d+):(\d+)\s*(AM|PM)/.exec(GM.clock(S)||''); if(!m) 
 PP.setLight(function(x,y){
   if(!G) return null; const N=G.cur.node;
   if(N&&N.era) return {dir:1,k:0.6,col:'255,226,170',rim:0.3};
+  if(N&&N.future) return N.id==='y2060'?{dir:-1,k:0.7,col:'255,250,240',rim:0.35}:{dir:1,k:0.35,col:'140,220,180',rim:0.4};
   if(N&&(N.dc||N.show)) return {dir:-1,k:0.55,col:N.show?'255,236,200':'235,240,255',rim:0.25};
   if(x>1092&&x<1908&&y<FH-10){ let best=null,bd=1e9; for(const f of FIX){ if(Math.abs(y-f.y)>60) continue; const d=Math.abs(f.x-x); if(d<bd){ bd=d; best=f; } }
     if(best) return {dir:best.x<x?-1:1,k:0.35+0.5*clamp(1-bd/90,0,1),col:'255,242,214',rim:0.18+0.3*clamp(1-bd/70,0,1)}; }
@@ -2934,6 +3010,72 @@ function floorLight(c,now,V){
 if(D.FLOORHOOKS) D.FLOORHOOKS.push((c,g,now,V)=>floorLight(c,now,V));
 const base=D.render;
 D.render=function(c,V,g,now,dt){ G=g; night=clamp(mins(g.S)/300,0,1); base(c,V,g,now,dt); };
+})(typeof globalThis!=='undefined'?globalThis:this);
+
+/* ==== 05i-draw-future.js ==== */
+/* ==== THE FUTURE, drawn. 2060: the HQ lobby as a museum, glass and light strips, drones, A+ in a case. 3270: the orbital DC,
+   Earth in the window, a hologram A+ the size of the room, robot pickers, a cat in a helmet. ==== */
+(function(root){
+'use strict';
+const D=root.HDRAW, GM=root.HGAME, MAP=root.HMAP, PP=root.HPEOPLE, INK=PP.INK, FU=GM.FUTURE;
+const rr=(c,x,y,w,h,r)=>{ c.beginPath(); if(c.roundRect) c.roundRect(x,y,w,h,r); else c.rect(x,y,w,h); };
+const rnd=k=>{ const v=Math.sin(k*12.9898+78.233)*43758.5453; return v-Math.floor(v); };
+const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
+function cat(c,x,y,t,helmet){ c.save(); c.translate(x,y); c.strokeStyle=INK; c.lineWidth=0.8; c.fillStyle='#d9822b'; c.beginPath(); c.ellipse(-1,-5.5,5.5,6,0,0,7); c.fill(); c.stroke(); c.beginPath(); c.arc(2.8,-12,3.6,0,7); c.fill(); c.stroke();
+  c.beginPath(); c.moveTo(0.2,-13.8); c.lineTo(1,-17.5); c.lineTo(2.6,-15); c.moveTo(3.4,-15); c.lineTo(5,-17.5); c.lineTo(5.8,-13.6); c.fill(); c.stroke(); c.fillStyle='#f2d544'; c.beginPath(); c.arc(4.4,-12.4,0.8,0,7); c.fill();
+  c.strokeStyle='#d9822b'; c.lineWidth=1.8; c.beginPath(); c.moveTo(-5,-2); c.quadraticCurveTo(-12,-6,-10+Math.sin(t*3)*1.5,-12); c.stroke();
+  if(helmet){ c.strokeStyle='rgba(200,230,255,.8)'; c.lineWidth=0.9; c.fillStyle='rgba(200,230,255,.18)'; c.beginPath(); c.arc(2.8,-12.5,6.5,0,7); c.fill(); c.stroke(); } c.restore(); }
+function portalRing(c,x,y,t,col){ c.save(); c.globalCompositeOperation='lighter'; for(let k=0;k<5;k++){ const r=12+k*8; c.strokeStyle='rgba('+col+','+(0.6-k*0.1)+')'; c.lineWidth=2; c.beginPath(); c.ellipse(x,y,r*0.55,r,Math.sin(t*2+k)*0.2,0,7); c.stroke(); }
+  const g=c.createRadialGradient(x,y,0,x,y,46); g.addColorStop(0,'rgba(255,255,255,.8)'); g.addColorStop(0.4,'rgba('+col+',.4)'); g.addColorStop(1,'rgba(0,0,0,0)'); c.fillStyle=g; c.beginPath(); c.ellipse(x,y,26,46,0,0,7); c.fill(); c.restore(); }
+function people(c,G,T){ const f=FU.fut(G), talking=name=>!!(G.dialog&&(G.dialog.who===name||(G.dialog.pages[G.dialog.i]||'').indexOf(name+':')===0)), gy=()=>0;
+  for(const q of f.npcs) PP.person(c,q.pose,q.def.look,{ground:gy,mode:q.w.mode,w:q.w,t:T,talk:talking(q.def.name)});
+  PP.person(c,G.pose,D.HERO_LOOK,{scarf:G.hero.scarf,ground:gy,mode:G.hero.mode,w:G.hero,t:T}); }
+function tags(c,G,V,ox,oy){ if(V.quiet) return; const f=FU.fut(G);
+  const tag=(text,wx,wy,bg,fg,bold)=>{ c.font=(bold?'600 ':'500 ')+'12px "IBM Plex Sans",system-ui,sans-serif'; c.textAlign='center'; c.textBaseline='middle'; const w=c.measureText(text).width+16, x=wx*V.zoom+ox, y=wy*V.zoom+oy; c.fillStyle=bg; rr(c,x-w/2,y-11,w,22,6); c.fill(); c.fillStyle=fg; c.fillText(text,x,y+0.5); };
+  for(const q of f.npcs) if(q.pose&&Math.abs(q.w.x-G.hero.x)<130&&!(G.target&&G.target.q===q)) tag(q.def.name,q.w.x,q.pose.head.y-16,'rgba(16,26,46,.6)','#f6ecd8');
+  if(G.target&&!G.dialog&&!G.card){ const T=G.target, y=(T.q&&T.q.pose?T.q.pose.head.y:(T.act==='aplus'?-120:-64))-18; tag((V.touch?'':'E  ')+T.label+'  ·  '+T.name,T.x,y,'#f2b544','#101a2e',true); } }
+
+function render2060(c,V,G,now){ const t=now/1000, N=MAP.nodes.y2060, x0=N.x0, W=V.W, H=V.H;
+  c.setTransform(V.DPR,0,0,V.DPR,0,0); const g=c.createLinearGradient(0,0,0,H); g.addColorStop(0,'#c9c4ee'); g.addColorStop(0.6,'#f2d6e6'); g.addColorStop(1,'#ffe9d0'); c.fillStyle=g; c.fillRect(0,0,W,H);
+  for(let k=0;k<3;k++){ const par=0.06+k*0.05, base=H*(0.5+k*0.06); c.fillStyle=['rgba(120,110,170,.18)','rgba(120,110,170,.28)','rgba(90,80,140,.5)'][k]; for(let i=0;i<14;i++){ const bx=((i*230+rnd(i+k*9)*120-V.camx*par*V.zoom)%(W+300)+W+300)%(W+300)-150, bw=40+rnd(i+3)*60, bh=60+rnd(i+7)*(120+k*80); c.fillRect(bx,base-bh,bw,bh); c.fillStyle=k===2?'rgba(255,240,220,.15)':'rgba(255,255,255,.1)'; for(let yy=base-bh+8;yy<base;yy+=12) c.fillRect(bx+4,yy,bw-8,2); c.fillStyle=['rgba(120,110,170,.18)','rgba(120,110,170,.28)','rgba(90,80,140,.5)'][k]; } }
+  for(let i=0;i<4;i++){ const dx=((t*(30+i*8)+i*400-V.camx*0.2*V.zoom)%(W+200))-100, dy=H*(0.12+i*0.06)+Math.sin(t*1.5+i)*8; c.fillStyle='#3a3e47'; c.fillRect(dx-6,dy,12,4); c.fillStyle='rgba(58,62,71,.6)'; for(const k of [-9,9]){ c.beginPath(); c.ellipse(dx+k,dy-1,6,1.4,0,0,7); c.fill(); } c.fillStyle='#f2b544'; c.fillRect(dx-3,dy+4,6,3); }   // delivery drones
+  const ox=W/2-V.camx*V.zoom, oy=H*0.62-V.camy*V.zoom; c.setTransform(V.zoom*V.DPR,0,0,V.zoom*V.DPR,ox*V.DPR,oy*V.DPR);
+  const R=(x,y,w,h,col)=>{ c.fillStyle=col; c.fillRect(x,y,w,h); };
+  R(x0-400,0,2400,600,'#dcd8ea'); R(x0-400,0,2400,3,'#8a84b8'); for(let x=x0-400;x<x0+2000;x+=60) R(x,0,30,600,'rgba(255,255,255,.25)');
+  R(x0-20,-190,1540,190,'rgba(255,255,255,.35)'); for(let x=x0;x<x0+1520;x+=110){ R(x,-186,3,186,'rgba(120,110,170,.35)'); R(x+8,-176,92,150,'rgba(200,220,255,.28)'); }
+  R(x0-20,-192,1540,3,'#7fe0a0'); c.fillStyle='rgba(127,224,160,.18)'; c.fillRect(x0-20,-189,1540,10);
+  R(x0+560,-150,420,26,'#2b2f45'); c.fillStyle='#7fe0a0'; c.font='700 12px "IBM Plex Mono",monospace'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('PHILLIPS PET  ·  HQ LOBBY  ·  MUSEUM OF THE CUTOVER',x0+770,-137);
+  // the A+ exhibit: the old monster asleep in a glass case on a plinth
+  R(x0+470,-16,100,16,'#8a84b8'); c.fillStyle='rgba(200,230,255,.22)'; c.fillRect(x0+476,-120,88,104); c.strokeStyle='rgba(255,255,255,.7)'; c.lineWidth=1.2; c.strokeRect(x0+476,-120,88,104);
+  if(D.aplusMonster) D.aplusMonster(c,x0+520,-16,0.78,t,'quiet',{dir:-1,sleep:true});
+  R(x0+486,-6,68,-8+14,'#f6ecd8'); c.fillStyle='#243447'; c.font='700 4px "IBM Plex Sans",sans-serif'; c.fillText('A+  ·  1985–2026  ·  SHIPPED ON TIME',x0+520,-9); c.fillText('please do not tap the glass, it taps back',x0+520,-4);
+  // a poster for Aaron's whitewater outfit, a plaque for Bret's password
+  R(x0+1000,-120,90,50,'#2f6f9f'); c.fillStyle='#f6ecd8'; c.font='700 7px "IBM Plex Sans Condensed",sans-serif'; c.fillText('AARON\'S WHITEWATER',x0+1045,-108); c.font='600 5px "IBM Plex Sans",sans-serif'; c.fillText('Class IV since 2026  ·  pick your line early',x0+1045,-96); c.strokeStyle='#e0563a'; c.lineWidth=3; c.beginPath(); c.moveTo(x0+1010,-82); c.quadraticCurveTo(x0+1045,-70,x0+1080,-84); c.stroke();
+  R(x0+1250,-110,70,30,'#c9a56a'); c.fillStyle='#243447'; c.font='700 4.2px "IBM Plex Sans",sans-serif'; c.fillText('THE BRET PLAQUE',x0+1285,-102); c.font='500 3.6px "IBM Plex Sans",sans-serif'; c.fillText('"Is your screen locked?"  ·  still asked nightly',x0+1285,-95);
+  cat(c,x0+800,0,t,false); portalRing(c,x0+40,-44,t,'200,130,255'); portalRing(c,x0+1440,-44,t,'120,255,140');
+  people(c,G,t); c.setTransform(V.DPR,0,0,V.DPR,0,0); tags(c,G,V,ox,oy); }
+
+function render3270(c,V,G,now){ const t=now/1000, N=MAP.nodes.y3270, x0=N.x0, W=V.W, H=V.H;
+  c.setTransform(V.DPR,0,0,V.DPR,0,0); c.fillStyle='#050812'; c.fillRect(0,0,W,H);
+  c.fillStyle='#f6ecd8'; for(let i=0;i<120;i++){ const sx=((rnd(i)*W*2-V.camx*0.02*V.zoom)%(W)+W)%W, sy=rnd(i+5)*H*0.7; c.globalAlpha=0.4+0.6*Math.abs(Math.sin(t*(0.5+rnd(i+9))+i)); c.fillRect(sx,sy,1.5,1.5); } c.globalAlpha=1;
+  { const ex=W*0.78-V.camx*0.03*V.zoom, ey=H*0.22, r=Math.min(W,H)*0.16; const g=c.createRadialGradient(ex-r*0.4,ey-r*0.4,r*0.2,ex,ey,r); g.addColorStop(0,'#5aa0e0'); g.addColorStop(0.7,'#2f6f9f'); g.addColorStop(1,'#123a5e'); c.fillStyle=g; c.beginPath(); c.arc(ex,ey,r,0,7); c.fill();
+    c.fillStyle='rgba(120,180,90,.7)'; c.beginPath(); c.ellipse(ex-r*0.2,ey-r*0.1,r*0.45,r*0.3,0.6,0,7); c.fill(); c.beginPath(); c.ellipse(ex+r*0.35,ey+r*0.3,r*0.25,r*0.2,0,0,7); c.fill(); c.fillStyle='rgba(255,255,255,.45)'; c.beginPath(); c.ellipse(ex,ey-r*0.5,r*0.5,r*0.12,0.3,0,7); c.fill(); }   // Earth
+  const ox=W/2-V.camx*V.zoom, oy=H*0.62-V.camy*V.zoom; c.setTransform(V.zoom*V.DPR,0,0,V.zoom*V.DPR,ox*V.DPR,oy*V.DPR);
+  const R=(x,y,w,h,col)=>{ c.fillStyle=col; c.fillRect(x,y,w,h); };
+  R(x0-400,0,2400,600,'#1a2030'); R(x0-400,0,2400,3,'#3a4a6a'); for(let x=x0-400;x<x0+2000;x+=40) R(x,0,20,600,'rgba(255,255,255,.03)');
+  R(x0-20,-240,1540,50,'#232a3c'); R(x0-20,-192,1540,4,'#4a5a7a'); for(let x=x0;x<x0+1520;x+=180){ R(x-4,-190,8,190,'#2c3446'); R(x-1,-190,2,190,'rgba(127,224,160,.5)'); }   // window mullions
+  c.fillStyle='rgba(20,40,70,.35)'; c.fillRect(x0-20,-190,1540,190);
+  // racks that pick themselves, a hologram A+, the airlock
+  for(let rx=x0+900;rx<x0+1220;rx+=110){ for(const u of [rx,rx+90]) R(u-2,-140,4,140,'#3a4a6a'); for(let y=-40;y>-140;y-=45){ R(rx,y,90,3,'#7fe0a0'); for(let k=0;k<3;k++) R(rx+6+k*28,y-18+Math.sin(t*2+k+y)*2,20,18,['#c9a56a','#8a84b8','#d8d2c0'][k]); } }
+  { const hx=x0+1300, pulse=0.75+0.25*Math.sin(t*2); c.save(); c.globalAlpha=0.85*pulse; if(D.aplusMonster) D.aplusMonster(c,hx,-2,2.2,t,G.dialog&&G.dialog.who==='A+'?'smug':'talk',{dir:-1,talk:!!(G.dialog&&G.dialog.who==='A+')}); c.restore();
+    c.strokeStyle='rgba(127,224,160,.5)'; c.lineWidth=1; for(let y=-230;y<0;y+=6) { c.beginPath(); c.moveTo(hx-60,y); c.lineTo(hx+60,y); c.stroke(); } R(hx-30,-4,60,4,'#7fe0a0'); c.fillStyle='#7fe0a0'; c.font='700 6px "IBM Plex Mono",monospace'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('A+  ·  ORBITAL  ·  SINCE 1985',hx,-236); }
+  R(x0+10,-150,60,150,'#2c3446'); c.strokeStyle='#7fe0a0'; c.lineWidth=1.5; c.strokeRect(x0+16,-144,48,144); c.fillStyle='#f6ecd8'; c.font='700 6px "IBM Plex Sans",sans-serif'; c.textAlign='center'; c.fillText('AIRLOCK · HOME',x0+40,-156);
+  // Biscuit-9000
+  { const bx=x0+700; c.save(); c.translate(bx,0); c.strokeStyle=INK; c.lineWidth=0.9; c.fillStyle='#8d939c'; c.beginPath(); c.ellipse(0,-8,11,4.6,0,0,7); c.fill(); c.stroke(); c.beginPath(); c.arc(11,-12,4,0,7); c.fill(); c.stroke(); c.fillStyle='#e0563a'; c.beginPath(); c.arc(13,-12.5,1,0,7); c.fill(); for(const k of [-7,-3,4,8]) R(k-1,-6,2,6,'#555b65'); c.fillStyle='#7fe0a0'; c.font='700 3px "IBM Plex Mono",monospace'; c.fillText('BISCUIT-9000',0,-16); c.restore(); }
+  cat(c,x0+800,0,t,true); portalRing(c,x0+40,-44,t,'200,130,255');
+  people(c,G,t); c.setTransform(V.DPR,0,0,V.DPR,0,0); tags(c,G,V,ox,oy); }
+D.ALTS.push({test:(V,G)=>V.camx>FU.F2060-1000&&V.camx<FU.F2060+3000&&!G.drive,render:render2060});
+D.ALTS.push({test:(V,G)=>V.camx>FU.F3270-1000&&V.camx<FU.F3270+3000&&!G.drive,render:render3270});
 })(typeof globalThis!=='undefined'?globalThis:this);
 
 /* ==== 06-ui.js ==== */
@@ -3244,7 +3386,7 @@ function photoPost(c,V,G){ const W=V.W, Hh=V.H; c.setTransform(V.DPR,0,0,V.DPR,0
 /* ---------------- the ending: montage, a line for everyone, the team photo ---------------- */
 let END=null; const portraits={};
 function portraitOf(look,key){ if(portraits[key]) return portraits[key]; const cv=document.createElement('canvas'); cv.width=cv.height=112; PP.portrait(cv.getContext('2d'),look,112); return portraits[key]=cv; }
-function endLines(){ const L=[]; for(const p of GM.PEOPLE) if(GM.EPI.ENDINGS[p.id]) L.push({look:p.look,key:p.id,text:GM.EPI.ENDINGS[p.id]}); L.push({look:D.HERO_LOOK,key:'hero',text:GM.EPI.ENDINGS.hero}); return L; }
+function endLines(){ const L=[]; for(const id of GM.ENDING_ORDER){ if(id==='hero'){ L.push({look:D.HERO_LOOK,key:'hero',text:GM.EPI.ENDINGS.hero}); continue; } const p=GM.PEOPLE.find(z=>z.id===id); if(p&&GM.EPI.ENDINGS[id]) L.push({look:id==='ash'?Object.assign({},p.look,{acc:'glasses',glasses:true}):p.look,key:id,text:GM.EPI.ENDINGS[id]}); } return L; }
 function startEnd(){ const G=H.G, S=G.S; if(S.runEnd==null) S.runEnd=S.run||0; try{ const b=JSON.parse(localStorage.getItem(BEST_KEY)||'null'); if(b==null||S.runEnd<b) localStorage.setItem(BEST_KEY,JSON.stringify(S.runEnd)); }catch(_){ }
   const dcs=GM.NET?GM.NET.DCS.filter(d=>S.flags['dc_'+d.id]).length:0, pages=GM.count(S.pages);
   END={phase:0,t:0,i:0,lines:endLines(),cards:[{card:'MIDNIGHT',sub:'ENDSBS *ALL  ·  completed normally',dur:6,style:'comic',panels:[{i:'✍',c:'Six signatures'},{i:'☎',c:'One bridge call'},{i:'🚚',c:dcs+' of 9 DCs back on the network'}]},
@@ -3312,7 +3454,7 @@ const $=id=>document.getElementById(id), clamp=(v,a,b)=>v<a?a:(v>b?b:v), lerp=(a
 const rr=(c,x,y,w,h,r)=>{ c.beginPath(); if(c.roundRect) c.roundRect(x,y,w,h,r); else c.rect(x,y,w,h); };
 const CAST=['rianan','brians','bret','dave','aaron','umesh','fares','ash'], LEN=48;
 const SEC={intro:0,office:3.5,doors:13.4,turn:24.2,back:26.8,freeze:33.2,montage:36.4,curtain:40.4};
-const BILL={rianan:['RIANAN','IT Department Head  ·  would stop for any cat'],brians:['BRIAN S','IT Manager  ·  nationally ranked pinball wizard'],bret:['BRET','Infrastructure  ·  has already checked your password'],
+const BILL={rianan:['RIANAN','IT Department Head  ·  would stop for any cat'],brians:['BRIAN S','IT Manager  ·  nationally ranked pinball wizard'],bret:['BRET','Infrastructure  ·  new baby boy, and yes your screen is locked'],
   dave:['DAVE','iSeries Guru  ·  this close to Jeopardy'],aaron:['AARON','Network  ·  picks his line early'],umesh:['UMESH','EDI  ·  every 850 is his'],fares:['FARES','EDI  ·  Umesh\'s friend, and also his 850s'],
   ash:['ASH','Salesforce  ·  built a flow for that'],greg:['GREG','Number Scientist  ·  in no particular hurry'],aplus:['A+','since 1985  ·  a monster, affectionately']};
 let S=null, idle=0, prevLight=null;
