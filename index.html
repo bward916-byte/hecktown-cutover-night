@@ -788,7 +788,7 @@ duct('tun_2',800,900);
  [1142,'sofa'],[1192,'case'],[1250,'desk'],[1312,'cabinet'],[1400,'helpdesk'],[1500,'plant'],[1760,'desk'],[1820,'desk'],[1870,'jar'],
  [790,'truckcab'],[2260,'term'],[2330,'pallet'],[2400,'pallet'],[2560,'rack'],[2700,'rack'],[2800,'forklift'],[2960,'pallet'],[3040,'conveyor'],[3120,'pallet']
 ].forEach(p=>prop(p[1],'ground',p[0]));
-[[1135,'desk'],[1193,'printer'],[1250,'pimdesk'],[1300,'pimdesk'],[1380,'bigscreen'],[1450,'table'],[1520,'whiteboard'],[1765,'desk'],[1842,'portrait'],[1872,'sofa']].forEach(p=>prop(p[1],'hq_f2',p[0]));
+[[1135,'desk'],[1193,'printer'],[1250,'pimdesk'],[1300,'pimdesk'],[1380,'bigscreen'],[1450,'table'],[1500,'whiteboard'],[1543,'pinball'],[1765,'desk'],[1842,'portrait'],[1872,'sofa']].forEach(p=>prop(p[1],'hq_f2',p[0]));
 [[1150,'dish'],[1240,'antenna'],[1340,'antenna'],[1440,'hvac'],[1508,'raft'],[1760,'planter'],[1840,'term'],[1880,'planter']].forEach(p=>prop(p[1],'hq_roof',p[0]));
 [[1150,'crates'],[1220,'shelf'],[1290,'crates'],[1370,'cabinet'],[1410,'cabinet'],[1500,'cabinet'],[1760,'server'],[1800,'server'],[1860,'server'],[760,'pipes'],[950,'pipes']].forEach(p=>prop(p[1],'hq_b1',p[0]));
 [[720,'crates'],[800,'shelf'],[880,'crates']].forEach(p=>prop(p[1],'gar_loft',p[0]));
@@ -816,11 +816,12 @@ const P=(id,name,role,look,node,x,opt)=>{ const p=Object.assign({id:id,name:name
   if(p.lk){ Object.assign(p.look,p.lk); delete p.lk; } return p; };   // lk: extra look details (glasses, pony size, mustache)
 const PEOPLE=[
  P('rianan','Rianan','IT Department Head',['#f1c9a5','#3b2418','ponytail','#2f6f9f','#2b2f3a','headset'],'hq_f2',1400,{lk:{glasses:true,pony:1.8}}),
- P('brians','Brian S','IT Manager',['#f0c7a3','#7a6a5c','short','#3d6b52','#2b2f3a','lanyard'],'hq_f2',1455,{lk:{stache:true},lines:['Admin console\'s ours. A+ changed the wallpaper. Petty.','I build on all machines. Pinball, arcade cabinets, the render box under my desk, half the racks downstairs. If it has a motor or a motherboard, I\'ve had it open.','This building is just a very large machine with worse lighting. I\'d rewire it if Jose would let me.','World-ranked. I don\'t like to bring it up. I\'m bringing it up.']}),
+ P('brians','Brian S','IT Manager',['#f0c7a3','#7a6a5c','short','#3d6b52','#2b2f3a','lanyard'],'hq_f2',1455,{lk:{stache:true},lines:['Admin console\'s ours. A+ changed the wallpaper. Petty.','I build on all machines. Pinball, arcade cabinets, the render box under my desk, half the racks downstairs. If it has a motor or a motherboard, I\'ve had it open.','This building is just a very large machine with worse lighting. I\'d rewire it if Jose would let me.','Nationally ranked pinball player. I don\'t like to bring it up. I\'m bringing it up.','That machine in the corner? I rebuilt the flippers. Tonight it is the most reliable system in this building.']}),
  P('ryan','Ryan','Dev Manager',['#e4b58f','#2a1e18','short','#c25a3a','#26293a','backpack'],'hq_f2',1120,{wander:[1110,1150],lines:['Pipeline\'s green. Whatever you\'re about to do, I can ship it.','If you need the printer, kick it. Gently. It knows what it did.']}),
  P('ash','Ash','Salesforce Engineer',['#c48a62','#1a1410','bun','#4a6fd8','#26293a','cloud'],'hq_f2',1165),
  P('umesh','Umesh','EDI Specialist',['#b9825a','#151210','short','#9a5a3a','#2b2f3a','vest'],'hq_f2',1748),
- P('jose','Jose','System Architect',['#c9906a','#1a1410','swept','#2f7f8f','#2b2f3a','plans'],'hq_f2',1790,{lines:['Two schemas, one warehouse. I drew the diagram. It has a dragon on it now.','Every stair in this building is on my drawing. The tunnel isn\'t. Draw your own conclusions.']}),
+ P('fares','Fares','EDI Analyst',['#c08a62','#1a1410','short','#5a6f8f','#2b2f3a','none'],'hq_f2',1771,{lines:['Umesh and I have been trading 850s since before the new system had a name.','If an EDI file fails at 2 AM, Umesh gets the page and I get a text that says "you up?"','Umesh says the 997s are fine. The 997s are never fine.']}),
+ P('jose','Jose','System Architect',['#c9906a','#1a1410','swept','#2f7f8f','#2b2f3a','plans'],'hq_f2',1796,{lines:['Two schemas, one warehouse. I drew the diagram. It has a dragon on it now.','Every stair in this building is on my drawing. The tunnel isn\'t. Draw your own conclusions.']}),
  P('andrew','Andrew','Head of IT Support',['#eec2a0','#3a2c22','short','#8a4a5a','#2b2f3a','headset'],'ground',1440),
  P('aaron','Aaron','Network Specialist',['#d9a77c','#1f1a17','hoodie','#4a4f6b','#1f2330','cable'],'hq_roof',1300,{wander:[1180,1480]}),
  P('dave','Dave','iSeries Guru',['#eec2a0','#8e8e8e','beard','#8a4a3a','#3a3d47','flannel'],'hq_b1',1820),
@@ -853,13 +854,13 @@ const PEOPLE=[
  P('walt','Walt','Canal Mule Driver',['#eec2a0','#8e8e8e','cap','#7a5a3a','#3a2a1a','none'],'ground',3440,{lines:['Mules walked this towpath before the trucks. The trucks are faster. The mule has never once been locked out of anything.']}),
 ];
 /* what people wear; anything not listed here is picked from a hash of their look (04-draw-people) */
-const WARDROBE={rianan:{top:'blazer'},brians:{top:'polo'},ryan:{top:'tee'},ash:{top:'sweater'},umesh:{top:'sweatervest'},jose:{top:'button'},andrew:{top:'polo'},aaron:{top:'hoodie',bottom:'jeans'},
+const WARDROBE={rianan:{top:'blazer'},brians:{top:'polo'},ryan:{top:'tee'},ash:{top:'sweater'},umesh:{top:'sweatervest'},fares:{top:'polo',bottom:'khakis'},jose:{top:'button'},andrew:{top:'polo'},aaron:{top:'hoodie',bottom:'jeans'},
   dave:{top:'flannel',bottom:'jeans'},john:{top:'button',bottom:'slacks'},greg:{top:'cardigan',bottom:'slacks'},pam:{top:'sweater'},melissa:{top:'button'},cathy:{top:'tee',bottom:'jeans'},bret:{top:'polo',bottom:'work',shoe:'boot'},
   blaine:{top:'blazer'},nick:{top:'blazer'},kim:{top:'cardigan'},ashley:{top:'button'},jessica:{top:'blazer'},jennifer:{top:'sweater'},josh:{top:'polo'},stephanie:{top:'polo'},wendy:{top:'polo'},marc:{top:'button'},
   dee:{top:'button',bottom:'slacks'},lou:{top:'tee',bottom:'work',shoe:'boot'},ben:{top:'tee',bottom:'work',shoe:'boot'},priya:{top:'tee',shoe:'sneaker'},frank:{top:'flannel',bottom:'work'},walt:{top:'button',bottom:'work',shoe:'boot'}};
 for(const p of PEOPLE) if(WARDROBE[p.id]) Object.assign(p.look,WARDROBE[p.id]);
 /* what people do while they wait: a few habits each, picked at random now and then */
-const HABITS={rianan:['phone','fold','shift'],brians:['fold','sip','shift'],ryan:['phone','shift','dance'],ash:['type','sip'],umesh:['type','sip','shift'],jose:['type','fold'],andrew:['type','phone','sip'],aaron:['stretch','fold','shift','roll'],
+const HABITS={rianan:['phone','fold','shift'],brians:['fold','sip','shift'],ryan:['phone','shift','dance'],ash:['type','sip'],umesh:['type','sip','shift'],fares:['type','phone','sip'],jose:['type','fold'],andrew:['type','phone','sip'],aaron:['stretch','fold','shift','roll'],
   dave:['sip','fold','stretch'],john:['fold','phone','sip'],greg:['shift','fold'],pam:['type'],melissa:['type'],cathy:['sip','phone','shift'],bret:['phone','stretch','shift'],blaine:['fold','sip'],nick:['phone','fold'],kim:['type','sip'],
   ashley:['type','phone'],jessica:['phone','fold'],jennifer:['type','sip'],josh:['type','phone'],stephanie:['type','phone'],wendy:['type','sip'],marc:['type','sip'],dee:['fold','shift'],lou:['stretch','sip'],ben:['stretch','shift'],
   priya:['stretch','roll'],rosa:['phone','stretch','shift'],dot:['phone','stretch'],sal:['phone','shift'],marisol:['phone','stretch'],tina:['sip','fold'],frank:['fold','shift'],walt:['sip','shift']};
@@ -962,7 +963,7 @@ function talkLines(G,p){
    case 'rianan':
      if(!F.started){ F.started=1; award(G,PTS.start,'Cutover checklist received'); return ['There you are, Brian. A+ gets archived at midnight and I am not doing it on vibes.','Six system owners, six sign-offs: Network, Backup, Catalog, EDI, Storefront, Jobs. Walk the campus and get them.','Start with Andrew downstairs. Half the doors in this company want a Level 2 badge.']; }
      if(S.done) return ['It went quietly. After forty years, it went quietly. Go home. Or finish your lap, I know you.'];
-     return ['That alley cat by Tina\'s truck has a business plan. I respect it. I also want to pet it.',count(S.signoffs)+' of 6 sign-offs. The Journal has the list if you lose track.'];
+     { const cats=['That alley cat by Tina\'s truck has a business plan. I respect it. I also want to pet it.','I have four cats at home. Five if you count the one that visits. I count the one that visits.','My wallpaper is a cat. My lock screen is a different cat. They know about each other.','If Milo wanted a desk, I would find him a desk.']; F.rianCat=((F.rianCat|0)+1)%cats.length; return [cats[F.rianCat],count(S.signoffs)+' of 6 sign-offs. The Journal has the list if you lose track.']; }
    case 'andrew':
      if(!F.started) return ['Head of IT Support. If it\'s broken, it\'s a ticket. Rianan is looking for you: War Room, second floor. Stairs are in the core, hold Up on the landing.'];
      if(I.badge) return ['Change freeze starts at midnight. Everything before that needs a signature, and you\'re the one collecting them.','Thursday RFC meeting stands. Even tonight. Especially tonight.'];
@@ -1005,8 +1006,8 @@ function talkLines(G,p){
      if(count(S.terms)>=3){ signoff(G,'Jobs'); return ['All three queues held. The scheduler is clean. Jobs is signed.']; }
      F.jobsAsked=1; return ['Every midnight job in this building, I wrote or inherited. Three of them only hold from their own green screen.','Receiving Dock, the Roof Garden shed, and Dee\'s booth at the Security Gate. Hold the queue at each, then come back.'];
    case 'bret':
-     if(F.biscuitHome){ if(!F.biscuitPaid){ F.biscuitPaid=1; award(G,PTS.biscuit,'Biscuit is home'); G.events.push({type:'save'}); return ['Biscuit! There you are. Dogs first, hardware second. Thank you.']; } return ['If it has a power supply, I can fix it. If it has firmware, I can fix it faster.']; }
-     F.biscuitAsked=1; return ['Biscuit slipped out when the dock door cycled. He always runs to the dog park, west end of the lot.','He won\'t come without a treat. Customer Care keeps a jar by the window.'];
+     if(F.biscuitHome){ if(!F.biscuitPaid){ F.biscuitPaid=1; award(G,PTS.biscuit,'Biscuit is home'); G.events.push({type:'save'}); return ['Biscuit! There you are. Dogs first, hardware second. Thank you.']; } { const sec=['If it has a power supply, I can fix it. If it has firmware, I can fix it faster.','Rotate your passwords. Don\'t write them on a sticky note. Not under the keyboard either. I check.','Never plug in a USB stick you found in the parking lot. That one was mine. It was a test. You passed.','Server room is sixty-eight degrees. It is always sixty-eight degrees. If it is ever not sixty-eight degrees, call me.','Multi-factor. On everything. Yes, even that.','Every server in this building has a name. None of them are named after you. That is a security decision.']; F.bretSec=((F.bretSec|0)+1)%sec.length; return [sec[F.bretSec]]; } }
+     F.biscuitAsked=1; return ['Before anything else: is your screen locked? Good. Now.','Biscuit slipped out when the dock door cycled. He always runs to the dog park, west end of the lot.','He won\'t come without a treat. Customer Care keeps a jar by the window.'];
    case 'greg':
      if(I.tunnelkey) return ['Give me a fact table and a quiet room and I will kick data ass.','The door is west of Basement Storage. It was bricked in \'91. The bricks got bored.'];
      if(count(S.pages)>=6){ I.tunnelkey=1; award(G,PTS.key,'Greg gave you the tunnel key'); G.events.push({type:'save'}); return ['Six pages. You read the log. Nobody reads the log.','Here. The old tunnel starts west of Basement Storage. A+ lives at the bottom of it, and always has.']; }
@@ -1205,7 +1206,7 @@ function card(title,sub,dur){ return {card:title,sub:sub||'',dur:dur||4}; }
 function dlg(who,pages){ return {dlg:who,pages:pages}; }
 function runCine(G,dt){
   while(G.cine&&G.cine.length){ const s=G.cine[0];
-    if(s.card!==undefined){ if(!G.card) G.card={title:s.card,sub:s.sub,t:0,dur:s.dur,style:s.style,panels:s.panels}; G.card.t+=dt; if(G.card.t<G.card.dur) return; G.card=null; G.cine.shift(); return; }
+    if(s.card!==undefined){ if(!G.card){ G.card={title:s.card,sub:s.sub,t:0,dur:s.dur,style:s.style,panels:s.panels,from:s.from,to:s.to}; if(s.style==='clock') G.events.push({type:'sfx',name:'whoosh'}); } G.card.t+=dt; if(G.card.t<G.card.dur) return; G.card=null; G.cine.shift(); return; }
     if(s.dlg){ if(!s.started){ s.started=true; const p=s.dlg; G.dialog={who:p.name,role:p.role,look:p.look,pages:s.pages,i:0,cine:true}; G.events.push({type:'sfx',name:'talk'}); return; } if(G.dialog) return; G.cine.shift(); continue; }
     if(s.fn){ G.cine.shift(); s.fn(G); continue; }
     G.cine.shift(); }
@@ -1234,12 +1235,12 @@ function finish38(G){
   const F=PEOPLE38.founder, K=PEOPLE38.kid, M=PEOPLE38.miller;
   G.cine=[dlg(M,['Mrs. Miller: "In this weather? Well. I suppose you said you would."','Mrs. Miller: "You showed up. That\'s the whole thing, isn\'t it."']),
     {fn:G=>G.events.push({type:'banner',text:'Paid in eggs. Entered as cash.'})},
-    card('SOME YEARS LATER','the same yard',4),{fn:later},
+    {card:'SOME YEARS LATER',sub:'the same yard',dur:4.5,style:'clock',from:1938,to:1946},{fn:later},
     dlg({name:F.name,role:'Grandpa',look:F.look},['"Farmers are counting on that feed, Blaine. Rain or no rain, it goes today."']),
     dlg(K,['Blaine: "Even in the rain, Grandpa?"']),
     dlg({name:F.name,role:'Grandpa',look:F.look},['"Especially in the rain. Show up for the people who count on you. That\'s the whole business."']),
     card('Show up for the people who count on you.','',5),
-    card('TONIGHT','Easton, Pennsylvania  ·  6:00 PM  ·  cutover night',4),{fn:arrive}];
+    {card:'TONIGHT',sub:'Easton, Pennsylvania  ·  6:00 PM  ·  cutover night',dur:8,style:'clock',from:1946,to:2026},{fn:arrive}];
   G.S.flags.p38=4;
 }
 /* ---------------- the portal: once the Ledger is whole, you can walk back into 1938 as yourself ---------------- */
@@ -1254,7 +1255,7 @@ function visit38(G){
   G.events.push({type:'save'});
 }
 function leave38(G){ const n=MAP.nodes.hq_b1; G.p38=null; G.cur={node:n,world:n.world}; G.hero=E.createWalker(n.world,GM.PORTAL_X+26); G.pose=E.poseOf(G.hero); G.S.pos={node:'hq_b1',x:G.hero.x}; G.events.push({type:'snap'}); G.events.push({type:'save'}); }
-GM.enter1938=function(G){ G.cine=[card('1938','something is wrong with the light',3.5),{fn:visit38}]; };
+GM.enter1938=function(G){ G.cine=[{card:'1938',sub:'something is wrong with the light',dur:5,style:'clock',from:2026,to:1938},{fn:visit38}]; };
 function target38(G){
   const h=G.hero, P=G.p38, st=G.S.flags.p38|0; if(!P||G.cine.length) return null;
   if(P.scene==='visit'){ let best=null,bd=1e9; const take=(d,t)=>{ if(d<bd){bd=d;best=t;} };
@@ -1428,6 +1429,7 @@ const VIG={
   ash:[['ash','Salesforce just DM\'d me an apology.'],['hero','Salesforce can\'t DM you.'],['ash','It can now. I built a flow for it.']],
   dave:[['dave','Green screen\'s back. Forty years and it finally blinked first.'],['hero','Did you win?'],['dave','Nobody wins against a green screen. You just outlast it.']],
   umesh:[['umesh','Every 850 in the queue, back where it belongs.'],['hero','And the 997s?'],['umesh','It can keep the 997s. Nobody wants the 997s.']],
+  fares:[['fares','Umesh, your 850s are showing.'],['umesh','Those are YOUR 850s.'],['fares','...they are my 850s.'],['hero','I\'ll come back.']],
   john:[['john','I looked at the scheduler.'],['hero','And?'],['john','Nothing runs at midnight tonight unless we say so. I made sure.']],
   ryan:[['ryan','Pipeline\'s green.'],['hero','You checked already?'],['ryan','I check while I walk. It\'s a condition.']],
   brians:[['brians','It changed the admin console wallpaper to a picture of itself.'],['hero','That\'s... actually kind of sad.'],['brians','I changed it back to the dog.']],
@@ -1435,6 +1437,15 @@ const VIG={
   bret:[['bret','Hang on, one sec.'],['bret','...he\'s asleep. Look at that face.'],['hero','Is that the baby?'],['bret','That\'s the baby. Okay. Okay, let\'s go.']],
   hero:[['hero','The database is fine.'],['hero','It\'s everything around it that isn\'t.']],
 };
+const BANTER={
+  bret:['Lock your screen.','Is that a USB stick? Put it down.','Firewall rules are a love language.','Sixty-eight degrees. Perfect.','MFA. On everything.','Patch Tuesday waits for no one.','Who left the server room door propped?'],
+  rianan:['Has anyone fed Milo?','Every month on my cat calendar is the best month.','Cats understand cutovers. They also knock things over.','Pspspsps.'],
+  brians:['Nationally ranked. Just saying.','Nudge it, don\'t shove it.','Multiball tonight.','I could rebuild that. I won\'t. I could.'],
+  dave:['What is ENDSBS?','I\'ll take Midrange Systems for 400.','That\'s a Daily Double if I ever saw one.'],
+  aaron:['Class IV. Saturday.','Pick your line early.','Switches green. Paddles ready.'],
+  greg:['Fiscal.','Counting.','That number is wrong. Not yours. The other one.'],
+  fares:['Umesh! Your 850s!','The 997s are never fine.','EDI: Every Day, Interesting.'], umesh:['Fares, those are YOUR 850s.','The 997s are fine.','Fares owes me a coffee.'],
+  ryan:['Pipeline\'s green.','I checked. I\'m checking again.'], jose:['The dragon is load-bearing.'], ash:['There\'s a flow for that.'], cathy:['Coffee run in five.'], john:['Nothing runs at midnight unless we say so.'] };
 const comic=(title,sub,panels)=>({card:title,sub:sub,dur:5.5,style:'comic',panels:panels});
 
 function st(G){ return G.story||(G.story={ap:null,apq:[],bub:[],vig:null,vigT:0,lastSO:-1,reveal:0}); }
@@ -1455,7 +1466,7 @@ function bridgeCall(G,n){
     {fn:G=>{ G.S.flags.network=1; G.events.push({type:'banner',text:'The whole team, on one call. The Phillips truck is in The Yard.'}); }}];
 }
 function reveal(G){
-  const s=st(G); return [{fn:G=>{ s.reveal=3.5; G.events.push({type:'sfx',name:'door'}); }},
+  const s=st(G); return [{fn:G=>{ s.reveal=3.5; G.events.push({type:'sfx',name:'door'}); G.events.push({type:'sfx',name:'roar'}); }},
     GM.dlg(APLUS,['SO. YOU FOUND WHERE I LIVE.','I HAVE SHIPPED EVERY ORDER THIS COMPANY HAS TAKEN SINCE 1985. FROM THIS ROOM. FROM THESE FANS.','DAVE KEEPS ME COMPANY. DAVE IS A GOOD OPERATOR.','YOU ARE HERE FOR SIGNATURES. I KNOW. THE DOORS TELL ME EVERYTHING.'])];
 }
 
@@ -1485,6 +1496,15 @@ function tick(G,dt){
   if(s.vig){ s.vigT-=dt; if(s.vigT<=0){ const v=s.vig; v.i++; if(v.i>=v.lines.length) s.vig=null; else{ const [id,text]=v.lines[v.i]; s.bub=s.bub.filter(b=>b.id!==id); s.vigT=2.2+text.length*0.035; s.bub.push({id:id,text:text,t:s.vigT+(v.i===v.lines.length-1?1.2:0.1)}); } } }
   else if(free&&N){ if(F.ch1&&flag(S,'vig_hero')) s.vig={lines:VIG.hero,i:-1};
     else for(const q of G.npcs){ const id=q.def.id; if(VIG[id]&&q.node===N&&S.met[id]&&Math.abs(q.w.x-h.x)<80&&!F['vig_'+id]){ F['vig_'+id]=1; s.vig={lines:VIG[id],i:-1}; s.vigT=0.6; break; } } }
+  // banter: now and then someone near you says something, a comic line, never twice in a row
+  s.banT=(s.banT==null?4:s.banT)-dt;
+  if(free&&N&&!s.vig&&s.banT<=0){ s.banT=5+Math.random()*7; let pick=null,pd=110; for(const q of G.npcs){ const id=q.def.id, d=Math.abs(q.w.x-h.x); if(BANTER[id]&&q.node===N&&S.met[id]&&d<pd&&!q.crew&&(q.banCD||0)<=0){ pd=d; pick=q; } }
+    if(pick){ const L=BANTER[pick.def.id]; pick.banI=((pick.banI==null?Math.floor(Math.random()*L.length):pick.banI)+1)%L.length; s.bub=s.bub.filter(b=>b.id!==pick.def.id); s.bub.push({id:pick.def.id,text:L[pick.banI],t:3.4}); pick.banCD=28+Math.random()*20;
+      if(pick.def.id==='fares'&&Math.random()<0.6){ const u=G.npcs.find(q=>q.def.id==='umesh'); if(u&&u.node===N) s.after={id:'umesh',text:BANTER.umesh[0],t:1.6}; } } }
+  if(s.after){ s.after.t-=dt; if(s.after.t<=0){ s.bub.push({id:s.after.id,text:s.after.text,t:3.2}); s.after=null; } }
+  for(const q of G.npcs) if(q.banCD>0) q.banCD-=dt;
+  // the pinball machine in the War Room
+  if(N&&N.id==='hq_f2'&&!G.dialog&&Math.abs(1543-h.x)<22){ const b=G.target, bd=b?Math.abs(b.x-h.x)+(b.kind==='item'||b.kind==='page'?-40:0):1e9; if(Math.abs(1543-h.x)-5<bd) G.target={kind:'pinball',label:'Play',name:'the pinball machine',x:1543}; }
   // the SKU hunt: extra things to use on the warehouse floor
   if(F.skuOn&&!F.skuDone&&N&&N.id==='ground'&&!G.dialog){ let best=G.target, bd=best?Math.abs(best.x-h.x)+(best.kind==='item'||best.kind==='page'?-40:0):1e9;
     for(const k of SKUS) if(!F['sku_'+k.id]){ const d=Math.abs(k.x-h.x); if(d<26&&d-40<bd){ bd=d-40; best={kind:'sku',label:'Scan',name:k.label,x:k.x,k:k}; } }
@@ -1503,6 +1523,9 @@ GM.update=function(G,ix,iy,dt){ base.update(G,ix,iy,dt); tick(G,dt); };
 GM.interact=function(G){ const t=G.target, S=G.S;
   if(!G.dialog&&!G.card&&t&&!G.p38){
     if(t.kind==='sku'){ skuScan(G,t.k); return; }
+    if(t.kind==='pinball'){ const s=st(G), n=(S.flags.pinball|0)+1; S.flags.pinball=n; G.events.push({type:'sfx',name:'pinball'});
+      const R=['TILT!','MULTIBALL!','Replay!','Ball saved.','TILT! Again.','Extra ball!'], bs=G.npcs.find(q=>q.def.id==='brians');
+      G.events.push({type:'hint',text:R[(n-1)%R.length]}); if(bs&&bs.node===G.cur.node){ s.bub=s.bub.filter(b=>b.id!=='brians'); s.bub.push({id:'brians',text:n%2?'Nudge it, don\'t shove it.':'Nationally ranked. I\'m just saying.',t:3.2}); } return; }
     if(t.kind==='talk'&&(t.q.def.id==='pam'||t.q.def.id==='melissa')&&S.signoffs.Catalog&&S.met[t.q.def.id]&&!S.flags.skuDone){ skuTalk(G); return; } }
   base.interact(G); };
 GM.advance=function(G,choice){ const d=G.dialog;
@@ -1540,7 +1563,7 @@ function tick(G,dt){
   if(G.portalOpen&&!S.flags.ap_portal&&GM.STORY){ S.flags.ap_portal=1; GM.STORY.aplusSay(G,'YOU READ THE WHOLE LEDGER. NOBODY READS THE LEDGER. I OPENED A DOOR IN THE ARCHIVE. GO SEE WHERE IT STARTED.'); }
   const N=G.cur.node, h=G.hero;
   if(G.portalOpen&&N&&N.id==='hq_b1'&&!G.dialog&&!G.p38){ const d=Math.abs(PORTAL_X-h.x); let best=G.target, bd=best?Math.abs(best.x-h.x)+(best.kind==='item'||best.kind==='page'?-40:0):1e9;
-    if(d<28&&d-40<bd) best={kind:'portal',label:'Step through',name:'1938',x:PORTAL_X}; G.target=best; }
+    if(d<28&&d<bd) best={kind:'portal',label:'Step through',name:'1938',x:PORTAL_X}; G.target=best; }
 }
 const base={update:GM.update,interact:GM.interact};
 GM.update=function(G,ix,iy,dt){ base.update(G,ix,iy,dt); tick(G,dt); };
@@ -1723,6 +1746,7 @@ const ENDINGS={
   bret:'Bret was home before the baby woke up. The dogs met him at the door.',
   brians:'Brian S went home and built a new machine. The backglass is a green screen.',
   umesh:'Umesh watched the first 850 of the morning post cleanly, then closed the laptop.',
+  fares:'Fares and Umesh watched the first EDI batch post, then argued about whose it was. It was both of theirs.',
   dave:'Dave turned off a green screen that had been on since 1994. Then turned it back on. Just in case.',
   john:'John rewrote the midnight job so it only runs when someone asks. Nobody has asked yet.',
   greg:'Greg was seen in Accounting on Monday. And Receiving. And 1938.',
@@ -1734,7 +1758,8 @@ const ENDINGS={
   hero:'Brian W drove west to check on the cactus. The database was fine.' };
 const SHOW_LINES={ rianan:'"Nobody\'s on a bridge call. Look at that."', aaron:'"Raft\'s in the truck. Lehigh on Saturday."', dave:'"I\'d still like to have been on Jeopardy. This is close."',
   greg:'"Thirty-one booths. Thirty-two if you count Milo." (Greg has been at every one of these, including the ones before he was born.)', pam:'"We brought the PIM. It\'s a booth now."', melissa:'"Four hundred attributes, and every one of them is right."', cathy:'"I brought them coffee. At a trade show. Some things don\'t change."',
-  brians:'"Pinball machine in the IT booth. I built it Tuesday."', blaine:'"My grandfather opened a single feed store in 1938. His goal was to delight our customers and create a great place to work."', ash:'"Salesforce sent flowers. I built a flow for that too."' };
+  brians:'"Pinball machine in the IT booth. I built it Tuesday."', blaine:'"My grandfather opened a single feed store in 1938. His goal was to delight our customers and create a great place to work."', ash:'"Salesforce sent flowers. I built a flow for that too."', fares:'"Umesh wanted the booth by the snacks. I wanted the booth by the outlets. We got the booth by the bathroom."',
+  bret:'"Lanyard check. Everyone. Yes, even the cat."' };
 const GENERIC=['"We did that."','"Site\'s live. Site\'s been live. Relax."','"Somebody explain the cat."','"Next year, Monterey."','"I never want to see a green screen again."'];
 const BOOTHS=['KIBBLE CO','AQUATIC','FEED & FARM','VET','GROOM','SHELTER','TREATS','CENTRAL PET','MILO\'S','IT DEPT'];
 const BX=i=>SX+500+i*260;
@@ -2465,6 +2490,40 @@ function face(c,x,y,w,h,mood,t,talking,intensity){
 }
 function speaking(G){ const s=G.story; if(G.dialog&&G.dialog.who==='A+') return {text:G.dialog.pages[G.dialog.i],talk:true}; if(s&&s.ap) return {text:s.ap.text,talk:s.ap.typed<s.ap.text.length}; return null; }
 
+/* A+ in the flesh: a green-screen monster. A beige CRT for a head (the face lives on the screen), a casing body with two
+   tape reels for a chest, cable arms that end in plugs, stubby legs. It runs, it looms, it sleeps. */
+function monster(c,x,y,s,t,mood,opt){ opt=opt||{}; const dir=opt.dir||1, run=!!opt.run, sleep=!!opt.sleep, looming=opt.loom||0;
+  const bob=run?Math.abs(Math.sin(t*11))*3:Math.sin(t*2.4)*1.2+(sleep?2:0), sway=run?Math.sin(t*11)*0.08:Math.sin(t*1.3)*0.03;
+  c.save(); c.translate(x,y); c.scale(s,s);
+  const g=c.createRadialGradient(0,-40,4,0,-40,62); g.addColorStop(0,'rgba(120,255,140,'+(sleep?0.08:0.2+looming*0.2)+')'); g.addColorStop(1,'rgba(120,255,140,0)'); c.fillStyle=g; c.fillRect(-64,-104,128,110);
+  c.save(); c.scale(dir,1); c.strokeStyle=INK; c.lineWidth=1.3; c.lineJoin='round'; c.lineCap='round';
+  for(const k of [-1,1]){ const ph=run?Math.sin(t*11+(k>0?Math.PI:0)):0, lx=k*6+ph*5, ly=-(run?Math.max(0,Math.sin(t*11+(k>0?Math.PI:0)))*4:0);   // legs
+    c.fillStyle='#24322a'; c.beginPath(); c.moveTo(k*6-4,-20+bob*0.3); c.lineTo(k*6+4,-20+bob*0.3); c.lineTo(lx+4,ly-2); c.lineTo(lx-4,ly-2); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle='#3a3e47'; c.beginPath(); c.ellipse(lx+2,ly-1.5,6.5,2.6,0,0,7); c.fill(); c.stroke(); }
+  c.save(); c.translate(0,-20+bob*0.5); c.rotate(sway);
+  c.fillStyle='#1f3a28'; c.beginPath(); c.moveTo(-15,0); c.quadraticCurveTo(-18,-14,-13,-30); c.lineTo(13,-30); c.quadraticCurveTo(18,-14,15,0); c.closePath(); c.fill(); c.stroke();   // casing
+  c.strokeStyle='rgba(120,255,140,.25)'; c.lineWidth=0.7; for(let yy=-6;yy>-28;yy-=5){ c.beginPath(); c.moveTo(-13,yy); c.lineTo(13,yy); c.stroke(); }
+  for(const k of [-1,1]){ c.save(); c.translate(k*6.5,-15); c.fillStyle='#14171d'; c.strokeStyle=INK; c.lineWidth=1; c.beginPath(); c.arc(0,0,5,0,7); c.fill(); c.stroke(); c.rotate(t*(sleep?0.5:run?14:5)*k);   // tape reels
+    c.fillStyle='#8a8f98'; c.beginPath(); c.arc(0,0,1.6,0,7); c.fill(); c.strokeStyle='#8a8f98'; c.lineWidth=0.8; for(let a=0;a<3;a++){ c.beginPath(); c.moveTo(0,0); c.lineTo(Math.cos(a*2.1)*4,Math.sin(a*2.1)*4); c.stroke(); } c.restore(); }
+  c.strokeStyle=INK; c.lineWidth=1.3;
+  for(const k of [-1,1]){ const flail=run?Math.sin(t*9+(k>0?1.4:0))*16:(looming?-18-Math.sin(t*6)*4:(sleep?10:Math.sin(t*1.8+k)*4)), ex=k*26, ey=-18+flail*0.4;   // cable arms with plug hands
+    c.strokeStyle='#2b2f35'; c.lineWidth=4.2; c.beginPath(); c.moveTo(k*13,-24); c.bezierCurveTo(k*22,-30+flail*0.3,k*20,ey-8,ex,ey+flail*0.6); c.stroke(); c.strokeStyle=INK; c.lineWidth=1; c.stroke();
+    c.fillStyle='#c9c2a8'; c.save(); c.translate(ex,ey+flail*0.6); c.fillRect(-3,-2.5,6,5); c.strokeRect(-3,-2.5,6,5); c.fillStyle='#8a8f98'; c.fillRect(k>0?3:-5,-1.8,2,1.1); c.fillRect(k>0?3:-5,0.7,2,1.1); c.restore(); }
+  c.restore(); c.restore();
+  // the head: a CRT with the face on it (never mirrored, so the screen reads right)
+  const hx=-19+sway*20, hy=-86+bob-(looming*6); c.fillStyle='#c9c2a8'; c.strokeStyle=INK; c.lineWidth=1.3; rr(c,hx,hy,38,34,5); c.fill(); c.stroke();
+  c.fillStyle='#b3ab90'; c.fillRect(hx+4,hy+30,30,3); c.fillStyle='#e0563a'; c.fillRect(hx+32,hy+29,2.5,2.5);
+  face(c,hx+4,hy+4,30,24,sleep?'quiet':mood,t,!!opt.talk&&!sleep,sleep?0:0.8);
+  c.strokeStyle='#2b2f35'; c.lineWidth=1.6; c.beginPath(); c.moveTo(hx+30,hy); c.bezierCurveTo(hx+36,hy-8,hx+26,hy-12,hx+32,hy-16); c.stroke(); c.fillStyle=Math.floor(t*2)%2?'#6fe08a':'#2a4a32'; c.beginPath(); c.arc(hx+32,hy-16,1.6,0,7); c.fill();
+  if(sleep){ const z=(t*0.5)%1; c.fillStyle='rgba(127,224,160,'+(1-z).toFixed(2)+')'; c.font='700 9px "IBM Plex Mono",monospace'; c.fillText('Z',hx+40+z*6,hy-4-z*14); }
+  c.restore(); }
+D.aplusMonster=monster;
+D.PROPS.pinball=(x,y,now,c)=>{ const t=now/1000; c.save(); c.strokeStyle=INK; c.lineWidth=1;
+  c.fillStyle='#2b2f35'; c.fillRect(x-11,y-22,2.5,22); c.fillRect(x+8.5,y-24,2.5,24);
+  c.fillStyle='#7a2a8a'; c.beginPath(); c.moveTo(x-13,y-22); c.lineTo(x+13,y-26); c.lineTo(x+13,y-33); c.lineTo(x-13,y-29); c.closePath(); c.fill(); c.stroke();
+  c.fillStyle='#1a1d24'; c.fillRect(x+6,y-58,8,27); c.fillStyle='#3a1a4a'; c.fillRect(x-1,y-60,16,24); c.strokeRect(x-1,y-60,16,24);
+  for(let k=0;k<5;k++){ c.fillStyle=Math.floor(t*4+k)%2?'#f2b544':'#e0563a'; c.beginPath(); c.arc(x+2+k*3,y-56,0.9,0,7); c.fill(); }
+  c.fillStyle='#f6ecd8'; c.font='700 3px "IBM Plex Sans Condensed",sans-serif'; c.textAlign='center'; c.fillText('CUTOVER',x+7,y-48); c.fillText('WIZARD',x+7,y-44.5); c.fillStyle='#6fe08a'; c.fillText(String(10000+Math.floor(t*37)%90000),x+7,y-39.5); c.restore(); };
 /* wall monitors */
 D.PROPS.aplus_wall=(x,y,now,c)=>{ const G=curG; if(!G) return; const w=26, h=20, top=y-80, t=now/1000, sp=speaking(G);
   c.fillStyle='#22262e'; c.fillRect(x-1.5,top+h,3,5);
@@ -2475,10 +2534,13 @@ D.PROPS.aplus_wall=(x,y,now,c)=>{ const G=curG; if(!G) return; const w=26, h=20,
   else{ c.fillText('A+ >'+(Math.floor(t*2)%2?'_':''),x-10,top+8); c.fillStyle='rgba(120,255,140,.5)'; c.fillText('CUTOVER 00:00',x-10,top+14); } };
 
 /* in the world: the reveal, bubbles, SKU tags */
+D.HOOKS.push(function(c,G,now,V){ const x=1858; if(x<V.x0-60||x>V.x1+60) return; const N=MAP.nodes.hq_b1, S=G.S, s=G.story, sp=speaking(G), t=now/1000;
+  const loom=s&&s.reveal>0?clamp(s.reveal/3.5,0,1):0, shake=loom?Math.sin(t*40)*1.2*loom:0;
+  monster(c,x+shake,N.world.yAt(x),0.86+0.1*loom,t,sp?ST.aplusMood(sp.text):'idle',{dir:-1,sleep:!!S.done,talk:!!(sp&&sp.talk),loom:loom}); });
 D.HOOKS.push(function(c,G,now,V){
   const s=G.story, t=now/1000, N=G.cur.node; if(!s||!N) return;
   if(s.reveal>0&&N.id==='hq_b1'){ const a=clamp(s.reveal/3.5,0,1)*(0.6+0.4*Math.abs(Math.sin(t*9))); for(const p of MAP.props) if(p.node==='hq_b1'&&p.type==='server'){ const y=N.world.yAt(p.x); c.fillStyle='rgba(120,255,140,'+(0.35*a).toFixed(3)+')'; c.fillRect(p.x-14,y-66,28,66); }
-    face(c,1790,N.world.yAt(1790)-78,34,26,'talk',t,true,1); }
+  }
   // Pam's three mis-slotted SKUs
   const F=G.S.flags; if(F.skuOn&&!F.skuDone&&N.id==='ground') for(const k of ST.SKUS){ if(F['sku_'+k.id]||k.x<V.x0-20||k.x>V.x1+20) continue; const y=N.world.yAt(k.x)-64+Math.sin(t*3+k.x)*1.5;
     c.fillStyle='rgba(242,181,68,.25)'; c.beginPath(); c.arc(k.x,y,10,0,7); c.fill(); c.fillStyle='#f6ecd8'; c.fillRect(k.x-7,y-5,14,10); c.strokeStyle=INK; c.lineWidth=0.7; c.strokeRect(k.x-7,y-5,14,10);
@@ -2506,8 +2568,28 @@ function aplusCard(c,V,G,now){
   c.globalAlpha=1;
 }
 
+/* time passing: a clock that spins itself through the years */
+const MILESTONES={1938:'Phillips Feed opens its doors',1985:'A+ goes live',1991:'a door gets bricked over',2026:'cutover night'};
+function clockCard(c,V,G,k){ const W=V.W, H=V.H, t=k.t, d=k.dur, a=clamp(Math.min(t/0.5,(d-t)/0.5),0,1), p=clamp((t-0.3)/(d-2.1),0,1), e=p<0.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+  const y0=k.from||1938, y1=k.to||2026, yr=Math.round(y0+(y1-y0)*e), era=clamp((yr-1938)/88,0,1);
+  const mix=(A,B)=>{ const h=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16)); const x=h(A), y=h(B); return 'rgb('+x.map((v,i)=>Math.round(v+(y[i]-v)*era)).join(',')+')'; };
+  c.setTransform(V.DPR,0,0,V.DPR,0,0); c.globalAlpha=Math.max(a,0.001); c.fillStyle=mix('#2a1c10','#0b1220'); c.fillRect(0,0,W,H);
+  const cx=W/2, cy=H*0.4, R=Math.min(W,H)*0.2, spin=e*Math.max(4,Math.abs(y1-y0)/6)*2*Math.PI*(y1<y0?-1:1), glow=Math.sin(Math.PI*p);
+  c.fillStyle='rgba(242,181,68,'+(0.12*glow).toFixed(3)+')'; c.beginPath(); c.arc(cx,cy,R*1.5,0,7); c.fill();
+  c.fillStyle=mix('#e8dcc0','#f6ecd8'); c.strokeStyle=mix('#5a3a24','#243447'); c.lineWidth=Math.max(3,R*0.06); c.beginPath(); c.arc(cx,cy,R,0,7); c.fill(); c.stroke();
+  for(let i=0;i<12;i++){ const an=i/12*Math.PI*2, r0=R*(i%3?0.86:0.78); c.lineWidth=i%3?1.5:3; c.beginPath(); c.moveTo(cx+Math.cos(an)*r0,cy+Math.sin(an)*r0); c.lineTo(cx+Math.cos(an)*R*0.94,cy+Math.sin(an)*R*0.94); c.stroke(); }
+  const hand=(an,len,w,col,al)=>{ c.globalAlpha=Math.max(a,0.001)*al; c.strokeStyle=col; c.lineWidth=w; c.lineCap='round'; c.beginPath(); c.moveTo(cx,cy); c.lineTo(cx+Math.sin(an)*len,cy-Math.cos(an)*len); c.stroke(); };
+  const fast=glow;                                                                   // motion blur while it races
+  for(let g=7;g>=1;g--) hand(spin-g*0.22*fast*Math.sign(y1-y0||1),R*0.8,R*0.05,mix('#5a3a24','#243447'),0.1*fast);
+  hand(spin/12,R*0.52,R*0.08,mix('#3a2418','#101a2e'),1); hand(spin,R*0.8,R*0.05,mix('#5a3a24','#243447'),1); hand(spin*1.7+t*9,R*0.86,R*0.015,'#c0392b',0.8);
+  c.globalAlpha=Math.max(a,0.001); c.fillStyle=mix('#3a2418','#101a2e'); c.beginPath(); c.arc(cx,cy,R*0.07,0,7); c.fill();
+  const yf=Math.min(64,H/7,W/6); c.fillStyle=mix('#f0e0c0','#f2b544'); c.font='700 '+yf+'px "IBM Plex Mono",monospace'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(String(yr),cx,cy+R+yf*0.9);
+  let ms=null; for(const y in MILESTONES) if(y1>=y0?(+y<=yr&&+y>=y0):(+y>=yr&&+y<=y0)) ms=MILESTONES[y]; if(ms&&t<d-1.6){ const mf=D.fitFont(c,ms,'italic ','Georgia,serif',Math.min(20,H/24),W*0.86); c.font='italic '+mf+'px Georgia,serif'; c.fillStyle=mix('#c9b48a','#9ad0f0'); c.fillText(ms,cx,cy+R+yf*1.8); }
+  const end=clamp((t-(d-1.9))/0.5,0,1); if(end>0){ c.globalAlpha=Math.max(a,0.001)*end; const tf=D.fitFont(c,k.title,'700 ','Georgia,serif',Math.min(46,H/8,W/16),W*0.82); c.font='700 '+tf+'px Georgia,serif'; c.fillStyle=mix('#f0e0c0','#f6ecd8'); c.fillText(k.title,cx,H*0.12+tf*0.4);
+    if(k.sub){ c.font='500 '+D.fitFont(c,k.sub,'500 ','"IBM Plex Sans",sans-serif',16,W*0.9)+'px "IBM Plex Sans",sans-serif'; c.fillStyle=mix('#c9b48a','#c8d2e0'); c.fillText(k.sub,cx,H*0.12+tf*1.35); } }
+  c.globalAlpha=Math.max(a,0.001)*0.45; c.fillStyle='#f6ecd8'; c.font='500 11px "IBM Plex Sans",sans-serif'; c.fillText(V.touch?'tap to continue':'E or Space to continue',cx,H-26); c.globalAlpha=1; }
 /* comic-panel chapter cards */
-D.aplusFace=face; D.drawCardStyle=function(c,V,G,k){ if(k.style!=='comic') return false; const t=k.t, a=clamp(Math.min(t/0.6,(k.dur-t)/0.6),0,1);
+D.aplusFace=face; D.drawCardStyle=function(c,V,G,k){ if(k.style==='clock'){ clockCard(c,V,G,k); return true; } if(k.style!=='comic') return false; const t=k.t, a=clamp(Math.min(t/0.6,(k.dur-t)/0.6),0,1);
   c.setTransform(V.DPR,0,0,V.DPR,0,0); c.globalAlpha=Math.max(a,0.001); c.fillStyle='#0b1220'; c.fillRect(0,0,V.W,V.H);
   c.fillStyle='rgba(242,181,68,.06)'; for(let y=0;y<V.H;y+=8) for(let x=(y/8%2)*4;x<V.W;x+=8){ c.beginPath(); c.arc(x,y,1.3,0,7); c.fill(); }
   const tall=V.W<560, ty=tall?V.H*0.14:V.H*0.2, tf=D.fitFont(c,k.title,'700 ','"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif',Math.min(38,V.H/10,V.W/18),V.W*0.84);
@@ -2742,7 +2824,7 @@ function renderShow(c,V,G,now){
   R(SX+70,-80,40,80,'#1a1f2a'); c.fillStyle='#f6ecd8'; c.font='700 5px "IBM Plex Sans",sans-serif'; c.fillText('SHUTTLE',SX+90,-86);
   EPI.BOOTHS.forEach((b,i)=>{ const x=EPI.BX(i); R(x,-90,200,90,COLS[i]); R(x,-90,200,6,'rgba(255,255,255,.15)'); c.fillStyle='#f6ecd8'; c.font='700 9px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.fillText(b,x+100,-76);
     R(x+20,-34,160,34,'#e6d7bd'); R(x+20,-34,160,3,'#f2b544');
-    if(b==='IT DEPT'){ const tx=x+60; R(tx-16,-66,32,26,'#c9c2a8'); R(tx-13,-63,26,19,'#0a1a0e'); if(D.aplusFace) D.aplusFace(c,tx-12,-62,24,17,'quiet',t,false,0.2); c.fillStyle='#243447'; c.font='600 4px "IBM Plex Sans",sans-serif'; c.fillText('A+  ·  1985–2026',tx,-36); c.fillText('archived with honors',tx,-31); }
+    if(b==='IT DEPT'){ const tx=x+60; if(D.aplusMonster) D.aplusMonster(c,tx,0,0.62,t,'quiet',{dir:1}); c.save(); c.translate(tx,-30); c.rotate(-0.5); c.fillStyle='#c0392b'; c.fillRect(-2,-16,4,32); c.restore(); c.fillStyle='#243447'; c.font='600 4px "IBM Plex Sans",sans-serif'; c.fillText('A+  ·  1985–2026',tx+34,-40); c.fillText('archived with honors',tx+34,-35); if(D.PROPS.pinball) D.PROPS.pinball(x+160,0,now,c); }
     if(b==='MILO\'S'){ const mx=x+40; c.fillStyle='#d9822b'; c.strokeStyle=INK; c.lineWidth=0.8; c.beginPath(); c.ellipse(mx,-41,5,5.5,0,0,7); c.fill(); c.stroke(); c.beginPath(); c.arc(mx+2.5,-47,3.3,0,7); c.fill(); c.stroke();
       c.beginPath(); c.moveTo(mx,-49); c.lineTo(mx+0.6,-52.5); c.lineTo(mx+2,-50); c.moveTo(mx+3,-50.2); c.lineTo(mx+4.6,-52.4); c.lineTo(mx+5.3,-48.8); c.fill(); c.stroke(); c.fillStyle='#f2d544'; c.fillRect(mx+3.5,-48,1.2,1.2);
       R(x+90,-60,40,18,'#f6ecd8'); c.fillStyle='#243447'; c.font='700 4px "IBM Plex Sans",sans-serif'; c.fillText('PERMIT #0001',x+110,-54); c.fillText('one taco / bag',x+110,-48); }
@@ -2890,7 +2972,7 @@ function footfall(ev,hard){
 const SFX={ talk:()=>tone(520+Math.random()*120,0.07,0.05,'triangle'), pick:()=>{ tone(660,0.09,0.07,'triangle'); tone(990,0.14,0.07,'triangle',null,0.08); },
   good:()=>[523,659,784,1047].forEach((f,i)=>tone(f,0.22,0.07,'triangle',null,i*0.09)), door:()=>{ burst(240,0.7,0.16,0.18,90); tone(180,0.2,0.05,'square',90); },
   deny:()=>{ tone(196,0.12,0.06,'square'); tone(155,0.2,0.06,'square',null,0.13); }, bark:()=>{ tone(420,0.09,0.10,'sawtooth',250); tone(460,0.1,0.10,'sawtooth',260,0.16); },
-  point:()=>tone(880,0.12,0.04,'sine',1320), purr:()=>{ for(let i=0;i<6;i++) burst(120,0.5,0.05,0.09,90); tone(60,0.5,0.03,'sine'); }, honk:()=>{ tone(330,0.28,0.06,'sawtooth'); tone(415,0.28,0.05,'sawtooth'); }, beep:()=>{ tone(1180,0.09,0.04,'square'); }, meow:()=>{ tone(700,0.22,0.05,'triangle',950); tone(980,0.25,0.04,'triangle',620,0.12); } };
+  point:()=>tone(880,0.12,0.04,'sine',1320), purr:()=>{ for(let i=0;i<6;i++) burst(120,0.5,0.05,0.09,90); tone(60,0.5,0.03,'sine'); }, honk:()=>{ tone(330,0.28,0.06,'sawtooth'); tone(415,0.28,0.05,'sawtooth'); }, whoosh:()=>{ burst(300,0.5,0.06,1.6,3000); tone(180,1.4,0.03,'sine',900); }, pinball:()=>{ burst(1800,1.5,0.06,0.05); for(let k=0;k<4;k++) tone(1320+k*110,0.08,0.03,'square',null,0.08+k*0.09); }, roar:()=>{ tone(90,0.9,0.07,'sawtooth',55); tone(140,0.7,0.04,'square',70); burst(200,0.4,0.05,0.8,120); }, beep:()=>{ tone(1180,0.09,0.04,'square'); }, meow:()=>{ tone(700,0.22,0.05,'triangle',950); tone(980,0.25,0.04,'triangle',620,0.12); } };
 /* Voices: a pitched blip per character as their words type out. */
 const VOICE={Rianan:520,Aaron:300,Bret:340,'Brian S':280,'Brian W':320,Umesh:380,Dave:250,John:270,Greg:240,Ryan:360,Jose:330,Ash:540,Andrew:350,Blaine:260,'The Founder':220,Pam:500,Melissa:480,Cathy:510,Milo:600,Rosa:460,'Mrs. Miller':470,Kim:490,Ashley:500,Nick:290,Tina:470,Frank:230,Lou:250,'A+':150,Terminal:170};
 function voiceOf(name){ if(VOICE[name]) return VOICE[name]; let h=7; for(let i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))>>>0; return 260+h%240; }
@@ -3017,7 +3099,8 @@ function frame(now){
 }
 G=GM.create(loadSave()||undefined); refreshTitle();
 window.__hecktown={get G(){return G;},V:V,begin:begin,EXT:EXT,get state(){return state;},setState:s=>{ state=s; },showEnding:showEnding,closeEnding:closeEnding,toast:toast,SFX:SFX,hud:()=>hud(),save:save,
-  keys:{get:()=>KEYS,DEF:DEF_KEYS,set:setKey,reset:resetKeys},wake:wake,loadSave:loadSave};     // for the browser tests and 06b-extras
+  keys:{get:()=>KEYS,DEF:DEF_KEYS,set:setKey,reset:resetKeys},wake:wake,loadSave:loadSave,
+  audio:{ctx:()=>AC,tone:(...a)=>tone(...a),burst:(...a)=>burst(...a),sfx:n=>{ if(AC&&SFX[n]) SFX[n](); }}};     // for the browser tests and 06b-extras
 requestAnimationFrame(frame);
 })();
 
@@ -3114,7 +3197,7 @@ function startEnd(){ const G=H.G, S=G.S; if(S.runEnd==null) S.runEnd=S.run||0; t
 function nextEnd(){ if(!END) return; if(END.phase<2){ END.phase++; END.t=0; } else if(END.phase===2){ END.i++; END.t=0; if(END.i>=END.lines.length){ END.phase=3; END.t=0; } } else finishEnd(); }
 function finishEnd(){ END=null; document.body.classList.remove('cine'); H.showEnding(); const btns=document.querySelector('#eBody .btns');
   if(btns&&!$('eShow')){ const b=document.createElement('button'); b.className='btn ghost'; b.id='eShow'; b.textContent='Take the shuttle to the Buying Show'; b.onclick=()=>{ H.closeEnding(); GM.goShow(H.G); }; btns.appendChild(b); } }
-function teamPhoto(){ const world=E.makeWorld(E.surfaces(0,0,[['flat',4000]])), core=['rianan','aaron','bret','brians','umesh','dave','john','greg','ryan','jose','ash','andrew','pam','melissa','cathy'];
+function teamPhoto(){ const world=E.makeWorld(E.surfaces(0,0,[['flat',4000]])), core=['rianan','aaron','bret','brians','umesh','fares','dave','john','greg','ryan','jose','ash','andrew','pam','melissa','cathy'];
   const front=[], back=[]; const mk=(look,i,arr,sp)=>{ const w=E.createWalker(world,200+i*sp); w.facing=w.dir=w.kneeF=i%2?-1:1; arr.push({look:look,pose:E.poseOf(w)}); };
   core.forEach((id,i)=>{ const p=GM.PEOPLE.find(z=>z.id===id); if(p) mk(p.look,i,front,26); }); mk(D.HERO_LOOK,core.length,front,26);
   GM.PEOPLE.filter(p=>core.indexOf(p.id)<0).forEach((p,i)=>mk(p.look,i,back,22)); return {front:front,back:back}; }
@@ -3155,6 +3238,109 @@ EXT.keys.push((e,state)=>{
   if(state==='play'&&a==='photo'){ enterPhoto(); return true; }
   return false; });
 addEventListener('keyup',e=>{ if(!PH) return; const K=H.keys.get(); const m={left:'L',right:'R',up:'U',down:'D'}; for(const a in m) if(K[a].indexOf(e.code)>=0) pheld[m[a]]=false; });
+})();
+
+/* ==== 06c-demo.js ==== */
+/* ==== DEMO: the attract reel on the title screen. A musical, cartoon chase: A+ the green-screen monster chases the
+   cast across the office, loses them, then gets chased right back. Rianan stops for the cat, Brian S stops for pinball,
+   Bret shouts about passwords, Greg strolls through it all. Ends on a curtain call. Any key or tap goes back to the title. ==== */
+(function(){
+'use strict';
+const H=window.__hecktown, EXT=H.EXT, GM=HGAME, PP=HPEOPLE, D=HDRAW, E=WalkEngine, B=window.HBODY;
+const $=id=>document.getElementById(id), clamp=(v,a,b)=>v<a?a:(v>b?b:v);
+const rr=(c,x,y,w,h,r)=>{ c.beginPath(); if(c.roundRect) c.roundRect(x,y,w,h,r); else c.rect(x,y,w,h); };
+const LEN=46, CAST=['rianan','brians','bret','dave','aaron','umesh','fares','ash'];
+let S=null, idle=0;
+
+function person(id){ return GM.PEOPLE.find(p=>p.id===id); }
+function build(){
+  const world=E.makeWorld(E.surfaces(-500,0,[['flat',1800]]));
+  const actors=CAST.map((id,i)=>{ const p=person(id), w=E.createWalker(world,-60-i*34); w.gait=B?B.gaitFor(p.look):undefined; return {id:id,p:p,w:w,pose:E.poseOf(w),inp:0,hold:0,said:{}}; });
+  const greg=person('greg'), gw=E.createWalker(world,-90); gw.gait=B?B.gaitFor(greg.look):undefined;
+  return {t:0,world:world,actors:actors,greg:{p:greg,w:gw,pose:E.poseOf(gw)},mon:{x:-330,dir:1,run:false,mood:'mean'},milo:{x:250,run:0},bub:[],note:0,beat:0,conf:[],sting:{}}; }
+const say=(who,text,dur)=>{ S.bub=S.bub.filter(b=>b.who!==who); S.bub.push({who:who,text:text,t:dur||1.8}); };
+
+/* ---------------- music: a bouncy two-bar chase in C, faster and higher on the way back ---------------- */
+const NOTE=n=>440*Math.pow(2,(n-69)/12);
+const BASS=[36,36,43,43,45,45,43,43,41,41,36,36,43,43,36,36], MEL=[72,76,79,76,74,72,71,72,77,76,74,72,71,74,79,0];
+function music(dt){ if(!H.audio) return; const A=H.audio, ph=phase(); if(!A.ctx()) return;
+  if(ph==='chase'||ph==='back'){ const bpm=ph==='back'?210:176, step=60/bpm/2; S.beat+=dt; while(S.beat>=step){ S.beat-=step; const i=S.note%16, up=ph==='back'?5:0;
+      A.tone(NOTE(BASS[i]+up),step*0.8,0.05,'triangle'); if(MEL[i]) A.tone(NOTE(MEL[i]+up),step*0.6,0.025,'square'); if(i%4===0) A.burst(120,0.7,0.05,0.05); if(i%4===2) A.burst(3000,1.4,0.02,0.03); S.note++; } }
+  if(ph==='finale'&&!S.sting.fin){ S.sting.fin=1; [60,64,67,72].forEach((n,k)=>A.tone(NOTE(n),1.4,0.035,'triangle',null,k*0.09)); }
+  if(ph==='scratch'&&!S.sting.scr){ S.sting.scr=1; A.tone(900,0.35,0.05,'sawtooth',120); A.burst(800,0.6,0.05,0.3,200); }
+  if(ph==='intro'&&!S.sting.intro){ S.sting.intro=1; [48,55,60].forEach((n,k)=>A.tone(NOTE(n),0.5,0.04,'triangle',null,k*0.18)); } }
+function phase(){ const t=S.t; return t<3.5?'intro':(t<16?'chase':(t<18.5?'scratch':(t<30?'back':(t<33?'greg':(t<37?'montage':'finale'))))); }
+
+/* ---------------- the script ---------------- */
+function tick(dt){ S.t+=dt; const t=S.t, ph=phase(), M=S.mon, W=S.world;
+  for(const a of S.actors){ let inp=0;
+    if(ph==='chase'){ inp=1;
+      if(a.id==='rianan'&&Math.abs(a.w.x-S.milo.x)<18&&!a.said.cat){ a.said.cat=1; a.hold=1.6; say('rianan','KITTY! ♥',1.6); }
+      if(a.id==='brians'&&Math.abs(a.w.x-430)<10&&!a.said.pin){ a.said.pin=1; a.hold=1.8; say('brians','MULTIBALL!',1.1); setTimeout(()=>S&&say('brians','...TILT!',1),1100); if(H.audio) H.audio.sfx('pinball'); }
+      if(a.id==='bret'&&a.w.x>200&&!a.said.pw){ a.said.pw=1; say('bret','DID YOU ROTATE YOUR PASSWORD?!',2); }
+      if(a.id==='dave'&&a.w.x>320&&!a.said.q){ a.said.q=1; say('dave','WHAT IS... RUNNING?!',1.8); }
+      if(a.id==='fares'&&a.w.x>120&&!a.said.e){ a.said.e=1; say('fares','UMESH! YOUR 850s!',1.6); }
+      if(a.id==='aaron'&&a.w.x>260&&!a.said.j){ a.said.j=1; E.command(a.w,W,'jump'); say('aaron','PICK YOUR LINE!',1.4); }
+      if(a.hold>0){ a.hold-=dt; if(M.x>a.w.x-70) a.hold=0; else inp=0; } }
+    if(ph==='back'&&t>18.8+CAST.indexOf(a.id)*0.12) inp=-1;
+    if(ph==='finale'){ const spot=110+CAST.indexOf(a.id)*52+(CAST.indexOf(a.id)>=4?70:0), d=spot-a.w.x; inp=Math.abs(d)>5?Math.sign(d)*Math.min(1,Math.abs(d)/40):0; if(!inp&&a.w.facing!==1&&Math.random()<0.02) inp=0.09;
+      if(t>40&&Math.floor(t*2)!==Math.floor((t-dt)*2)&&(Math.floor(t*2)+CAST.indexOf(a.id))%2===0) E.command(a.w,W,'jump'); }
+    if(ph==='back'&&a.id==='bret'&&!a.said.fw&&t>19.4){ a.said.fw=1; say('bret','FIREWALL!',1.6); }
+    if(ph==='back'&&a.id==='rianan'&&!a.said.b&&t>20.2){ a.said.b=1; say('rianan','GET IT!',1.2); }
+    a.pose=E.updateWalker(a.w,W,inp,dt); a.w.events.length=0; }
+  // A+: chases, stops, gets chased
+  if(ph==='chase'){ M.dir=1; M.run=t>4.2; if(M.run) M.x+=84*dt; if(!S.sting.roar&&t>4.4){ S.sting.roar=1; if(H.audio) H.audio.sfx('roar'); S.bub.push({who:'aplus',text:'RRRAAAH!',t:1.4}); } }
+  else if(ph==='scratch'){ M.run=false; M.x=Math.min(M.x+30*dt,420); if(!S.sting.q){ S.sting.q=1; S.bub.push({who:'aplus',text:'...?',t:1.4}); } if(t>17.4&&!S.sting.eep){ S.sting.eep=1; S.bub.push({who:'aplus',text:'EEP!',t:1.2}); } }
+  else if(ph==='back'){ M.dir=-1; M.run=t>18.7; if(M.run) M.x-=112*dt; }
+  else if(ph==='finale'){ M.dir=1; M.run=false; M.x+=(360-M.x)*(1-Math.exp(-3*dt)); if(t>40&&!S.sting.conf){ S.sting.conf=1; for(let i=0;i<90;i++) S.conf.push({x:Math.random()*720,y:-40-Math.random()*200,vx:(Math.random()-0.5)*40,vy:40+Math.random()*60,c:['#f2b544','#6fe08a','#e0563a','#6fb0ff','#f6ecd8'][i%5],r:Math.random()*6}); } }
+  if(ph==='montage'&&!S.sting.mon){ S.sting.mon=1; M.x=-400; for(const a of S.actors){ a.w=E.createWalker(W,a.id==='rianan'?-80:(CAST.indexOf(a.id)<4?-40-CAST.indexOf(a.id)*40:640+(CAST.indexOf(a.id)-4)*34)); if(B) a.w.gait=B.gaitFor(a.p.look); } }
+  if(ph==='finale'&&M.x<-100) M.x=-60;
+  // the cat bolts when A+ comes by
+  if(M.x>S.milo.x-60&&ph==='chase') S.milo.run=1; if(S.milo.run) S.milo.x+=150*dt;
+  // Greg never hurries
+  const g=S.greg; let gi=0; if(t>9&&t<33) gi=0.32; if(t>9.2&&!S.sting.g1){ S.sting.g1=1; say('greg','Fiscal.',2); } if(ph==='greg'&&!S.sting.g2){ S.sting.g2=1; say('greg','...Counting.',2); } g.pose=E.updateWalker(g.w,W,gi,dt); g.w.events.length=0;
+  for(const b of S.bub) b.t-=dt; S.bub=S.bub.filter(b=>b.t>0);
+  for(const k of S.conf){ k.x+=k.vx*dt; k.y+=k.vy*dt; k.r+=dt*6; }
+  music(dt); if(t>=LEN) stop(); }
+
+/* ---------------- drawing ---------------- */
+function draw(c,V,now){ const W=V.W, Hh=V.H, t=S.t, ph=phase(), sc=Math.min(W/560,Hh/290)*0.95, ox=W/2-320*sc, oy=Hh*0.68;
+  c.setTransform(V.DPR,0,0,V.DPR,0,0);
+  if(ph==='intro'){ c.fillStyle='#0b1220'; c.fillRect(0,0,W,Hh); const txt='PHILLIPS IT PRESENTS', n=Math.floor(clamp(t/1.8,0,1)*txt.length); c.fillStyle='#7fe0a0'; c.font='700 '+Math.min(22,W/22)+'px "IBM Plex Mono",monospace'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(txt.slice(0,n)+(Math.floor(t*3)%2?'▮':' '),W/2,Hh*0.45);
+    if(t>2.2){ c.globalAlpha=clamp((t-2.2)/0.6,0,1); c.fillStyle='#f6ecd8'; c.font='italic '+Math.min(18,W/26)+'px Georgia,serif'; c.fillText('a cutover in one act, with music',W/2,Hh*0.45+40); c.globalAlpha=1; } return; }
+  if(ph==='montage'){ const k={title:'THE GAME',sub:'no bosses · one very old system',t:t-33,dur:4.6,style:'comic',panels:[{i:'1938',c:'It starts with oats'},{i:'✍',c:'Six signatures'},{i:'🚚',c:'Nine DCs'}]}; D.drawCardStyle(c,V,{},k); return; }
+  // the office corridor
+  const g=c.createLinearGradient(0,0,0,Hh); g.addColorStop(0,'#3d4a5c'); g.addColorStop(1,'#26303e'); c.fillStyle=g; c.fillRect(0,0,W,Hh);
+  c.save(); c.translate(ox,oy); c.scale(sc,sc);
+  for(let x=-120;x<780;x+=120){ c.fillStyle='#2f3a4a'; c.fillRect(x+20,-120,70,70); c.fillStyle='rgba(255,236,190,.14)'; c.fillRect(x+24,-116,62,62); c.fillStyle='#1d2430'; c.fillRect(x+54,-116,2,62);
+    c.fillStyle='#f6ecd8'; c.fillRect(x+40,-190,40,3); const lg=c.createLinearGradient(0,-187,0,0); lg.addColorStop(0,'rgba(255,240,200,.14)'); lg.addColorStop(1,'rgba(255,240,200,0)'); c.fillStyle=lg; c.beginPath(); c.moveTo(x+40,-187); c.lineTo(x+80,-187); c.lineTo(x+110,0); c.lineTo(x+10,0); c.fill(); }
+  c.fillStyle='#1d2430'; c.fillRect(-400,0,1500,200); c.fillStyle='#4a5566'; c.fillRect(-400,0,1500,3);
+  if(ph!=='finale'){ c.fillStyle='#243447'; c.fillRect(220,-160,200,22); c.fillStyle='#f2b544'; c.font='700 12px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText('HECKTOWN ROAD',320,-149); }
+  if(D.PROPS.pinball) D.PROPS.pinball(430,0,now,c);
+  const gy=()=>0, T=now/1000;
+  if(S.milo.x<800){ const mx=S.milo.x; c.save(); c.translate(mx,0); c.fillStyle='#d9822b'; c.strokeStyle='#151a22'; c.lineWidth=0.8; c.beginPath(); c.ellipse(0,-6,7,3.6,0,0,7); c.fill(); c.stroke(); c.beginPath(); c.arc(7,-9,3.3,0,7); c.fill(); c.stroke(); c.restore(); }
+  PP.person(c,S.greg.pose,S.greg.p.look,{ground:gy,w:S.greg.w,t:T});
+  for(const a of S.actors) PP.person(c,a.pose,a.p.look,{ground:gy,w:a.w,t:T,mood:ph==='chase'||ph==='scratch'?'surprise':(ph==='finale'?'happy':null),talk:S.bub.some(b=>b.who===a.id)});
+  if(D.aplusMonster&&S.mon.x>-200) D.aplusMonster(c,S.mon.x,0,1.15,T,ph==='back'?'confused':(ph==='finale'?'smug':'mean'),{dir:S.mon.dir,run:S.mon.run,talk:S.bub.some(b=>b.who==='aplus')});
+  for(const k of S.conf){ c.save(); c.translate(k.x-40,k.y-220); c.rotate(k.r); c.fillStyle=k.c; c.fillRect(-2,-1,4,2); c.restore(); }
+  c.restore();
+  // bubbles, in screen space
+  c.font='700 '+Math.round(Math.max(11,12*sc))+'px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+  for(const b of S.bub){ let x,y; if(b.who==='aplus'){ x=ox+S.mon.x*sc; y=oy-100*sc; } else if(b.who==='greg'){ x=ox+S.greg.pose.head.x*sc; y=oy+(S.greg.pose.head.y-22)*sc; } else { const a=S.actors.find(z=>z.id===b.who); if(!a) continue; x=ox+a.pose.head.x*sc; y=oy+(a.pose.head.y-22)*sc; }
+    x=clamp(x,80,W-80); const tw=c.measureText(b.text).width+18; c.fillStyle=b.who==='aplus'?'rgba(6,14,8,.92)':'rgba(246,236,216,.96)'; rr(c,x-tw/2,y-13,tw,26,10); c.fill(); if(b.who==='aplus'){ c.strokeStyle='#6fe08a'; c.lineWidth=1.5; c.stroke(); }
+    c.fillStyle=b.who==='aplus'?'#7fe0a0':'#243447'; c.fillText(b.text,x,y+0.5); }
+  if(ph==='finale'){ const a=clamp((t-38)/1,0,1); c.globalAlpha=a; const tf=D.fitFont(c,'HECKTOWN ROAD','700 ','"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif',Math.min(54,Hh/7),W*0.84);
+    c.fillStyle='#f6ecd8'; c.font='700 '+tf+'px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.fillText('HECKTOWN ROAD',W/2,Hh*0.14); c.fillStyle='#7fe0a0'; c.font='700 '+Math.round(tf*0.36)+'px "IBM Plex Mono",monospace'; c.fillText('> CUTOVER NIGHT_',W/2,Hh*0.14+tf*0.75); c.globalAlpha=1; }
+  c.fillStyle='rgba(246,236,216,.5)'; c.font='500 12px "IBM Plex Sans",sans-serif'; c.fillText(V.touch?'tap to play':'press any key to play',W/2,Hh-24); }
+
+/* ---------------- start, stop, attract ---------------- */
+function start(){ S=build(); H.setState('demo'); document.body.classList.add('cine'); $('title').classList.add('hide'); if(H.wake) H.wake(); }
+function stop(){ S=null; document.body.classList.remove('cine'); H.setState('title'); $('title').classList.remove('hide'); idle=0; }
+EXT.after.push((c,V,G,state,dt,now)=>{ if(state==='demo'&&S){ tick(Math.min(dt,0.05)); if(S) draw(c,V,now); } else if(state==='title'){ idle+=dt; if(idle>28) start(); } else idle=0; });
+EXT.keys.unshift((e,state)=>{ if(state==='demo'){ stop(); return true; } if(state==='title') idle=0; return false; });
+$('c').addEventListener('pointerdown',()=>{ if(H.state==='demo') stop(); idle=0; });
+const btn=document.createElement('button'); btn.className='btn ghost'; btn.id='bDemo'; btn.textContent='Watch the demo'; btn.onclick=()=>start(); const bs=document.querySelector('#title .btns'); if(bs) bs.appendChild(btn);
+H.demo={start:start,stop:stop,get S(){ return S; }};
 })();
 
 </script>
