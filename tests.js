@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js','03k-chapters.js','03l-aivs.js','03m-loop.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js','03k-chapters.js','03l-aivs.js','03m-loop.js','03n-pinball.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -183,6 +183,18 @@ section('Chapter 4: the Time Loop');
   l.t=LP.LEN-0.5; for(let i=0;i<120*10;i++) step(G,0,0); ok(l.n===3&&!l.flowOff&&S.inv.badge&&S.inv.token,'loop 3: flow is back on, badge and token kept');
   talkTo(G,'ash'); ok(l.flowOff,'flow off again, fast this time'); for(const t of GM.TERMS) useAt(G,t.node,t.x,'term'); for(let i=0;i<120*6;i++){ step(G,0,0); if(G.dialog) GM.advance(G,null); }
   ok(S.done&&GM.clock(S)==='12:01 AM','the loop breaks'); ok(/ended/.test(GM.chapterEnding(S).title),'chapter ending'); }
+
+section('Chapter 5: Pinball Showdown');
+{ const G=GM.create(GM.freshSave('pinball')); GM.skipPrologue(G); G.events.length=0; const S=G.S, PN=GM.PIN, st=PN.P(S);
+  ok(S.chapter==='pinball','pinball save'); talkTo(G,'brians'); skipCards(G); for(let i=0;i<60;i++) step(G,0,0); ok(S.flags.pinIntro,'A+ names its terms');
+  walkTo(G,PN.MACHINE.x+4); ok(G.target&&G.target.kind==='pinmatch','the machine is there'); GM.interact(G); ok(!G.pin&&G.dialog,'not before the parts'); closeDialog(G);
+  for(const pt of PN.PARTS){ ok(goTo(G,pt.node,pt.x),'reach '+pt.name); ok(G.target&&G.target.kind==='pinpart','part is there: '+pt.name); GM.interact(G); ok(st.parts[pt.id],'got '+pt.name); }
+  talkTo(G,'brians'); ok(st.fixed,'machine fixed'); walkTo(G,PN.MACHINE.x+4); GM.interact(G); ok(!!G.pin,'the match starts');
+  let flips=0, guard=0; while(G.pin&&guard++<120*200){ const p=G.pin; if(p.phase==='ready'){ PN.flip(G); } else if(p.phase==='play'){ if(Math.abs(p.u-p.zc)<p.zw/2*0.6){ PN.flip(G); flips++; } } step2(G); }
+  ok(!G.pin&&flips>10,'played it out ('+flips+' flips, best '+st.best+')'); for(let i=0;i<120*4;i++){ step(G,0,0); if(G.dialog) GM.advance(G,null); }
+  ok(S.done&&st.best>PN.TARGET,'beat 1,985,000 ('+st.best+')'); ok(/Showdown/.test(GM.chapterEnding(S).title),'chapter ending');
+  const G2=GM.create(GM.freshSave('pinball')); GM.skipPrologue(G2); G2.S.flags.pinIntro=1; for(const pt of PN.PARTS) PN.P(G2.S).parts[pt.id]=1; PN.P(G2.S).fixed=true; walkTo(G2,PN.MACHINE.x+4); GM.interact(G2); let g=0; while(G2.pin&&g++<120*60){ if(G2.pin.phase==='ready') PN.flip(G2); step2(G2); }
+  ok(!G2.pin&&!G2.S.done&&PN.P(G2.S).matches===1,'never flipping loses to A+ and you can try again'); }
 
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
