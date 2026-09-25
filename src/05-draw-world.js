@@ -122,6 +122,11 @@ function structure(G){
   // low passages: the mass that makes you crawl
   for(const d of MAP.ducts){ if(!vis(d.x0,d.x1)||!seen(d.node,d.x0)) continue; const y=MAP.nodes[d.node].world.yAt(d.x0+1);
     if(d.node==='wh_cat'){ R(d.x0-2,y-CEIL,d.x1-d.x0+4,CEIL-34,'#8a9099'); O(d.x0-2,y-CEIL,d.x1-d.x0+4,CEIL-34); for(let x=d.x0+8;x<d.x1;x+=18) LN(x,y-CEIL,x,y-34,'rgba(0,0,0,.25)',1); }
+    else if(d.node==='wh_mezz'){ const w=d.x1-d.x0; R(d.x0-6,y-CEIL,w+12,CEIL-32,'#3a4150'); O(d.x0-6,y-CEIL,w+12,CEIL-32);           // the crossover: a loaded conveyor at knee height
+      R(d.x0-6,y-40,w+12,8,'#555b65'); for(let x=d.x0-2;x<d.x1+4;x+=11){ ctx.fillStyle='#8d939c'; ctx.beginPath(); ctx.arc(x+4,y-36,3.2,0,7); ctx.fill(); }
+      for(let x=d.x0+2;x<d.x1-14;x+=30){ R(x,y-62,24,22,'#c9a56a'); O(x,y-62,24,22); R(x+4,y-58,16,3,'#a8845a'); }
+      R(d.x0-6,y-36,4,36,'#30343c'); R(d.x1+2,y-36,4,36,'#30343c'); R(d.x0+w/2-22,y-CEIL+6,44,14,'#f2b544'); O(d.x0+w/2-22,y-CEIL+6,44,14); ctx.fillStyle='#101a2e'; ctx.font='700 5px "IBM Plex Sans",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('LOW CLEARANCE',d.x0+w/2,y-CEIL+13);
+      for(let x=d.x0;x<d.x1;x+=10) R(x,y-33,5,2,'#f2b544'); }
     else{ ctx.fillStyle='#231f1d'; ctx.beginPath(); ctx.moveTo(d.x0-16,y-CEIL); ctx.lineTo(d.x0,y-36); ctx.lineTo(d.x1,y-34); ctx.lineTo(d.x1+18,y-CEIL); ctx.closePath(); ctx.fill(); LN(d.x0-10,y-60,d.x1+6,y-38,'#5a4632',6); } }
   // locked doors
   for(const g of MAP.gates){ if(!vis(g.x-6,g.x+6)||!seen(g.node,g.x+1)) continue; const y=MAP.nodes[g.node].world.yAt(g.x), h=g.open?12:74, col=g.needs==='badge'?'#51647c':(g.needs==='tunnelkey'?'#6a3f30':'#123a22');
