@@ -19,6 +19,8 @@
   button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}
   button:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
   .hide{display:none !important;}
+  #chapters{background:rgba(11,18,32,.97);}
+  .chap{background:rgba(255,255,255,.05);border:1px solid rgba(246,236,216,.15);border-radius:10px;padding:14px 16px;margin:12px 0;} .chap .num{font:700 12px var(--mono,monospace);color:var(--gold);letter-spacing:.08em;} .chap h2{margin:4px 0 6px;} .chap p{margin:0 0 6px;} .chap .goal{font-style:italic;opacity:.8;margin-bottom:6px;} .chap .prog{font-size:13px;opacity:.75;margin-bottom:8px;} .chap .btns{margin-top:6px;}
   body.card #hud, body.card #toasts, body.card #pad, body.card #tools, body.card #saved{visibility:hidden;}
 
   /* ---- HUD ---- */
@@ -112,6 +114,7 @@
   <button data-act="crawl" aria-pressed="false">Crawl</button><button data-act="jump">Jump</button><button class="big" id="bUse" data-act="use">Use</button>
 </div>
 
+<div id="chapters" class="overlay hide"><div class="sheet"><button class="btn ghost close" id="chClose">Back</button><h1>Chapters</h1><div class="sub">Same campus, same people. Each chapter keeps its own save.</div><div id="chList"></div></div></div>
 <div id="title" class="overlay">
   <div class="in">
     <h1>Hecktown<br>Road</h1>
@@ -1933,6 +1936,79 @@ GM.clock=function(S){ if(S.pos.node==='y2060') return '2060'; if(S.pos.node==='y
 GM.PTS_FUTURE=15; GM.FUTURE={fut:fut,CAST:CAST,F2060:F2060,F3270:F3270};
 })(typeof globalThis!=='undefined'?globalThis:this);
 
+/* ==== 03k-chapters.js ==== */
+/* ==== CHAPTERS. The campus, the cast and everything they do are shared; a chapter is a goal, an intro, a few scenes and an
+   ending. Chapter 1 is Cutover Night (six signatures). Chapter 2 is Trivia Night: Dave hosts Jeopardy in the War Room, the
+   answers are Phillips history you can find around campus, and A+ wants to play. DOM-free. ==== */
+(function(root){
+'use strict';
+const E=root.WalkEngine, MAP=root.HMAP, GM=root.HGAME;
+const CHAPTERS=[
+  {id:'cutover',num:1,title:'Cutover Night',blurb:'A+ has shipped every order since 1985. At midnight it gets archived, and it would like six signatures first.',goal:'Six sign-offs, then down to A+.'},
+  {id:'trivia',num:2,title:'Trivia Night',blurb:'Dave finally gets his Jeopardy. He hosts, you play, the answers are somewhere on campus, and A+ would very much like a buzzer.',goal:'Answer all eight, then survive Final Jeopardy.'}];
+const CLUES=[
+  {cat:'PEOPLE YOU KNOW',v:200,q:'This IT Department Head has four cats at home. Five if you count the one that visits.',a:['Who is Rianan?','Who is Pam?','Who is Bret?'],ok:0,hint:'Rianan, War Room. She will tell you herself.'},
+  {cat:'PHILLIPS HISTORY',v:400,q:'The year a single feed store opened on this road.',a:['What is 1952?','What is 1938?','What is 1985?'],ok:1,hint:'The first ledger page, in the HQ Lobby.'},
+  {cat:'MIDRANGE',v:600,q:'The command that puts a whole library on tape on the IBM i.',a:['What is SAVLIB?','What is ENDSBS?','What is WRKACTJOB?'],ok:0,hint:'Ask the host. He knows every command.'},
+  {cat:'PEOPLE YOU KNOW',v:400,q:'Nationally ranked at pinball. Builds on all machines. Has a mustache.',a:['Who is Aaron?','Who is Brian S?','Who is Jose?'],ok:1,hint:'War Room, by the pinball machine.'},
+  {cat:'SECURITY',v:600,q:'The temperature Bret keeps the server room, always.',a:['What is 72?','What is 64?','What is 68?'],ok:2,hint:'Bret, Shipping Dock. He will bring it up.'},
+  {cat:'EDI',v:800,q:'The transaction set that is a purchase order, and the thing Umesh and Fares argue about.',a:['What is an 850?','What is an 856?','What is a 997?'],ok:0,hint:'EDI & Integration, HQ 2nd floor.'},
+  {cat:'OUR SYSTEMS',v:800,q:'The year A+ went live and shipped forty bags of chow on day one.',a:['What is 1991?','What is 1985?','What is 2008?'],ok:1,hint:'The wall monitors say it. So does A+.'},
+  {cat:'THE CAT',v:1000,q:'One taco buys one bag of this from the alley cat by the taco truck.',a:['What is a laser pointer?','What is catnip?','What is a coupon?'],ok:1,hint:'Milo, on his dumpster by Tina\'s truck.'}];
+const HOST={x:1470,node:'hq_f2'};
+const ANGRY=['I HAVE A BUZZER. IT IS THE WHOLE BUILDING.','I KNOW THAT ONE. I KNOW ALL OF THEM. I HAVE THE RECORDS.','WHY DOES DAVE GET A PODIUM.','ASK ME ABOUT 1985. GO ON.'];
+
+function ch(S){ return S.chapter||'cutover'; }
+const baseFresh=GM.freshSave;
+GM.freshSave=function(id){ const s=baseFresh(); s.chapter=id||'cutover';
+  if(s.chapter==='trivia'){ s.flags.p38=5; s.pos={node:'ground',x:1150}; Object.assign(s.flags,{started:1,ch1:1,vig_hero:1,ch3:1,ch4:1,reveal:1,ap_so6:1}); s.trivia={i:0,right:0,wrong:0,final:0}; }
+  return s; };
+
+/* ---------------- Trivia Night ---------------- */
+function T(S){ return S.trivia||(S.trivia={i:0,right:0,wrong:0,final:0}); }
+function dave(G){ return G.npcs.find(q=>q.def.id==='dave'); }
+function hostTalk(G){ const S=G.S, t=T(S), d=dave(G), who={name:'Dave',role:'Host, at last',look:d.def.look};
+  if(S.done){ G.dialog={who:who.name,role:who.role,look:who.look,pages:['Dave: "Champion. Nobody has ever said that about me on a Tuesday. Go home. Or take a lap, I know you."'],i:0}; return; }
+  if(t.i>=CLUES.length){ finalJeopardy(G); return; }
+  if(!S.flags.tvIntro){ S.flags.tvIntro=1; G.cine.push({card:'TRIVIA NIGHT',sub:'War Room  ·  Dave hosts  ·  eight clues, then Final Jeopardy',dur:5,style:'comic',panels:[{i:'?',c:'Eight clues'},{i:'🏢',c:'Answers all over campus'},{i:'A+',c:'One very keen contestant'}]},
+      GM.dlg(who,['Dave: "Thirty-one years I waited for this. I have a podium. I have a buzzer. I have cards."','Dave: "Rules: I read a clue. You answer in the form of a question. If you don\'t know, go find out. The building knows."']),
+      {fn:G=>askClue(G)}); return; }
+  askClue(G); }
+function askClue(G){ const S=G.S, t=T(S), c=CLUES[t.i], d=dave(G);
+  G.dialog={who:'Dave',role:'Host',look:d.def.look,pages:[c.cat+' for '+c.v+': '+c.q],i:0,choices:c.a.map((l,k)=>({label:l,id:k===c.ok?'tv_ok':'tv_no'})).concat([{label:'Let me go find out',id:'tv_later'}])}; G.events.push({type:'sfx',name:'talk'}); }
+function answer(G,id){ const S=G.S, t=T(S), c=CLUES[t.i], d=dave(G), who={name:'Dave',role:'Host',look:d.def.look}; G.dialog=null;
+  if(id==='tv_later'){ G.events.push({type:'hint',text:c.hint}); return; }
+  if(id==='tv_no'){ t.wrong++; G.events.push({type:'sfx',name:'deny'}); G.dialog={who:who.name,role:who.role,look:who.look,pages:['Dave: "Ooh. No. '+c.hint+'"'],i:0}; if(GM.STORY&&t.wrong%2===1) GM.STORY.aplusSay(G,ANGRY[t.wrong%ANGRY.length],4); return; }
+  t.i++; t.right++; S.points+=GM.PTS_CLUE; G.events.push({type:'banner',text:'Correct: '+c.cat+' for '+c.v,pts:GM.PTS_CLUE}); G.events.push({type:'sfx',name:'good'}); G.events.push({type:'save'});
+  const left=CLUES.length-t.i; G.dialog={who:who.name,role:who.role,look:who.look,pages:[left?'Dave: "Correct. Phrased as a question and everything. '+left+' to go."':'Dave: "That\'s the board. Which means... Final Jeopardy. Come back when you\'re ready."'],i:0};
+  if(GM.STORY&&t.i===4) GM.STORY.aplusSay(G,'HALF THE BOARD. I COULD HAVE DONE THAT IN 1985.',4); }
+function finalJeopardy(G){ const S=G.S, d=dave(G), who={name:'Dave',role:'Host',look:d.def.look};
+  G.cine.push(GM.dlg(who,['Dave: "Final Jeopardy. Category: SHIPPING."']),GM.dlg({name:'A+',role:'contestant',look:null},['I AM PLAYING. I HAVE BEEN PLAYING. MY BUZZER IS THE LIGHTS.']),GM.dlg(who,['Dave: "...Fine. Two contestants. Clue: since 1985, this is what ships on time."']),
+    {fn:G=>{ G.dialog={who:'Dave',role:'Host',look:d.def.look,pages:['Answer, in the form of a question.'],i:0,choices:[{label:'What is A+?',id:'tvf_aplus'},{label:'What is the new website?',id:'tvf_web'},{label:'What are the orders?',id:'tvf_orders'}]}; }}); }
+function finalAnswer(G,id){ const S=G.S, t=T(S), d=dave(G), who={name:'Dave',role:'Host',look:d.def.look}; G.dialog=null; t.final=1; S.done=true; S.points+=GM.PTS_CLUE*2;
+  const A={name:'A+',role:'contestant',look:null};
+  const lines=id==='tvf_aplus'?[GM.dlg(A,['CORRECT. OBVIOUSLY. I WROTE THE CLUE.']),GM.dlg(who,['Dave: "You did not write the clue."']),GM.dlg(A,['I WROTE ALL THE CLUES. IN 1985.'])]
+    :id==='tvf_web'?[GM.dlg(A,['THE WEBSITE. THE WEBSITE?!']),GM.dlg(who,['Dave: "Also acceptable. Both ship on time now."']),GM.dlg(A,['...FINE. BOTH. I AM COUNTING IT AS ME.'])]
+    :[GM.dlg(who,['Dave: "The orders. Correct, and the only answer everyone in this building agrees on."']),GM.dlg(A,['THE ORDERS. YES. ...MY ORDERS.'])];
+  G.cine.push(...lines,GM.dlg(who,['Dave: "Champion of Trivia Night. Somebody tell Alex. Somebody tell my mother."']),{fn:G=>{ G.events.push({type:'banner',text:'Trivia Night: champion',pts:GM.PTS_CLUE*2}); G.events.push({type:'sfx',name:'good'}); G.events.push({type:'save'}); G.events.push({type:'ending'}); }}); }
+
+const base={interact:GM.interact,advance:GM.advance,objective:GM.objective,create:GM.create};
+GM.create=function(save){ const G=base.create(save); if(ch(G.S)==='trivia'){ const d=dave(G); if(d&&G.S.pos.node!=='dc_taunton'){ d.node=MAP.nodes.hq_f2; d.w=E.createWalker(d.node.world,HOST.x); d.w.facing=d.w.dir=d.w.kneeF=-1; d.pose=E.poseOf(d.w); d.def.busy=true; d.def.habits=['shift']; } } return G; };
+GM.interact=function(G){ const t=G.target, S=G.S;
+  if(ch(S)==='trivia'&&!G.dialog&&!G.card&&t&&t.kind==='talk'&&t.q&&t.q.def.id==='dave'&&!(G.cine&&G.cine.length)){ S.met.dave=1; hostTalk(G); return; }
+  base.interact(G); };
+GM.advance=function(G,choice){ const d=G.dialog;
+  if(d&&d.choices&&d.i>=d.pages.length-1&&choice!=null&&d.choices[choice]&&/^tv/.test(d.choices[choice].id)){ const id=d.choices[choice].id; if(/^tvf_/.test(id)) finalAnswer(G,id); else answer(G,id); return; }
+  base.advance(G,choice); };
+GM.objective=function(S){ if(ch(S)!=='trivia') return base.objective(S); const t=T(S);
+  if(S.done) return 'Trivia Night champion. Keep exploring: '+GM.percent(S)+'% of Hecktown found.';
+  if(!S.flags.tvIntro) return 'Find Dave in the War Room (HQ 2nd floor). He is hosting Trivia Night.';
+  if(t.i>=CLUES.length) return 'That\'s the board. Final Jeopardy is waiting with Dave in the War Room.';
+  const c=CLUES[t.i]; return 'Clue '+(t.i+1)+' of 8, '+c.cat+' for '+c.v+': '+c.q+'  ('+c.hint+')'; };
+GM.PTS_CLUE=25; GM.CHAPTERS=CHAPTERS; GM.chapterOf=ch; GM.TRIVIA={CLUES:CLUES,T:T};
+GM.chapterEnding=function(S){ if(ch(S)==='trivia'){ const t=T(S); return {title:'Trivia Night champion',sub:'War Room  ·  '+t.right+' of 8 on the board  ·  '+t.wrong+' wrong along the way  ·  '+GM.clock(S),body:'Dave hosted. A+ played anyway. The building knew every answer, once you asked it. Somebody tell Alex.'}; } return null; };
+})(typeof globalThis!=='undefined'?globalThis:this);
+
 /* ==== 04-draw-people.js ==== */
 /* ==== PEOPLE: draws any rig pose with a Hecktown "look" (skin, hair style, shirt, trousers, accessory). ==== */
 (function(root){
@@ -3106,16 +3182,19 @@ D.ALTS.push({test:(V,G)=>V.camx>FU.F3270-1000&&V.camx<FU.F3270+3000&&!G.drive,re
 const E=WalkEngine, GM=HGAME, MAP=HMAP, DRAW=HDRAW, PP=HPEOPLE, CFG=E.CFG;
 const $=id=>document.getElementById(id), clamp=(v,a,b)=>v<a?a:(v>b?b:v);
 const cv=$('c'), ctx=cv.getContext('2d');
-const KEY='hecktown2.save.v1';
+const KEY='hecktown2.save.v1', CHK='hecktown2.chapter';
+let CH='cutover'; try{ CH=localStorage.getItem(CHK)||'cutover'; }catch(_){ }
+const keyFor=id=>KEY+(id==='cutover'?'':'.'+id);
+function setChapter(id){ CH=id; try{ localStorage.setItem(CHK,id); }catch(_){ } }
 const V={W:0,H:0,DPR:1,zoom:2,camx:1150,camy:-34,touch:false};
 const zoomStops=[310,420,235]; let zi=0;
 let G=null, state='title', soundOn=true;
 
 /* ---------------- saving ---------------- */
-function loadSave(){ try{ const s=JSON.parse(localStorage.getItem(KEY)||'null'); return s&&s.v===1?s:null; }catch(_){ return null; } }
+function loadSave(id){ try{ const s=JSON.parse(localStorage.getItem(keyFor(id||CH))||'null'); return s&&s.v===1?s:null; }catch(_){ return null; } }
 let saveBlip=0;
-function save(){ if(!G||state==='title') return; try{ localStorage.setItem(KEY,JSON.stringify(G.S)); saveBlip=1.6; $('saved').classList.add('on'); }catch(_){ } }
-function wipe(){ try{ localStorage.removeItem(KEY); }catch(_){ } }
+function save(){ if(!G||state==='title') return; try{ localStorage.setItem(keyFor(G.S.chapter||'cutover'),JSON.stringify(G.S)); saveBlip=1.6; $('saved').classList.add('on'); }catch(_){ } }
+function wipe(id){ try{ localStorage.removeItem(keyFor(id||CH)); }catch(_){ } }
 addEventListener('pagehide',save); document.addEventListener('visibilitychange',()=>{ if(document.hidden) save(); });
 
 /* ---------------- input ---------------- */
@@ -3138,7 +3217,7 @@ addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code.startsWith('Arrow')
   if(state==='title'){ if(e.code==='Enter') (loadSave()?$('bContinue'):$('bNew')).click(); return; }
   const a=actionOf(e.code);
   if(a==='journal'){ toggleJournal(); return; }
-  if(e.code==='Escape'){ if(G&&G.board){ G.board=null; return; } if(state==='journal') toggleJournal(); else if(state==='ending') closeEnding(); return; }
+  if(e.code==='Escape'){ if(state==='chapters'){ $('chClose').click(); return; } if(G&&G.board){ G.board=null; return; } if(state==='journal') toggleJournal(); else if(state==='ending') closeEnding(); return; }
   if(a==='zoom'){ $('bZoom').click(); return; } if(a==='sound'){ $('bSnd').click(); return; }
   if(state!=='play') return;
   if(G.card&&(a==='jump'||a==='use')){ queue.push('use'); return; }
@@ -3266,19 +3345,26 @@ function keysHTML(){ return V.touch?'Drag a thumb on the left to walk. Push up o
 function toggleJournal(){ if(state==='play'){ state='journal'; $('jBody').innerHTML=journalHTML(); $('journal').classList.remove('hide'); $('journal').scrollTop=0; $('jClose').onclick=toggleJournal; $('jOpts').onclick=()=>{ toggleJournal(); if(window.__hecktown.openOptions) window.__hecktown.openOptions(); }; save(); }
   else if(state==='journal'){ state='play'; $('journal').classList.add('hide'); } }
 function showEnding(){ state='ending'; const S=G.S;
-  $('eBody').innerHTML='<h1>Good night, A+</h1><div class="sub">ENDSBS *ALL  ·  completed normally  ·  '+esc(GM.clock(S))+'</div><p style="font-size:16px;line-height:1.6;max-width:56ch">Forty years of orders, archived with six signatures and nobody raising their voice. Upstairs the new system takes its first order without ceremony. The trucks roll at dawn.</p>'+statsHTML(S)+
+  const ce=GM.chapterEnding&&GM.chapterEnding(S);
+  $('eBody').innerHTML='<h1>'+esc(ce?ce.title:'Good night, A+')+'</h1><div class="sub">'+esc(ce?ce.sub:'ENDSBS *ALL  ·  completed normally  ·  '+GM.clock(S))+'</div><p style="font-size:16px;line-height:1.6;max-width:56ch">'+esc(ce?ce.body:'Forty years of orders, archived with six signatures and nobody raising their voice. Upstairs the new system takes its first order without ceremony. The trucks roll at dawn.')+'</p>'+statsHTML(S)+
    '<p class="sub" style="margin-top:16px">'+(GM.percent(S)>=100?'Every room, every page, every person. Hecktown Legend.':'There is more campus out there: '+(MAP.rooms.length-GM.count(S.rooms))+' places, '+(GM.PAGES.length-GM.count(S.pages))+' ledger pages and '+(GM.PEOPLE.length-GM.count(S.met))+' people you have not found yet.')+'</p><div class="btns"><button class="btn" id="eGo">Keep exploring</button></div>';
   $('ending').classList.remove('hide'); $('eGo').onclick=closeEnding; SFX.good(); }
 function closeEnding(){ state='play'; $('ending').classList.add('hide'); }
 
 /* ---------------- title ---------------- */
 function snapCam(){ V.camx=G.hero.x; V.camy=G.cur.world.yAt(G.hero.x)-34; }
-function begin(saveData){ G=GM.create(saveData||undefined); state='play'; document.body.classList.add('play'); $('title').classList.add('hide'); $('hud').classList.remove('hide'); $('tools').classList.remove('hide');
+function begin(saveData,chapter){ if(chapter) setChapter(chapter); G=GM.create(saveData||GM.freshSave(chapter||CH)); setChapter(G.S.chapter||'cutover'); state='play'; document.body.classList.add('play'); $('title').classList.add('hide'); $('hud').classList.remove('hide'); $('tools').classList.remove('hide');
   V.camx=G.hero.x; V.camy=G.cur.world.yAt(G.hero.x)-34; hud(); save(); }
-function refreshTitle(){ const s=loadSave(); $('bContinue').classList.toggle('hide',!s); $('bNew').classList.toggle('ghost',!!s);
-  $('resume').textContent=s?('Saved game: '+GM.percent(s)+'%, '+GM.rank(s)+', '+GM.clock(s)+' on cutover night.'):''; $('keysHelp').innerHTML=keysHTML(); }
+function refreshTitle(){ const s=loadSave(); $('bContinue').classList.toggle('hide',!s); $('bNew').classList.toggle('ghost',!!s); $('bNew').textContent='Chapters';
+  const cn=(GM.CHAPTERS||[]).find(c=>c.id===CH); $('resume').textContent=s?('Chapter '+(cn?cn.num+' · '+cn.title:'')+': '+GM.percent(s)+'%, '+GM.rank(s)+', '+GM.clock(s)+'.'):''; $('keysHelp').innerHTML=keysHTML(); }
 $('bContinue').onclick=()=>{ wake(); begin(loadSave()); };
-let armNew=false; $('bNew').onclick=()=>{ wake(); if(loadSave()&&!armNew){ armNew=true; $('bNew').textContent='Erase the save and start over?'; return; } wipe(); begin(null); };
+$('bNew').onclick=()=>{ wake(); openChapters(); };
+/* the chapter menu: one card per chapter, each with its own save */
+function openChapters(){ const el=$('chapters'), list=$('chList'); let h='';
+  for(const c of GM.CHAPTERS||[]){ const s=loadSave(c.id); h+='<div class="chap"><div class="num">CHAPTER '+c.num+'</div><h2>'+esc(c.title)+'</h2><p>'+esc(c.blurb)+'</p><div class="goal">'+esc(c.goal)+'</div>'+(s?'<div class="prog">Saved: '+GM.percent(s)+'%, '+esc(GM.rank(s))+'</div>':'')+'<div class="btns">'+(s?'<button class="btn" data-ch="'+c.id+'" data-mode="continue">Continue</button><button class="btn ghost" data-ch="'+c.id+'" data-mode="new">Start over</button>':'<button class="btn" data-ch="'+c.id+'" data-mode="new">Play</button>')+'</div></div>'; }
+  list.innerHTML=h; el.classList.remove('hide'); $('title').classList.add('hide'); state='chapters';
+  for(const b of list.querySelectorAll('button[data-ch]')) b.onclick=()=>{ const id=b.dataset.ch; if(b.dataset.mode==='new'){ if(loadSave(id)&&!b.dataset.armed){ b.dataset.armed=1; b.textContent='Erase and start over?'; return; } wipe(id); el.classList.add('hide'); begin(null,id); } else { el.classList.add('hide'); begin(loadSave(id),id); } };
+  $('chClose').onclick=()=>{ el.classList.add('hide'); $('title').classList.remove('hide'); state='title'; refreshTitle(); }; }
 $('score').onclick=toggleJournal; $('bJournal').onclick=toggleJournal;
 $('bZoom').onclick=()=>{ zi=(zi+1)%zoomStops.length; };
 $('bSnd').onclick=function(){ soundOn=!soundOn; this.textContent=soundOn?'Sound on':'Sound off'; wake(); if(master) master.gain.value=soundOn?1:0; };
@@ -3408,7 +3494,7 @@ function photoPost(c,V,G){ const W=V.W, Hh=V.H; c.setTransform(V.DPR,0,0,V.DPR,0
 let END=null; const portraits={};
 function portraitOf(look,key){ if(portraits[key]) return portraits[key]; const cv=document.createElement('canvas'); cv.width=cv.height=112; PP.portrait(cv.getContext('2d'),look,112); return portraits[key]=cv; }
 function endLines(){ const L=[]; for(const id of GM.ENDING_ORDER){ if(id==='hero'){ L.push({look:D.HERO_LOOK,key:'hero',text:GM.EPI.ENDINGS.hero}); continue; } const p=GM.PEOPLE.find(z=>z.id===id); if(p&&GM.EPI.ENDINGS[id]) L.push({look:id==='ash'?Object.assign({},p.look,{acc:'glasses',glasses:true}):p.look,key:id,text:GM.EPI.ENDINGS[id]}); } return L; }
-function startEnd(){ const G=H.G, S=G.S; if(S.runEnd==null) S.runEnd=S.run||0; try{ const b=JSON.parse(localStorage.getItem(BEST_KEY)||'null'); if(b==null||S.runEnd<b) localStorage.setItem(BEST_KEY,JSON.stringify(S.runEnd)); }catch(_){ }
+function startEnd(){ const G=H.G, S=G.S; if(GM.chapterEnding&&GM.chapterEnding(S)){ if(S.runEnd==null) S.runEnd=S.run||0; H.showEnding(); return; } if(S.runEnd==null) S.runEnd=S.run||0; try{ const b=JSON.parse(localStorage.getItem(BEST_KEY)||'null'); if(b==null||S.runEnd<b) localStorage.setItem(BEST_KEY,JSON.stringify(S.runEnd)); }catch(_){ }
   const dcs=GM.NET?GM.NET.DCS.filter(d=>S.flags['dc_'+d.id]).length:0, pages=GM.count(S.pages);
   END={phase:0,t:0,i:0,lines:endLines(),cards:[{card:'MIDNIGHT',sub:'ENDSBS *ALL  ·  completed normally',dur:6,style:'comic',panels:[{i:'✍',c:'Six signatures'},{i:'☎',c:'One bridge call'},{i:'🚚',c:dcs+' of 9 DCs back on the network'}]},
     {card:'THE MORNING AFTER',sub:'The trucks roll at dawn',dur:6,style:'comic',panels:[{i:'A+',c:'Archived with honors'},{i:'§',c:pages+' of '+GM.PAGES.length+' ledger pages'},{i:'🐈',c:'Milo got a permit'}]}],photo:null};
