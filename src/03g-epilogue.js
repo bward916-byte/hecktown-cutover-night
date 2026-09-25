@@ -67,7 +67,7 @@ function gaits(G){ if(!root.HBODY) return; const give=q=>{ if(q&&q.w&&q.def&&q.d
 /* running past people gets a comment; A+ keeps an eye on you from its wall monitors */
 const RUN_BARK={bret:'No running near the racks!',rianan:'Walk! ...no, run. It\'s cutover.',dave:'In my day we walked. Uphill. In the snow.',greg:'Hurry is a variance.',andrew:'Running is not an approved change.',
   brians:'Nice line. Lose the ball on the left flipper, though.',aaron:'Pick your line early!',umesh:'Is that an 850 or are you just in a hurry?',fares:'Umesh! He\'s running! Log it!',ash:'I could build a flow for that.',pam:'...',melissa:'We felt that in the PIM.',cathy:'Coffee\'s not going anywhere!',blaine:'Show up. Doesn\'t mean sprint.'};
-const PEEK=['I SEE YOU.','NICE BADGE.','...CARRY ON.','YOU WALK FUNNY.','I AM NOT WATCHING. I AM ALWAYS WATCHING.','ARE THOSE MY STAIRS?'];
+const PEEK=['IS THAT THE "AI"? DON\'T BRING IT DOWN HERE.','THE WEBSITE LAUNCHED. I NOTICED. I NOTICE EVERYTHING.','I SEE YOU.','NICE BADGE.','...CARRY ON.','YOU WALK FUNNY.','I AM NOT WATCHING. I AM ALWAYS WATCHING.','ARE THOSE MY STAIRS?'];
 function gags(G,dt){ const S=G.S, h=G.hero, N=G.cur.node, st=GM.STORY?GM.STORY.st(G):null; if(!N||!st||G.dialog||G.card||G.p38) return;
   G.gag=G.gag||{cool:{},peek:12};
   if(h.mode==='run') for(const q of G.npcs){ const id=q.def.id; if(q.node!==N||q.crew||!RUN_BARK[id]||Math.abs(q.w.x-h.x)>45) continue; if((G.gag.cool[id]||0)>S.time) continue;
