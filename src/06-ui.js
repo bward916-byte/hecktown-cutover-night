@@ -19,7 +19,7 @@ addEventListener('pagehide',save); document.addEventListener('visibilitychange',
 /* ---------------- input ---------------- */
 const keys={}, queue=[]; let stick=null;
 /* keys are rebindable (Options): each action has a list of codes, the first is the one you can change */
-const DEF_KEYS={left:['ArrowLeft','KeyA'],right:['ArrowRight','KeyD'],up:['ArrowUp','KeyW'],down:['ArrowDown','KeyS'],use:['KeyE','Enter'],jump:['Space'],roll:['KeyX'],crawl:['KeyC'],throw:['KeyF'],read:['KeyR'],dance:['KeyG'],clap:['KeyV'],
+const DEF_KEYS={left:['ArrowLeft','KeyA'],right:['ArrowRight','KeyD'],up:['ArrowUp','KeyW'],down:['ArrowDown','KeyS'],use:['KeyE','Enter'],jump:['Space'],crawl:['KeyC'],throw:['KeyF'],read:['KeyR'],
   stroll:['ShiftLeft','ShiftRight'],journal:['KeyJ','Tab'],zoom:['KeyZ'],sound:['KeyM'],map:['KeyN'],photo:['KeyP']};
 const KEYS_KEY='hecktown2.keys';
 let KEYS=loadKeys();
@@ -28,7 +28,7 @@ function bindKey(k,a,code){ for(const b in k) if(b!==a) k[b]=k[b].filter(c=>c!==
 function setKey(a,code){ bindKey(KEYS,a,code); try{ const o={}; for(const b in KEYS) if(KEYS[b][0]!==DEF_KEYS[b][0]) o[b]=KEYS[b][0]; localStorage.setItem(KEYS_KEY,JSON.stringify(o)); }catch(_){ } }
 function resetKeys(){ KEYS=JSON.parse(JSON.stringify(DEF_KEYS)); try{ localStorage.removeItem(KEYS_KEY); }catch(_){ } }
 const actionOf=code=>{ for(const a in KEYS) if(KEYS[a].indexOf(code)>=0) return a; return null; }, held=a=>KEYS[a].some(c=>keys[c]);
-const ACTS={jump:1,roll:1,crawl:1,throw:1,read:1,dance:1,clap:1,use:1};
+const ACTS={jump:1,crawl:1,throw:1,read:1,use:1};
 const EXT={keys:[],after:[],camera:null,ending:null,tick:[]};          // 06b-extras plugs in here
 addEventListener('keydown',e=>{ keys[e.code]=true; if(e.code.startsWith('Arrow')||e.code==='Space'||e.code==='Tab')e.preventDefault(); wake();
   if(e.repeat) return;
@@ -51,7 +51,7 @@ const endStick=e=>{ if(stick&&e.pointerId===stick.id) stick=null; }; cv.addEvent
 function setTouch(){ if(!V.touch){ V.touch=true; document.body.classList.add('touch'); } }
 if(matchMedia('(pointer:coarse)').matches) setTouch();
 for(const b of document.querySelectorAll('#pad button[data-act]')) b.addEventListener('pointerdown',e=>{ e.preventDefault(); wake(); queue.push(b.dataset.act); });
-const padMap={0:'use',1:'roll',2:'jump',3:'crawl',4:'read',5:'dance',6:'clap',7:'throw'}, padWas={};
+const padMap={0:'use',2:'jump',3:'crawl',4:'read',7:'throw'}, padWas={};
 function readInput(){
   let ix=0, iy=0;
   if(held('right')) ix+=1; if(held('left')) ix-=1; if(held('up')) iy-=1; if(held('down')) iy+=1;
@@ -76,6 +76,7 @@ function tone(freq,dur,vol,type,to,delay){ if(!AC)return; const o=AC.createOscil
   g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+0.012); g.gain.exponentialRampToValueAtTime(0.0008,t+dur); o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.05); }
 function footfall(ev,hard){
   switch(ev.type){
+    case 'npcstep':{ const v=(1-ev.d/170)*0.05*(0.8+0.4*(ev.heavy-1)); if(ev.shoe==='dress') burst(1500,1.6,v*0.9,0.04); else if(ev.shoe==='boot') burst(Math.max(260,420-120*(ev.heavy-1)),1,v*1.3,0.09); else burst(650,0.8,v*0.7,0.06); } break;
     case 'step':  burst(hard||ev.stone?950:520,hard||ev.stone?1.4:0.8,(0.04+0.09*clamp(ev.speed/CFG.walkSpeed,0,1))*(ev.prof==='down'?1.25:1),hard||ev.stone?0.07:0.11); break;
     case 'land':  burst(360,0.8,0.12+0.14*clamp(ev.speed/200,0,1),0.14); break;
     case 'jump':  burst(500,0.7,0.06,0.12,1400); break;   case 'roll': burst(300,0.6,0.10,0.16,700); break;
@@ -95,6 +96,13 @@ let rainG=null;
 function tickRain(){ if(!G) return; if(!rainG){ const s=AC.createBufferSource(), b=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; s.buffer=b; s.loop=true; const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1400; f.Q.value=0.4; rainG=AC.createGain(); rainG.gain.value=0; s.connect(f); f.connect(rainG); rainG.connect(master); s.start(); }
   const N=G.cur.node, id=N?N.id:'', indoor=N&&(['hq_f2','hq_b1','tun_2','tun_3','wh_mezz','wh_cat','gar_loft'].indexOf(id)>=0||(id==='ground'&&((G.hero.x>1100&&G.hero.x<1900)||(G.hero.x>2200&&G.hero.x<3160)))), era=G.p38&&G.p38.scene==='yard'&&(G.S.flags.p38|0)>=2&&(G.S.flags.p38|0)<4;
   const want=state==='play'?(era?0.07:(G.p38?0:((G.wx&&G.wx.rain)||0)*(indoor?0.025:0.08))):0; rainG.gain.setTargetAtTime(want,AC.currentTime,0.6); }
+let humG=null, nextChirp=0, nextRing=0;
+function tickAmbience(){ if(!G||!AC) return; const N=G.cur.node, id=N?N.id:'', x=G.hero.x, t=AC.currentTime, play=state==='play';
+  if(!humG){ humG=AC.createGain(); humG.gain.value=0; for(const f of [55,110,165]){ const o=AC.createOscillator(); o.type='sine'; o.frequency.value=f; const g=AC.createGain(); g.gain.value=f===55?1:0.35; o.connect(g); g.connect(humG); o.start(); } humG.connect(master); }
+  const server=play&&id==='hq_b1'&&x>1724, near=play&&id==='hq_b1'&&x>1500; humG.gain.setTargetAtTime(server?0.035:(near?0.012:0),t,0.5);
+  const m=/(\d+):\d+ (AM|PM)/.exec(GM.clock(G.S)||''), hr=m?(+m[1]%12)+(m[2]==='PM'?12:24):18, outside=play&&id==='ground'&&(x<1100||(x>1900&&x<2200)||x>3160);
+  if(outside&&hr>=20&&!(G.wx&&G.wx.rain>0.3)&&t>nextChirp){ nextChirp=t+0.6+Math.random()*2.2; for(let k=0;k<3;k++) tone(4300+Math.random()*300,0.03,0.008,'sine',null,k*0.07); }
+  if(play&&id==='hq_f2'&&x>1330&&x<1556&&!G.S.done&&t>nextRing){ if(nextRing) for(let k=0;k<2;k++){ tone(440,0.35,0.012,'sine',null,k*0.5); tone(480,0.35,0.012,'sine',null,k*0.5); } nextRing=t+22+Math.random()*25; } }
 function startMusic(){ const g=AC.createGain(); g.gain.value=0.0; g.connect(master); const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=700; f.connect(g);
   const o1=AC.createOscillator(), o2=AC.createOscillator(); o1.type='sawtooth'; o2.type='triangle'; o1.connect(f); o2.connect(f); o1.start(); o2.start(); music={g:g,o1:o1,o2:o2,root:0,next:0}; }
 function tickMusic(){ if(!music||!G) return; const t=AC.currentTime, n=G.cur.node?G.cur.node.id:(G.cur.link.id.indexOf('tun')===0?'tun_2':'hq'); 
@@ -150,8 +158,8 @@ function journalHTML(){
   h+='<h3>The ledger</h3>'; let any=false; GM.PAGES.forEach((p,i)=>{ if(S.pages[i]){ any=true; h+='<div class="page">'+esc(p[2])+'</div>'; } }); if(!any) h+='<div class="sub">No pages yet. They turn up in corners, lofts and places you have to crawl into.</div>';
   h+='<h3>Controls</h3><div class="keys">'+keysHTML()+'</div>'; return h;
 }
-function keysHTML(){ return V.touch?'Drag a thumb on the left to walk. Push up or down on a stair landing to take the stairs. Use talks, takes and opens. More holds roll, throw, read, dance and clap.'
-  :'<kbd>←</kbd> <kbd>→</kbd> walk (<kbd>Shift</kbd> stroll)  ·  <kbd>↑</kbd> <kbd>↓</kbd> take the stairs from a landing  ·  <kbd>E</kbd> talk, take, open  ·  <kbd>Space</kbd> jump  ·  <kbd>C</kbd> crawl  ·  <kbd>X</kbd> roll  ·  <kbd>F</kbd> throw  ·  <kbd>R</kbd> read  ·  <kbd>G</kbd> dance  ·  <kbd>V</kbd> clap  ·  <kbd>J</kbd> journal  ·  <kbd>Z</kbd> zoom  ·  <kbd>M</kbd> sound. Controllers work too.'; }
+function keysHTML(){ return V.touch?'Drag a thumb on the left to walk. Push up or down on a stair landing to take the stairs. The big button talks, takes and opens, and says which.'
+  :'<kbd>←</kbd> <kbd>→</kbd> walk (<kbd>Shift</kbd> stroll)  ·  <kbd>↑</kbd> <kbd>↓</kbd> take the stairs from a landing  ·  <kbd>E</kbd> talk, take, open  ·  <kbd>Space</kbd> jump  ·  <kbd>C</kbd> crawl  ·  <kbd>F</kbd> throw  ·  <kbd>R</kbd> read  ·  <kbd>J</kbd> journal  ·  <kbd>Z</kbd> zoom  ·  <kbd>M</kbd> sound. Controllers work too.'; }
 function toggleJournal(){ if(state==='play'){ state='journal'; $('jBody').innerHTML=journalHTML(); $('journal').classList.remove('hide'); $('journal').scrollTop=0; $('jClose').onclick=toggleJournal; $('jOpts').onclick=()=>{ toggleJournal(); if(window.__hecktown.openOptions) window.__hecktown.openOptions(); }; save(); }
   else if(state==='journal'){ state='play'; $('journal').classList.add('hide'); } }
 function showEnding(){ state='ending'; const S=G.S;
@@ -190,7 +198,7 @@ function frame(now){
     typeTick(dt); hudT-=dt; if(hudT<=0){ hudT=0.15; hud(); } dialogUI(); document.body.classList.toggle('card',!!(G.card||G.board||G.drive));
   } else { readInput(); queue.length=0; acc=0; }
   if(saveBlip>0){ saveBlip-=dt; if(saveBlip<=0) $('saved').classList.remove('on'); }
-  if(AC){ tickMusic(); tickRain(); }
+  if(AC){ tickMusic(); tickRain(); tickAmbience(); }
 
   const h=G.hero, w=G.cur.world, target=Math.min(V.H/zoomStops[zi],V.W/250); zoomNow=zoomNow?zoomNow+(target-zoomNow)*(1-Math.exp(-6*dt)):target; V.zoom=zoomNow;
   if(EXT.camera&&EXT.camera(state,V,dt)){ }
