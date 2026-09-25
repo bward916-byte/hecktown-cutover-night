@@ -63,7 +63,19 @@ GM.goShow=G=>enterShow(G);
 /* everyone walks their own way: give each person's walker its gait (the hero keeps the rig's) */
 function gaits(G){ if(!root.HBODY) return; const give=q=>{ if(q&&q.w&&q.def&&q.def.look&&q.w.gait===undefined) q.w.gait=root.HBODY.gaitFor(q.def.look); };
   G.npcs.forEach(give); if(G.net) G.net.locals.forEach(give); if(G.showS) G.showS.npcs.forEach(give); if(G.p38) G.p38.npcs.forEach(give); }
-const upd2=GM.update; GM.update=function(G,ix,iy,dt){ gaits(G); upd2(G,ix,iy,dt); };
+/* running past people gets a comment; A+ keeps an eye on you from its wall monitors */
+const RUN_BARK={bret:'No running near the racks!',rianan:'Walk! ...no, run. It\'s cutover.',dave:'In my day we walked. Uphill. In the snow.',greg:'Hurry is a variance.',andrew:'Running is not an approved change.',
+  brians:'Nice line. Lose the ball on the left flipper, though.',aaron:'Pick your line early!',umesh:'Is that an 850 or are you just in a hurry?',fares:'Umesh! He\'s running! Log it!',ash:'I could build a flow for that.',pam:'...',melissa:'We felt that in the PIM.',cathy:'Coffee\'s not going anywhere!',blaine:'Show up. Doesn\'t mean sprint.'};
+const PEEK=['I SEE YOU.','NICE BADGE.','...CARRY ON.','YOU WALK FUNNY.','I AM NOT WATCHING. I AM ALWAYS WATCHING.','ARE THOSE MY STAIRS?'];
+function gags(G,dt){ const S=G.S, h=G.hero, N=G.cur.node, st=GM.STORY?GM.STORY.st(G):null; if(!N||!st||G.dialog||G.card||G.p38) return;
+  G.gag=G.gag||{cool:{},peek:12};
+  if(h.mode==='run') for(const q of G.npcs){ const id=q.def.id; if(q.node!==N||q.crew||!RUN_BARK[id]||Math.abs(q.w.x-h.x)>45) continue; if((G.gag.cool[id]||0)>S.time) continue;
+    G.gag.cool[id]=S.time+90; st.bub=st.bub.filter(b=>b.id!==id); st.bub.push({id:id,text:RUN_BARK[id],t:2.6}); break; }
+  G.gag.peek-=dt; if(G.gag.peek<=0&&!S.done&&S.flags.started&&!st.ap&&!st.apq.length){ const m=MAP.props.find(p=>p.type==='aplus_wall'&&p.node===N.id&&Math.abs(p.x-h.x)<90);
+    if(m){ G.gag.peek=45+Math.random()*40; GM.STORY.aplusSay(G,h.mode==='run'?'NO RUNNING IN MY HALLS.':PEEK[Math.floor(Math.random()*PEEK.length)],2.4); } else G.gag.peek=2; } }
+const upd2=GM.update; GM.update=function(G,ix,iy,dt){ gags(G,dt); gaits(G); G.hero.canRun=true; for(const q of G.npcs) q.w.canRun=!!q.crew;
+  if(G.hero.mode==='run'&&(iy||G.dialog||G.card||G.board||G.drive)) E.endRun(G.hero,G.cur.world);        // stairs, talking and cutscenes start from a walk
+  upd2(G,ix,iy,dt); };
 const bObj=GM.objective, bClock=GM.clock;
 GM.objective=S=>S.pos.node==='show'?'The Buying Show. Everyone is here. Talk to people; the shuttle home is by the door.':bObj(S);
 GM.clock=S=>S.pos.node==='show'?'9:00 AM':bClock(S);
