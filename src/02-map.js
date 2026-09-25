@@ -111,7 +111,7 @@ duct('wh_mezz',2766,2846);                         // the mezzanine conveyor cro
  [1142,'sofa'],[1192,'case'],[1250,'desk'],[1312,'cabinet'],[1400,'helpdesk'],[1500,'plant'],[1760,'desk'],[1820,'desk'],[1870,'jar'],
  [790,'truckcab'],[2260,'term'],[2330,'pallet'],[2400,'pallet'],[2560,'rack'],[2700,'rack'],[2800,'forklift'],[2960,'pallet'],[3040,'conveyor'],[3120,'pallet']
 ].forEach(p=>prop(p[1],'ground',p[0]));
-[[1135,'desk'],[1193,'printer'],[1250,'pimdesk'],[1300,'pimdesk'],[1380,'bigscreen'],[1450,'table'],[1500,'whiteboard'],[1543,'pinball'],[1765,'desk'],[1842,'portrait'],[1872,'sofa']].forEach(p=>prop(p[1],'hq_f2',p[0]));
+[[1160,'sitebanner'],[1135,'desk'],[1193,'printer'],[1250,'pimdesk'],[1300,'pimdesk'],[1380,'bigscreen'],[1450,'table'],[1500,'whiteboard'],[1543,'pinball'],[1765,'desk'],[1842,'portrait'],[1872,'sofa']].forEach(p=>prop(p[1],'hq_f2',p[0]));
 [[1150,'dish'],[1240,'antenna'],[1340,'antenna'],[1440,'hvac'],[1508,'raft'],[1760,'planter'],[1840,'term'],[1880,'planter']].forEach(p=>prop(p[1],'hq_roof',p[0]));
 [[1150,'crates'],[1220,'shelf'],[1290,'crates'],[1370,'cabinet'],[1410,'cabinet'],[1500,'cabinet'],[1760,'server'],[1800,'server'],[1860,'server'],[760,'pipes'],[950,'pipes']].forEach(p=>prop(p[1],'hq_b1',p[0]));
 [[720,'crates'],[800,'shelf'],[880,'crates']].forEach(p=>prop(p[1],'gar_loft',p[0]));
