@@ -12,7 +12,7 @@
 const H=window.__hecktown, EXT=H.EXT, GM=HGAME, PP=HPEOPLE, D=HDRAW, E=WalkEngine, C=E.CFG;
 const $=id=>document.getElementById(id), clamp=(v,a,b)=>v<a?a:(v>b?b:v), lerp=(a,b,t)=>a+(b-a)*t, ss=t=>{ t=clamp(t,0,1); return t*t*(3-2*t); };
 const rr=(c,x,y,w,h,r)=>{ c.beginPath(); if(c.roundRect) c.roundRect(x,y,w,h,r); else c.rect(x,y,w,h); };
-const CAST=['rianan','brians','bret','dave','aaron','umesh','fares','ash'], LEN=86.6;
+const CAST=['rianan','brians','bret','dave','aaron','umesh','fares','ash'], LEN=91;
 const SEC={intro:0,office:5.0,doors:14.9,time:25.7,turn:53.5,back:57.2,freeze:63.6,montage:66.8,curtain:70.8};
 /* the time-machine beat: three stops, each long enough to read. Everyone runs in, stops and looks around, a gag plays,
    A+ arrives late and confused, everyone scrambles and runs on. Clock spins of 1.2 s between. */
@@ -118,7 +118,7 @@ function scene(t){
   if(T>11.8){ const a=run(430,250,11.8,110,T); act('ash',a.x,a.done?'stand':'walk',-1,{mood:null,shades:true}); }
   const g=run(-420,-250,0.2,60,T); act('greg',g.x,g.done?'stand':'walk',1,{mood:null,bow:0}); out.lyric=T>5.0&&T<11.0?T-5.0:null;
   out.mon={show:true,x:T<1.2?lerp(0,0,1):0,F:1,run:false,mood:T>3?'smug':'idle',rise:ss(T/1.2)};
-  out.milo={show:true,x:250,F:-1,run:false,sit:true}; return out; }
+  out.milo={show:true,x:250,F:-1,run:false,sit:true}; out.cooler={x:38,open:clamp((T-16.6)/0.5,0,1)}; return out; }
 
 /* events keyed to the script: speech, stings, captions */
 function events(t,dt){
@@ -170,6 +170,7 @@ function events(t,dt){
   if(T(SEC.freeze+2.2)) once('zip',()=>{ tone(400,0.3,0.05,'sine',1800); });
   if(T(SEC.curtain+3.2)) once('conf',()=>{ for(let i=0;i<120;i++) S.conf.push({x:(Math.random()-0.5)*700,y:-260-Math.random()*220,vx:(Math.random()-0.5)*50,vy:60+Math.random()*80,c:['#f2b544','#6fe08a','#e0563a','#6fb0ff','#f6ecd8'][i%5],r:Math.random()*6}); });
   if(T(SEC.curtain+3.6)) once('bow',()=>say('aplus','THANK YOU. THANK YOU.',1.8));
+  if(T(SEC.curtain+16.4)) once('cool0',()=>{ tone(400,0.3,0.04,'sine',900); }); if(T(SEC.curtain+17.0)) once('cool1',()=>say('cooler','I WAS ALSO IN THE COOLER.',2.2)); if(T(SEC.curtain+18.6)) once('cool2',()=>say('bret','EVERYTHING SHOULD BE LOCKED.',1.8)); if(T(SEC.curtain+19.4)) once('cool3',()=>say('aplus','...I GET AROUND.',1.6));
   if(T(SEC.curtain+12.4)) once('ash1',()=>say('ash','Sorry I\'m late.',1.8)); if(T(SEC.curtain+14.0)) once('ash2',()=>say('rianan','Where were you?',1.4)); if(T(SEC.curtain+15.2)) once('ash3',()=>say('ash','Don\'t ask.',2.2));
   // captions: one at a time
   if(!S.cap&&S.capQ&&S.capQ.length) S.cap={id:S.capQ.shift(),t:0};
@@ -229,7 +230,9 @@ function drawSet(c,set,cam,t,sc,W,Hh,ox,oy){
     c.restore(); return; }
   if(set==='curtain'){ const g=c.createLinearGradient(0,0,0,Hh); g.addColorStop(0,'#3a0f14'); g.addColorStop(1,'#1a0609'); c.fillStyle=g; c.fillRect(0,0,W,Hh);
     c.save(); c.translate(ox,oy); c.scale(sc,sc); for(let x=-520;x<520;x+=26){ const sh=0.5+0.5*Math.sin(x*0.25); c.fillStyle='rgba(120,20,30,'+(0.4+0.3*sh)+')'; c.fillRect(x,-400,14,400); }
-    R(-600,0,1200,300,'#3a2418'); R(-600,0,1200,4,'#c9a56a'); const sp=c.createRadialGradient(0,-60,10,0,-60,300); sp.addColorStop(0,'rgba(255,240,200,.35)'); sp.addColorStop(1,'rgba(255,240,200,0)'); c.fillStyle=sp; c.fillRect(-400,-360,800,360); c.restore(); return; }
+    R(-600,0,1200,300,'#3a2418'); R(-600,0,1200,4,'#c9a56a');
+    if(S.scn.cooler){ const cx=S.scn.cooler.x, o=S.scn.cooler.open; R(cx-16,-26,32,26,'#e0563a'); c.strokeStyle='#151a22'; c.lineWidth=1.2; c.strokeRect(cx-16,-26,32,26); c.save(); c.translate(cx-16,-26); c.rotate(-o*1.3); R(0,-6,32,6,'#f6ecd8'); c.strokeRect(0,-6,32,6); c.restore();
+      if(o>0.3){ c.fillStyle='rgba(120,255,140,'+(0.35*o)+')'; c.beginPath(); c.arc(cx,-30,18,0,7); c.fill(); if(D.aplusFace) D.aplusFace(c,cx-11,-40-o*8,22,16,'smug',t,S.bub.some(b=>b.who==='cooler'),0.8); } } const sp=c.createRadialGradient(0,-60,10,0,-60,300); sp.addColorStop(0,'rgba(255,240,200,.35)'); sp.addColorStop(1,'rgba(255,240,200,0)'); c.fillStyle=sp; c.fillRect(-400,-360,800,360); c.restore(); return; }
   const g=c.createLinearGradient(0,0,0,Hh); g.addColorStop(0,set==='dead'?'#2e3848':'#3d4a5c'); g.addColorStop(1,'#26303e'); c.fillStyle=g; c.fillRect(0,0,W,Hh);
   c.save(); c.translate(ox,oy); c.scale(sc,sc); c.translate(-cam,0);
   const x0=cam-W/sc, x1=cam+W/sc;
@@ -296,7 +299,7 @@ function draw(c,V,now){
     c.fillStyle='rgba(246,236,216,.8)'; c.font='700 '+Math.round(Math.min(18,W/26))+'px "IBM Plex Mono",monospace'; c.textAlign='center'; c.fillText('❚❚  PAUSED FOR GREG',W/2,Math.max(40,Hh*0.1)); }
   // bubbles, stacked so they never overlap
   c.font='700 '+Math.round(clamp(12*sc/2.2,11,17))+'px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif'; c.textAlign='center'; c.textBaseline='middle'; const placed=[];
-  for(const b of S.bub){ let x,y; if(b.who==='aplus'){ if(!sn.mon.show) continue; x=ox+(sn.mon.x-cam)*sc; y=oy-128*sc-(sn.mon.hop||0)*sc; } else if(b.who==='founder'){ if(!sn.founder) continue; x=ox+(sn.founder.x-cam)*sc; y=oy-70*sc; } else if(b.who==='caseaplus'){ if(!sn.caseX) continue; x=ox+(sn.caseX-cam)*sc; y=oy-125*sc; } else { const a=sn.actors.find(z=>z.id===b.who); if(!a||!a.P) continue; x=ox+(a.P.head.x-cam)*sc; y=oy+(a.P.head.y-20)*sc; }
+  for(const b of S.bub){ let x,y; if(b.who==='aplus'){ if(!sn.mon.show) continue; x=ox+(sn.mon.x-cam)*sc; y=oy-128*sc-(sn.mon.hop||0)*sc; } else if(b.who==='founder'){ if(!sn.founder) continue; x=ox+(sn.founder.x-cam)*sc; y=oy-70*sc; } else if(b.who==='caseaplus'){ if(!sn.caseX) continue; x=ox+(sn.caseX-cam)*sc; y=oy-125*sc; } else if(b.who==='cooler'){ if(!sn.cooler) continue; x=ox+(sn.cooler.x-cam)*sc; y=oy-60*sc; } else { const a=sn.actors.find(z=>z.id===b.who); if(!a||!a.P) continue; x=ox+(a.P.head.x-cam)*sc; y=oy+(a.P.head.y-20)*sc; }
     if(x<-20||x>W+20) continue; const tw=c.measureText(b.text).width+20; x=clamp(x,tw/2+8,W-tw/2-8); y=Math.max(y,40); for(let k=0;k<6&&placed.some(r=>Math.abs(r[0]-x)<(r[2]+tw)/2+4&&Math.abs(r[1]-y)<30);k++) y-=32; placed.push([x,y,tw]);
     const ap=b.who==='aplus'; c.fillStyle=ap?'rgba(6,14,8,.94)':'rgba(246,236,216,.97)'; rr(c,x-tw/2,y-14,tw,28,11); c.fill(); if(ap){ c.strokeStyle='#6fe08a'; c.lineWidth=1.5; c.stroke(); }
     c.fillStyle=ap?'#7fe0a0':'#243447'; c.fillText(b.text,x,y+0.5); }
