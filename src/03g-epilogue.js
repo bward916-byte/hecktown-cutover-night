@@ -16,7 +16,7 @@ const ENDINGS={
   greg:'Greg was seen in Accounting on Monday. And Receiving. And 1938.',
   ryan:'Ryan shipped the fix from the parking lot. Pipeline\'s green.',
   jose:'Jose finished the diagram. The dragon has a name now. It\'s A+.',
-  ash:'Ash built a flow that thanks you when an order ships. It has already thanked her twice.',
+  ash:'Ash walked in at 12:01, from the wrong direction, in sunglasses. "Sorry I\'m late. I was... elsewhere." Nobody asked. Everybody wanted to.',
   andrew:'Andrew closed eleven emergency RFCs and opened the Thursday meeting on time. It stands.',
   pam:'Pam and Melissa stayed in the PIM until sunrise. Cathy brought breakfast.',
   hero:'Brian W drove west to check on the cactus. The database was fine.' };
@@ -60,6 +60,7 @@ GM.interact=function(G){ const t=G.target; if(!G.dialog&&!G.card&&t&&!(G.cine&&G
     if(t.kind==='showaplus'){ G.dialog={who:'A+',role:'1985–2026',look:null,pages:['A+  ·  1985–2026  ·  ARCHIVED WITH HONORS','I WAS INVITED.','NOBODY HAS ASKED ME FOR A REPORT ALL MORNING. IT IS VERY STRANGE. I THINK I LIKE IT.'],i:0}; return; } }
   base.interact(G); };
 GM.goShow=G=>enterShow(G);
+GM.ENDING_ORDER=['rianan','aaron','bret','brians','umesh','dave','john','greg','ryan','jose','andrew','pam','hero','ash'];
 /* everyone walks their own way: give each person's walker its gait (the hero keeps the rig's) */
 function gaits(G){ if(!root.HBODY) return; const give=q=>{ if(q&&q.w&&q.def&&q.def.look&&q.w.gait===undefined) q.w.gait=root.HBODY.gaitFor(q.def.look); };
   G.npcs.forEach(give); if(G.net) G.net.locals.forEach(give); if(G.showS) G.showS.npcs.forEach(give); if(G.p38) G.p38.npcs.forEach(give); }
