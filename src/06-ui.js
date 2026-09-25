@@ -86,7 +86,7 @@ function footfall(ev,hard){
 const SFX={ talk:()=>tone(520+Math.random()*120,0.07,0.05,'triangle'), pick:()=>{ tone(660,0.09,0.07,'triangle'); tone(990,0.14,0.07,'triangle',null,0.08); },
   good:()=>[523,659,784,1047].forEach((f,i)=>tone(f,0.22,0.07,'triangle',null,i*0.09)), door:()=>{ burst(240,0.7,0.16,0.18,90); tone(180,0.2,0.05,'square',90); },
   deny:()=>{ tone(196,0.12,0.06,'square'); tone(155,0.2,0.06,'square',null,0.13); }, bark:()=>{ tone(420,0.09,0.10,'sawtooth',250); tone(460,0.1,0.10,'sawtooth',260,0.16); },
-  point:()=>tone(880,0.12,0.04,'sine',1320), purr:()=>{ for(let i=0;i<6;i++) burst(120,0.5,0.05,0.09,90); tone(60,0.5,0.03,'sine'); }, honk:()=>{ tone(330,0.28,0.06,'sawtooth'); tone(415,0.28,0.05,'sawtooth'); }, beep:()=>{ tone(1180,0.09,0.04,'square'); }, meow:()=>{ tone(700,0.22,0.05,'triangle',950); tone(980,0.25,0.04,'triangle',620,0.12); } };
+  point:()=>tone(880,0.12,0.04,'sine',1320), purr:()=>{ for(let i=0;i<6;i++) burst(120,0.5,0.05,0.09,90); tone(60,0.5,0.03,'sine'); }, honk:()=>{ tone(330,0.28,0.06,'sawtooth'); tone(415,0.28,0.05,'sawtooth'); }, whoosh:()=>{ burst(300,0.5,0.06,1.6,3000); tone(180,1.4,0.03,'sine',900); }, pinball:()=>{ burst(1800,1.5,0.06,0.05); for(let k=0;k<4;k++) tone(1320+k*110,0.08,0.03,'square',null,0.08+k*0.09); }, roar:()=>{ tone(90,0.9,0.07,'sawtooth',55); tone(140,0.7,0.04,'square',70); burst(200,0.4,0.05,0.8,120); }, beep:()=>{ tone(1180,0.09,0.04,'square'); }, meow:()=>{ tone(700,0.22,0.05,'triangle',950); tone(980,0.25,0.04,'triangle',620,0.12); } };
 /* Voices: a pitched blip per character as their words type out. */
 const VOICE={Rianan:520,Aaron:300,Bret:340,'Brian S':280,'Brian W':320,Umesh:380,Dave:250,John:270,Greg:240,Ryan:360,Jose:330,Ash:540,Andrew:350,Blaine:260,'The Founder':220,Pam:500,Melissa:480,Cathy:510,Milo:600,Rosa:460,'Mrs. Miller':470,Kim:490,Ashley:500,Nick:290,Tina:470,Frank:230,Lou:250,'A+':150,Terminal:170};
 function voiceOf(name){ if(VOICE[name]) return VOICE[name]; let h=7; for(let i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))>>>0; return 260+h%240; }
@@ -213,6 +213,7 @@ function frame(now){
 }
 G=GM.create(loadSave()||undefined); refreshTitle();
 window.__hecktown={get G(){return G;},V:V,begin:begin,EXT:EXT,get state(){return state;},setState:s=>{ state=s; },showEnding:showEnding,closeEnding:closeEnding,toast:toast,SFX:SFX,hud:()=>hud(),save:save,
-  keys:{get:()=>KEYS,DEF:DEF_KEYS,set:setKey,reset:resetKeys},wake:wake,loadSave:loadSave};     // for the browser tests and 06b-extras
+  keys:{get:()=>KEYS,DEF:DEF_KEYS,set:setKey,reset:resetKeys},wake:wake,loadSave:loadSave,
+  audio:{ctx:()=>AC,tone:(...a)=>tone(...a),burst:(...a)=>burst(...a),sfx:n=>{ if(AC&&SFX[n]) SFX[n](); }}};     // for the browser tests and 06b-extras
 requestAnimationFrame(frame);
 })();
