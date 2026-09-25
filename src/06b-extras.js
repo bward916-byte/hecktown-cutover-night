@@ -40,6 +40,7 @@ function renderOpts(){ const K=H.keys.get(), T=[['90%',0.9],['100%',1],['115%',1
 function openOpts(){ if(H.state!=='play'&&H.state!=='title') return; prevState=H.state; H.setState('options'); renderOpts(); ov.classList.remove('hide'); }
 function closeOpts(){ rebind=null; ov.classList.add('hide'); H.setState(prevState); }
 $('bMap').onclick=()=>{ O.map=!O.map; saveOpts(); };
+H.openOptions=openOpts;
 
 /* ---------------- speedrun clock ---------------- */
 let runT=0; EXT.tick.push(dt=>{ runT-=dt; if(runT>0) return; runT=0.25; const S=H.G.S, el=$('hRun'); el.classList.toggle('hide',!O.run); if(O.run) el.textContent='run '+GM.fmtRun(S.runEnd!=null?S.runEnd:S.run)+(S.runEnd!=null?' ✓':''); });
