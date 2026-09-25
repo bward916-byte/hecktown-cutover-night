@@ -251,5 +251,5 @@ function portrait(ctx,look,size){
   const P={face:1,head:{x:0,y:0,a:0},neck:{x:-0.5,y:R+2},hip:{x:-1,y:R+22}}, C=colours(look);
   stroke(ctx,[P.hip.x,P.hip.y,P.neck.x,P.neck.y+3],13,C.shirt); stroke(ctx,[P.neck.x,P.neck.y+2,P.neck.x+0.6,P.neck.y-3],4.2,C.skin); head(ctx,P,look,C,{t:1}); ctx.restore();
 }
-root.HPEOPLE={setLight:fn=>{ lightAt=fn; },person:person,dog:dog,treat:treat,portrait:portrait,shade:shade,INK:INK};
+root.HPEOPLE={setLight:fn=>{ lightAt=fn; },getLight:()=>lightAt,person:person,dog:dog,treat:treat,portrait:portrait,shade:shade,INK:INK};
 })(typeof globalThis!=='undefined'?globalThis:this);
