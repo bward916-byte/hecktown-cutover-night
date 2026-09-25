@@ -135,6 +135,11 @@ section('everyone walks their own way');
   ok(worst<=30*0.985+0.05,'no one over-extends a leg on flats or stairs (worst '+worst.toFixed(2)+' over '+n+' steps)'); ok(seen.size>=GM.PEOPLE.length*0.9,'gaits differ ('+seen.size+' of '+GM.PEOPLE.length+')');
   const B=GM.PEOPLE.map(p=>HBODY.buildOf(p.look)); ok(B.some(b=>b.d>1.3)&&B.some(b=>b.d<1.02)&&B.filter(b=>b.belly>0).length>=5,'slight to heavy builds'); }
 
+section('people do things while they wait');
+{ const G=newGame(), had=new Set(), kinds=new Set(); for(let i=0;i<120*40;i++){ step2(G); for(const q of G.npcs) if(q.w.idle){ had.add(q.def.id); kinds.add(q.w.idle.name); } }
+  ok(had.size>=10,'people pick up habits near the player ('+had.size+')'); ok(kinds.size>=4,'several kinds ('+[...kinds].join(',')+')');
+  const pam=G.npcs.find(q=>q.def.id==='pam'); ok(!pam.w.idle||pam.w.idle.name==='type','Pam only types'); }
+
 section('map');
 ok(Object.keys(MAP.nodes).length>=11,'nodes'); ok(MAP.links.length===11,'links '+MAP.links.length);
 for(const L of MAP.links){ const s=L.world.s; for(let i=1;i<s.length;i++) ok(Math.abs(s[i].x0-s[i-1].x1)<1e-6,'contiguous '+L.id);
