@@ -73,9 +73,12 @@ function gags(G,dt){ const S=G.S, h=G.hero, N=G.cur.node, st=GM.STORY?GM.STORY.s
     G.gag.cool[id]=S.time+90; st.bub=st.bub.filter(b=>b.id!==id); st.bub.push({id:id,text:RUN_BARK[id],t:2.6}); break; }
   G.gag.peek-=dt; if(G.gag.peek<=0&&!S.done&&S.flags.started&&!st.ap&&!st.apq.length){ const m=MAP.props.find(p=>p.type==='aplus_wall'&&p.node===N.id&&Math.abs(p.x-h.x)<90);
     if(m){ G.gag.peek=45+Math.random()*40; GM.STORY.aplusSay(G,h.mode==='run'?'NO RUNNING IN MY HALLS.':PEEK[Math.floor(Math.random()*PEEK.length)],2.4); } else G.gag.peek=2; } }
+function runFx(G,dt){ const h=G.hero, N=G.cur.node; G.fx=G.fx||[]; if(N) for(const ev of G.events){ if(ev.type==='step'&&h.mode==='run'&&ev.speed>GM.CFG_WALK*1.1) for(let k=0;k<2;k++) G.fx.push({x:h.x-h.facing*(6+k*4),y:N.world.yAt(h.x)-1,vx:-h.facing*(20+Math.random()*30),vy:-8-Math.random()*14,a:0,r:2+Math.random()*2});
+    if(ev.type==='runstop') for(let k=0;k<6;k++) G.fx.push({x:h.x+h.facing*(k*3),y:N.world.yAt(h.x)-1,vx:h.facing*(30+Math.random()*40),vy:-10-Math.random()*20,a:0,r:2+Math.random()*3}); }
+  for(const f of G.fx){ f.x+=f.vx*dt; f.y+=f.vy*dt; f.vy+=20*dt; f.a+=dt*2.4; } G.fx=G.fx.filter(f=>f.a<1).slice(-80); }
 const upd2=GM.update; GM.update=function(G,ix,iy,dt){ gags(G,dt); gaits(G); G.hero.canRun=true; for(const q of G.npcs) q.w.canRun=!!q.crew;
   if(G.hero.mode==='run'&&(iy||G.dialog||G.card||G.board||G.drive)) E.endRun(G.hero,G.cur.world);        // stairs, talking and cutscenes start from a walk
-  upd2(G,ix,iy,dt); };
+  upd2(G,ix,iy,dt); runFx(G,dt); };
 const bObj=GM.objective, bClock=GM.clock;
 GM.objective=S=>S.pos.node==='show'?'The Buying Show. Everyone is here. Talk to people; the shuttle home is by the door.':bObj(S);
 GM.clock=S=>S.pos.node==='show'?'9:00 AM':bClock(S);
