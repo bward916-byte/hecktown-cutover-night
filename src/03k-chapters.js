@@ -16,13 +16,18 @@ const CLUES=[
   {cat:'EDI',v:800,q:'The transaction set that is a purchase order, and the thing Umesh and Fares argue about.',a:['What is an 850?','What is an 856?','What is a 997?'],ok:0,hint:'EDI & Integration, HQ 2nd floor.'},
   {cat:'OUR SYSTEMS',v:800,q:'The year A+ went live and shipped forty bags of chow on day one.',a:['What is 1991?','What is 1985?','What is 2008?'],ok:1,hint:'The wall monitors say it. So does A+.'},
   {cat:'THE CAT',v:1000,q:'One taco buys one bag of this from the alley cat by the taco truck.',a:['What is a laser pointer?','What is catnip?','What is a coupon?'],ok:1,hint:'Milo, on his dumpster by Tina\'s truck.'}];
-const HOST={x:1470,node:'hq_f2'};
+/* Studio B: the Employee Lot with a tent on it. A board, three podiums, risers full of coworkers, two cameras and an ON AIR sign. */
+const SX=80000, SLEN=990; { const world=E.makeWorld(E.surfaces(SX,0,[['flat',SLEN]])); const n={id:'studio',label:'Studio B · Trivia Night',layer:'front',world:world,studio:true,x0:SX}; world.node=n; MAP.nodes.studio=n; }
+const SEAT={player:SX+440,host:SX+655,aplus:SX+880,door:SX+50}, LOT_DOOR=-100;
+const HOST={x:SEAT.host,node:'studio'};
+const APLUS_PODIUM=['I HAVE A PODIUM NOW. IT HAS A LIGHT. THE LIGHT IS MINE.','MY SCORE SAYS 1985. THAT IS NOT A SCORE. THAT IS A WARNING.','THE AUDIENCE IS MY USERS. THEY KNOW WHO SHIPS THE ORDERS.','ASK ME ANYTHING. NOT ABOUT THE WEBSITE.'];
+function fx(G){ return G.studio||(G.studio={cheer:0,groan:0,right:-1,wrong:-1,quip:0}); }
 const ANGRY=['I HAVE A BUZZER. IT IS THE WHOLE BUILDING.','I KNOW THAT ONE. I KNOW ALL OF THEM. I HAVE THE RECORDS.','WHY DOES DAVE GET A PODIUM.','ASK ME ABOUT 1985. GO ON.'];
 
 function ch(S){ return S.chapter||'cutover'; }
 const baseFresh=GM.freshSave;
 GM.freshSave=function(id){ const s=baseFresh(); s.chapter=id||'cutover';
-  if(s.chapter==='trivia'){ s.flags.p38=5; s.pos={node:'ground',x:1150}; Object.assign(s.flags,{started:1,ch1:1,vig_hero:1,ch3:1,ch4:1,reveal:1,ap_so6:1}); s.trivia={i:0,right:0,wrong:0,final:0}; }
+  if(s.chapter==='trivia'){ s.flags.p38=5; s.pos={node:'studio',x:SX+130}; Object.assign(s.flags,{started:1,ch1:1,vig_hero:1,ch3:1,ch4:1,reveal:1,ap_so6:1}); s.trivia={i:0,right:0,wrong:0,final:0}; }
   return s; };
 
 /* ---------------- Trivia Night ---------------- */
@@ -31,8 +36,8 @@ function dave(G){ return G.npcs.find(q=>q.def.id==='dave'); }
 function hostTalk(G){ const S=G.S, t=T(S), d=dave(G), who={name:'Dave',role:'Host, at last',look:d.def.look};
   if(S.done){ G.dialog={who:who.name,role:who.role,look:who.look,pages:['Dave: "Champion. Nobody has ever said that about me on a Tuesday. Go home. Or take a lap, I know you."'],i:0}; return; }
   if(t.i>=CLUES.length){ finalJeopardy(G); return; }
-  if(!S.flags.tvIntro){ S.flags.tvIntro=1; G.cine.push({card:'TRIVIA NIGHT',sub:'War Room  ·  Dave hosts  ·  eight clues, then Final Jeopardy',dur:5,style:'comic',panels:[{i:'?',c:'Eight clues'},{i:'🏢',c:'Answers all over campus'},{i:'A+',c:'One very keen contestant'}]},
-      GM.dlg(who,['Dave: "Thirty-one years I waited for this. I have a podium. I have a buzzer. I have cards."','Dave: "Rules: I read a clue. You answer in the form of a question. If you don\'t know, go find out. The building knows."']),
+  if(!S.flags.tvIntro){ S.flags.tvIntro=1; G.cine.push({card:'TRIVIA NIGHT',sub:'Studio B  ·  the Employee Lot, with a tent on it  ·  eight clues, then Final Jeopardy',dur:5,style:'comic',panels:[{i:'?',c:'Eight clues'},{i:'🏢',c:'Answers out the stage door, all over campus'},{i:'A+',c:'One very keen contestant'}]},
+      GM.dlg(who,['Dave: "Thirty-one years I waited for this. I have a podium. I have a buzzer. I have cards."','Dave: "Rules: I read a clue. You answer in the form of a question. If you don\'t know, the stage door is behind you. The building knows."']),
       {fn:G=>askClue(G)}); return; }
   askClue(G); }
 function askClue(G){ const S=G.S, t=T(S), c=CLUES[t.i], d=dave(G);
@@ -54,8 +59,19 @@ function finalAnswer(G,id){ const S=G.S, t=T(S), d=dave(G), who={name:'Dave',rol
   G.cine.push(...lines,GM.dlg(who,['Dave: "Champion of Trivia Night. Somebody tell Alex. Somebody tell my mother."']),{fn:G=>{ G.events.push({type:'banner',text:'Trivia Night: champion',pts:GM.PTS_CLUE*2}); G.events.push({type:'sfx',name:'good'}); G.events.push({type:'save'}); G.events.push({type:'ending'}); }}); }
 
 const base={interact:GM.interact,advance:GM.advance,objective:GM.objective,create:GM.create};
-GM.create=function(save){ const G=base.create(save); if(ch(G.S)==='trivia'){ const d=dave(G); if(d&&G.S.pos.node!=='dc_taunton'){ d.node=MAP.nodes.hq_f2; d.w=E.createWalker(d.node.world,HOST.x); d.w.facing=d.w.dir=d.w.kneeF=-1; d.pose=E.poseOf(d.w); d.def.busy=true; d.def.habits=['shift']; } } return G; };
+GM.create=function(save){ const G=base.create(save); if(ch(G.S)==='trivia'){ const d=dave(G); if(d&&G.S.pos.node!=='dc_taunton'){ d.node=MAP.nodes[HOST.node]; d.w=E.createWalker(d.node.world,HOST.x); d.w.facing=d.w.dir=d.w.kneeF=-1; d.pose=E.poseOf(d.w); d.def.busy=true; d.def.habits=['shift']; } } return G; };
+function goStudio(G,toStudio){ const S=G.S, n=MAP.nodes[toStudio?'studio':'ground'], x=toStudio?SEAT.door+30:LOT_DOOR+30; G.cur={node:n,world:n.world}; G.hero=E.createWalker(n.world,x); G.hero.facing=G.hero.dir=G.hero.kneeF=1; G.pose=E.poseOf(G.hero); S.pos={node:n.id,x:x}; G.target=null; G.events.push({type:'sfx',name:'door'}); G.events.push({type:'snap'}); G.events.push({type:'save'});
+  if(toStudio&&!S.flags.studioSeen){ S.flags.studioSeen=1; G.events.push({type:'banner',text:'Studio B: the lot, with a tent on it'}); } }
+function studioTick(G,dt){ const S=G.S; if(ch(S)!=='trivia') return; const f=fx(G), t=T(S), N=G.cur.node, h=G.hero;
+  if(f.right>=0&&t.right>f.right) f.cheer=3.2; if(f.wrong>=0&&t.wrong>f.wrong) f.groan=2.6; f.right=t.right; f.wrong=t.wrong; if(S.done&&f.cheer<=0&&f.done!==1){ f.done=1; f.cheer=6; }
+  f.cheer=Math.max(0,f.cheer-dt); f.groan=Math.max(0,f.groan-dt); f.quip=Math.max(0,f.quip-dt);
+  if(G.dialog||!N||(G.cine&&G.cine.length)) return;
+  if(N.id==='studio'){ const dd=Math.abs(SEAT.door-h.x); if(dd<34&&!(G.target&&G.target.kind==='talk')) G.target={kind:'studio',label:'Step out',name:'the stage door, to the lot',x:SEAT.door,act:'out'};
+    const da=Math.abs(SEAT.aplus-h.x); if(da<34&&!(G.target&&G.target.kind==='talk')) G.target={kind:'studio',label:'Talk',name:'A+, contestant',x:SEAT.aplus,act:'aplus'}; }
+  else if(N.id==='ground'){ const d=Math.abs(LOT_DOOR-h.x); if(d<34&&!G.target) G.target={kind:'studio',label:'Enter',name:'Studio B',x:LOT_DOOR,act:'in'}; } }
+GM.update=(function(prev){ return function(G,ix,iy,dt){ prev(G,ix,iy,dt); studioTick(G,dt); }; })(GM.update);
 GM.interact=function(G){ const t=G.target, S=G.S;
+  if(ch(S)==='trivia'&&!G.dialog&&!G.card&&t&&t.kind==='studio'&&!(G.cine&&G.cine.length)){ if(t.act==='out') goStudio(G,false); else if(t.act==='in') goStudio(G,true); else { const f=fx(G), k=(S.flags.apq=(S.flags.apq||0)+1); G.dialog={who:'A+',role:'contestant  ·  score: 1985',look:null,pages:[APLUS_PODIUM[k%APLUS_PODIUM.length]],i:0}; f.quip=3; G.events.push({type:'sfx',name:'talk'}); } return; }
   if(ch(S)==='trivia'&&!G.dialog&&!G.card&&t&&t.kind==='talk'&&t.q&&t.q.def.id==='dave'&&!(G.cine&&G.cine.length)){ S.met.dave=1; hostTalk(G); return; }
   base.interact(G); };
 GM.advance=function(G,choice){ const d=G.dialog;
@@ -63,9 +79,9 @@ GM.advance=function(G,choice){ const d=G.dialog;
   base.advance(G,choice); };
 GM.objective=function(S){ if(ch(S)!=='trivia') return base.objective(S); const t=T(S);
   if(S.done) return 'Trivia Night champion. Keep exploring: '+GM.percent(S)+'% of Hecktown found.';
-  if(!S.flags.tvIntro) return 'Find Dave in the War Room (HQ 2nd floor). He is hosting Trivia Night.';
-  if(t.i>=CLUES.length) return 'That\'s the board. Final Jeopardy is waiting with Dave in the War Room.';
-  const c=CLUES[t.i]; return 'Clue '+(t.i+1)+' of 8, '+c.cat+' for '+c.v+': '+c.q+'  ('+c.hint+')'; };
-GM.PTS_CLUE=25; GM.CHAPTERS=CHAPTERS; GM.chapterOf=ch; GM.TRIVIA={CLUES:CLUES,T:T};
-GM.chapterEnding=function(S){ if(ch(S)==='trivia'){ const t=T(S); return {title:'Trivia Night champion',sub:'War Room  ·  '+t.right+' of 8 on the board  ·  '+t.wrong+' wrong along the way  ·  '+GM.clock(S),body:'Dave hosted. A+ played anyway. The building knew every answer, once you asked it. Somebody tell Alex.'}; } return null; };
+  if(!S.flags.tvIntro) return 'Walk up to Dave at the host podium. He is hosting Trivia Night from Studio B.';
+  if(t.i>=CLUES.length) return 'That\'s the board. Final Jeopardy is waiting with Dave at the host podium in Studio B.';
+  const c=CLUES[t.i]; return 'Clue '+(t.i+1)+' of 8, '+c.cat+' for '+c.v+': '+c.q+'  ('+c.hint+(S.pos.node==='studio'?'  ·  stage door is at the left end of the studio; the tent in the Employee Lot brings you back':'')+')'; };
+GM.PTS_CLUE=25; GM.CHAPTERS=CHAPTERS; GM.chapterOf=ch; GM.TRIVIA={CLUES:CLUES,T:T,SX:SX,SLEN:SLEN,SEAT:SEAT,LOT_DOOR:LOT_DOOR,fx:fx};
+GM.chapterEnding=function(S){ if(ch(S)==='trivia'){ const t=T(S); return {title:'Trivia Night champion',sub:'Studio B  ·  '+t.right+' of 8 on the board  ·  '+t.wrong+' wrong along the way  ·  '+GM.clock(S),body:'Dave hosted. A+ played anyway. The building knew every answer, once you asked it. Somebody tell Alex.'}; } return null; };
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -152,11 +152,14 @@ section('banter, pinball, Fares');
 
 section('Chapter 2: Trivia Night');
 { const G=GM.create(GM.freshSave('trivia')); GM.skipPrologue(G); G.events.length=0; const S=G.S, TV=GM.TRIVIA;
-  ok(S.chapter==='trivia'&&G.cur.node.id==='ground','a trivia save starts in Easton'); const d=G.npcs.find(q=>q.def.id==='dave'); ok(d.node.id==='hq_f2'&&Math.abs(d.w.x-1470)<2,'Dave hosts from the War Room');
+  ok(S.chapter==='trivia'&&G.cur.node.id==='studio','a trivia save starts in Studio B'); const d=G.npcs.find(q=>q.def.id==='dave'); ok(d.node.id==='studio'&&Math.abs(d.w.x-TV.SEAT.host)<2,'Dave hosts from the studio podium');
+  walkTo(G,TV.SEAT.door); ok(G.target&&G.target.kind==='studio'&&G.target.act==='out','the stage door is a target'); GM.interact(G); for(let i=0;i<10;i++) step(G,0,0); ok(G.cur.node.id==='ground'&&Math.abs(G.hero.x-TV.LOT_DOOR)<60,'the stage door opens onto the Employee Lot');
+  walkTo(G,TV.LOT_DOOR); ok(G.target&&G.target.kind==='studio'&&G.target.act==='in','the tent on the lot is a way back in'); GM.interact(G); for(let i=0;i<10;i++) step(G,0,0); ok(G.cur.node.id==='studio','back inside Studio B');
+  walkTo(G,TV.SEAT.aplus); ok(G.target&&G.target.act==='aplus','A+ has a podium'); GM.interact(G); ok(G.dialog&&G.dialog.who==='A+','and opinions'); closeDialog(G);
   ok(/Dave/.test(GM.objective(S)),'objective points at Dave'); talkTo(G,'dave'); skipCards(G); for(let i=0;i<60;i++) step(G,0,0); ok(S.flags.tvIntro,'the intro played');
   let tries=0; while(TV.T(S).i<TV.CLUES.length&&tries++<40){ if(!G.dialog){ walkTo(G,d.w.x+12); GM.interact(G); for(let i=0;i<30&&!G.dialog;i++) step(G,0,0); }
     if(G.dialog&&G.dialog.choices){ const c=TV.CLUES[TV.T(S).i]; if(tries===1){ GM.advance(G,(c.ok+1)%3); ok(TV.T(S).wrong===1,'a wrong answer is wrong'); closeDialog(G); continue; } GM.advance(G,c.ok); closeDialog(G); } else closeDialog(G); }
-  ok(TV.T(S).i===TV.CLUES.length&&TV.T(S).right===8,'eight right ('+TV.T(S).right+')');
+  ok(TV.T(S).i===TV.CLUES.length&&TV.T(S).right===8,'eight right ('+TV.T(S).right+')'); for(let i=0;i<5;i++) step(G,0,0); ok(TV.fx(G).right===8&&TV.fx(G).cheer>0,'the studio saw the scores and the audience is cheering');
   walkTo(G,d.w.x+12); GM.interact(G); for(let i=0;i<120*3&&!(G.dialog&&G.dialog.choices);i++){ step(G,0,0); if(G.dialog&&!G.dialog.choices) GM.advance(G,null); }
   ok(G.dialog&&G.dialog.choices&&G.dialog.choices.length===3,'Final Jeopardy'); GM.advance(G,1); for(let i=0;i<120*3;i++){ step(G,0,0); if(G.dialog) GM.advance(G,null); }
   ok(S.done&&TV.T(S).final,'champion'); ok(GM.chapterEnding(S)&&/champion/.test(GM.chapterEnding(S).title),'chapter ending text');
