@@ -96,7 +96,7 @@ const ITEMS=[
 ];
 const TERMS=[{id:'t_dock',node:'ground',x:2260,where:'Receiving Dock'},{id:'t_roof',node:'hq_roof',x:1840,where:'Roof Garden'},{id:'t_gate',node:'ground',x:1010,where:'Security Gate'}];
 
-const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg+PTS.duct+PTS.jeopardy+PTS.sku+PTS.portal+PTS.dc*9+PTS.future*2;
+const MAXPTS=MAP.rooms.length*PTS.room+PEOPLE.length*PTS.meet+PAGES.length*PTS.page+PTS.start+PTS.badge+SIGNOFFS.length*PTS.signoff+PTS.biscuit+PTS.key+PTS.finale+PTS.egg+PTS.duct+PTS.jeopardy+PTS.sku+PTS.portal+PTS.dc*9+PTS.future*2+200;   // +200: the Help Desk queue (03p-tickets: ten tickets and queue zero)
 const RANKS=[[0,'New Badge'],[12,'Ticket Closer'],[30,'On-Call'],[50,'Change Approver'],[72,'Cutover Lead'],[95,'Hecktown Legend']];
 
 function freshSave(){ return {v:1,flags:{},inv:{},met:{},rooms:{},pages:{},eggs:{},signoffs:{},terms:{},gates:{},points:0,time:0,done:false,pos:{node:'ground',x:1150}}; }

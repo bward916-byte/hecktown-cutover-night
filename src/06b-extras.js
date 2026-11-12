@@ -6,7 +6,7 @@ const H=window.__hecktown, EXT=H.EXT, GM=HGAME, MAP=HMAP, PP=HPEOPLE, D=HDRAW, E
 const $=id=>document.getElementById(id), clamp=(v,a,b)=>v<a?a:(v>b?b:v), esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const rr=(c,x,y,w,h,r)=>{ c.beginPath(); if(c.roundRect) c.roundRect(x,y,w,h,r); else c.rect(x,y,w,h); };
 const OPT_KEY='hecktown2.opts', BEST_KEY='hecktown2.best';
-let O={text:1,run:false,map:!matchMedia('(pointer:coarse)').matches}; try{ Object.assign(O,JSON.parse(localStorage.getItem(OPT_KEY)||'{}')); }catch(_){ }
+let O={text:1,run:false,guide:true,map:!matchMedia('(pointer:coarse)').matches}; try{ Object.assign(O,JSON.parse(localStorage.getItem(OPT_KEY)||'{}')); }catch(_){ }
 const saveOpts=()=>{ try{ localStorage.setItem(OPT_KEY,JSON.stringify(O)); }catch(_){ } };
 const st=document.createElement('style'); st.textContent=`
   #dialog,#hud,#toasts,.sheet{zoom:var(--ts,1);}
@@ -30,17 +30,18 @@ function renderOpts(){ const K=H.keys.get(), T=[['90%',0.9],['100%',1],['115%',1
   h+='<div class="row"><span>Text size</span>'+T.map(t=>'<button class="btn ghost'+(O.text===t[1]?' sel':'')+'" data-ts="'+t[1]+'">'+t[0]+'</button>').join('')+'</div>';
   h+='<div class="row"><span>Speedrun clock</span><button class="btn ghost'+(O.run?' sel':'')+'" id="oRun">'+(O.run?'Shown':'Hidden')+'</button></div>';
   h+='<div class="row"><span>Minimap</span><button class="btn ghost'+(O.map?' sel':'')+'" id="oMap">'+(O.map?'Shown':'Hidden')+'</button></div>';
+  h+='<div class="row"><span>Guide arrow</span><button class="btn ghost'+(O.guide?' sel':'')+'" id="oGuide">'+(O.guide?'Shown':'Hidden')+'</button></div>';
   let best=null; try{ best=JSON.parse(localStorage.getItem(BEST_KEY)||'null'); }catch(_){ } if(best) h+='<div class="sub">Best cutover run: '+GM.fmtRun(best)+'</div>';
   h+='<h3>Keys</h3><div class="keys">'+Object.keys(NAMES).map(a=>'<div class="row"><span>'+NAMES[a]+'</span><kbd>'+(rebind===a?'press a key…':esc(keyName(K[a][0])))+'</kbd><button class="btn ghost" data-rb="'+a+'">Change</button></div>').join('')+'</div>';
   h+='<div class="btns"><button class="btn ghost" id="oReset">Reset keys</button></div>'; $('oBody').innerHTML=h;
-  $('oClose').onclick=closeOpts; $('oRun').onclick=()=>{ O.run=!O.run; saveOpts(); renderOpts(); }; $('oMap').onclick=()=>{ O.map=!O.map; saveOpts(); renderOpts(); };
+  $('oClose').onclick=closeOpts; $('oRun').onclick=()=>{ O.run=!O.run; saveOpts(); renderOpts(); }; $('oMap').onclick=()=>{ O.map=!O.map; saveOpts(); renderOpts(); }; $('oGuide').onclick=()=>{ O.guide=!O.guide; saveOpts(); renderOpts(); };
   $('oReset').onclick=()=>{ H.keys.reset(); renderOpts(); };
   for(const b of document.querySelectorAll('#oBody [data-ts]')) b.onclick=()=>{ O.text=+b.dataset.ts; saveOpts(); applyText(); renderOpts(); };
   for(const b of document.querySelectorAll('#oBody [data-rb]')) b.onclick=()=>{ rebind=b.dataset.rb; renderOpts(); }; }
 function openOpts(){ if(H.state!=='play'&&H.state!=='title') return; prevState=H.state; H.setState('options'); renderOpts(); ov.classList.remove('hide'); }
 function closeOpts(){ rebind=null; ov.classList.add('hide'); H.setState(prevState); }
 $('bMap').onclick=()=>{ O.map=!O.map; saveOpts(); };
-H.openOptions=openOpts;
+H.openOptions=openOpts; H.opts=()=>O;
 
 /* ---------------- speedrun clock ---------------- */
 /* a short musical sting for each chapter card */
@@ -58,6 +59,7 @@ function minimap(c,V,G){ const N=G.cur.node; if(!N||N.era||N.dc||N.show||N.river
   const dot=(x,y,col,r)=>{ const [a,b]=P(x,y); c.fillStyle=col; c.beginPath(); c.arc(a,b-2,r||2.5,0,7); c.fill(); };
   if(S.flags.network) dot(GM.NET.TRUCK_E,0,'#9ad0f0',2); if(G.portalOpen) dot(GM.PORTAL_X,MAP.nodes.hq_b1.world.yAt(GM.PORTAL_X),'#c882ff',2.5);
   for(const q of G.npcs) if(q.crew&&q.node) dot(q.w.x,q.node.world.yAt(q.w.x),'#6fb0ff',2);
+  if(GM.TICKETS) for(const sp of GM.TICKETS.openSpots(S)){ const n=MAP.nodes[sp.node]; if(n) dot(sp.x,n.world.yAt(sp.x),'#ff7a59',2.4); }
   if(N) dot(G.hero.x,N.world.yAt(G.hero.x),'#f2b544',3.2);
   c.fillStyle='rgba(246,236,216,.6)'; c.font='600 9px "IBM Plex Sans",sans-serif'; c.textAlign='right'; c.textBaseline='alphabetic'; c.fillText('HECKTOWN ROAD',x0+w,y0+h+2); }
 

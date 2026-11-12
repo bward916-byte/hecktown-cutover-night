@@ -103,8 +103,8 @@ function bubbles(c,V,G){
 function aplusCard(c,V,G,now){
   const s=G.story; if(!s||!s.ap||G.card||V.quiet||(G.dialog&&G.dialog.who==='A+')) return; const a=s.ap, t=now/1000, alpha=clamp(Math.min(a.t/0.2,(a.dur+a.text.length/32-a.t)/0.5),0,1); if(alpha<=0) return;
   c.setTransform(V.DPR,0,0,V.DPR,0,0); c.globalAlpha=alpha; c.font='700 13px "IBM Plex Mono",monospace';
-  const maxW=Math.min(520,V.W-120), lines=wrap(c,'A+ > '+a.text,maxW), shown=a.typed+5; const fw=64, fh=50, h=Math.max(fh,16+lines.length*18), w=Math.min(maxW,Math.max(...lines.map(l=>c.measureText(l).width)))+28;
-  const x=(V.W-(w+fw+8))/2+fw+8, y=V.W<640?160:118;
+  const short=V.H<480&&V.W>640, maxW=short?Math.min(420,V.W*0.5-90):Math.min(520,V.W-120), lines=wrap(c,'A+ > '+a.text,maxW), shown=a.typed+5; const fw=64, fh=50, h=Math.max(fh,16+lines.length*18), w=Math.min(maxW,Math.max(...lines.map(l=>c.measureText(l).width)))+28;
+  const x=short?12+fw+8:(V.W-(w+fw+8))/2+fw+8, y=short?60:(V.W<640?160:150);
   face(c,x-fw-8,y+(h-fh)/2,fw,fh,ST.aplusMood(a.text),t,a.typed<a.text.length,1);
   c.fillStyle='rgba(6,14,8,.92)'; rr(c,x,y,w,h,4); c.fill(); c.strokeStyle='rgba(120,255,140,.55)'; c.lineWidth=1; rr(c,x,y,w,h,4); c.stroke();
   c.fillStyle='#7fe0a0'; c.textAlign='left'; c.textBaseline='middle'; let left=shown;

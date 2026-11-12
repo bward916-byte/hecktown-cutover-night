@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Headless tests: load the DOM-free modules, then let a bot walk the whole campus and finish the game. */
 const fs=require('fs'), path=require('path'), vm=require('vm');
-for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js','03k-chapters.js','03l-aivs.js','03m-loop.js','03n-pinball.js','03o-raft.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
+for(const f of ['01-walk-engine.js','01b-body.js','02-map.js','03-game.js','03b-prologue.js','03c-life.js','03d-story.js','03e-world.js','03f-network.js','03g-epilogue.js','03i-future.js','03k-chapters.js','03l-aivs.js','03m-loop.js','03n-pinball.js','03o-raft.js','03p-tickets.js','03q-guide.js']) vm.runInThisContext(fs.readFileSync(path.join(__dirname,'src',f),'utf8'),{filename:f});
 let _seed=+(process.env.SEED||1)*7919; Math.random=()=>{ _seed=(_seed*16807)%2147483647; return _seed/2147483647; };
 const E=WalkEngine, MAP=HMAP, GM=HGAME, DT=1/120;
 let fails=0; const ok=(c,m)=>{ if(!c){ fails++; console.log('  FAIL '+m); } };
@@ -222,6 +222,12 @@ section('every flight, both ways');
     t=0; while(G.cur.node!==L.lo.node&&t<30){ step(G,0,1); t+=DT; } ok(G.cur.node===L.lo.node,'descend '+L.id); }
   ok(goTo(G,'hq_roof',1200),'basement-to-roof run'); }
 
+section('the guide points at the next step');
+{ const s=GM.freshSave('cutover'); s.flags.p38=5; s.pos={node:'ground',x:1150}; const G=GM.create(s), GD=GM.GUIDE; for(let i=0;i<30;i++) step(G,0,0);
+  const sp=GD.spot(G), r=G.npcs.find(q=>q.def.id==='rianan'); ok(sp&&sp.node===r.node.id&&Math.abs(sp.x-r.w.x)<1,'first stop is Rianan'); const h=GD.hop(G); ok(h&&!h.here&&h.stairs===-1,'from the lobby that means stairs up');
+  ok(goTo(G,sp.node,sp.x-20),'walk there'); const h2=GD.hop(G); ok(h2&&h2.here,'on her floor the arrow points at her');
+  const t=GM.freshSave('trivia'); ok(GD.spot(GM.create(t))===null,'other chapters have no guide'); const d=GM.freshSave('cutover'); d.flags.p38=5; d.done=true; { const Gd=GM.create(d), sp2=GD.spot(Gd); ok(sp2&&sp2.name==='ledger page','after the cutover it points at what is still unfound'); for(let i=0;i<GM.PAGES.length;i++) d.pages[i]=1; for(const q of GM.PEOPLE) d.met[q.id]=1; for(const r of MAP.rooms) d.rooms[r.id]=1; ok(GD.spot(GM.create(d))===null,'and at nothing once everything is found'); } }
+
 section('locked doors and ducts hold');
 { const G=newGame(); goTo(G,'hq_f2',1600); walkTo(G,1870,8); ok(G.hero.x<1814,'exec door blocks without badge (x='+G.hero.x.toFixed(0)+')');
   goTo(G,'hq_b1',1300); walkTo(G,900,8); ok(G.hero.x>1100,'tunnel door blocks without key');
@@ -269,6 +275,24 @@ section('full playthrough');
   runNetwork(G);
   for(const r of MAP.rooms) if(!S.rooms[r.id]) ok(goTo(G,r.node,(r.x0+r.x1)/2),'visit '+r.name);
   if(!S.eggs.catnip){ walkTo(G,GM.LIFE.MILO.x+10); GM.interact(G); closeDialog(G); talkTo(G,'tina'); walkTo(G,GM.LIFE.MILO.x+10); GM.interact(G); GM.advance(G,0); closeDialog(G); walkTo(G,900); GM.command(G,'throw'); for(let i=0;i<240;i++) step(G,0,0); }
+  { // the Help Desk queue: every ticket, each kind, one deliberate miss and one wrong answer
+    const TK=GM.TICKETS, q=TK.tk(S); ok(TK.total===200,'queue is worth 200'); ok(q.open.length===3,'three tickets open at a time (got '+q.open.length+')');
+    for(const d of TK.LIST) for(const sp of [d,d.to].filter(Boolean)){ for(const it of GM.ITEMS) ok(!(it.node===sp.node&&Math.abs(it.x-sp.x)<26),d.id+' clear of item '+it.id); for(const t of GM.TERMS) ok(!(t.node===sp.node&&Math.abs(t.x-sp.x)<26),d.id+' clear of terminal'); GM.PAGES.forEach((pg,i)=>ok(!(pg[0]===sp.node&&Math.abs(pg[1]-sp.x)<26),d.id+' clear of page '+i)); ok(MAP.nodes[sp.node]&&sp.x>MAP.nodes[sp.node].world.hx0+6&&sp.x<MAP.nodes[sp.node].world.hx1-6,d.id+' is on its floor'); }
+    let guard=0, missed=false, wrong=false; const before=S.points;
+    while(GM.count(q.done)<TK.LIST.length&&guard++<40){ const sp=TK.openSpots(S)[0], d=sp.d; ok(goTo(G,sp.node,sp.x),'reach ticket '+d.id);
+      let tries=0; while(!(G.target&&G.target.kind==='ticket'&&G.target.d===d)&&tries++<6) walkTo(G,sp.x+(tries%2?5:-5));
+      ok(G.target&&G.target.kind==='ticket'&&G.target.d===d,'ticket '+d.id+' is usable (target '+(G.target&&G.target.kind+' '+G.target.name)+')'); GM.interact(G);
+      if(d.kind==='fix'){ ok(G.fix&&G.fix.id===d.id,'fixing '+d.id); const x0=G.hero.x; for(let i=0;i<60;i++) step(G,1,0); ok(Math.abs(G.hero.x-x0)<3,'hands are busy while fixing '+d.id+' moved '+(G.hero.x-x0).toFixed(1)+' fix '+!!G.fix+' mode '+G.hero.mode+' node '+(G.cur.node&&G.cur.node.id));
+        const inZ=()=>{ const z=TK.zone(G.fix), p=TK.needle(G.fix); return p>=z[0]&&p<=z[1]; };
+        if(!missed){ let n=0; while(inZ()&&n++<2000) step(G,0,0); GM.interact(G); ok(G.fix&&G.fix.tries===1&&!q.done[d.id],'a press outside the green is a miss'); missed=true; }
+        let n=0; while(!inZ()&&n++<2000) step(G,0,0); GM.interact(G); ok(q.done[d.id]&&!G.fix,'closed '+d.id); closeDialog(G); }
+      else if(d.kind==='ask'){ ok(G.dialog&&G.dialog.choices&&G.dialog.choices.length===3,'three fixes on offer');
+        if(!wrong){ GM.advance(G,(d.ok+1)%3); ok(!q.done[d.id]&&G.dialog,'the wrong fix does not close it'); closeDialog(G); wrong=true; GM.interact(G); }
+        GM.advance(G,d.ok); ok(q.done[d.id],'closed '+d.id); closeDialog(G); }
+      else{ ok(q.done[d.id]||q.carry===d.id,'carrying or installed: '+d.id); closeDialog(G); }
+      ok(q.open.length<=3,'never more than three open'); }
+    ok(GM.count(q.done)===TK.LIST.length&&!q.open.length&&!q.carry,'queue zero ('+GM.count(q.done)+' closed)'); ok(S.points-before===TK.total,'the queue paid '+(S.points-before));
+    const Gr=GM.create(JSON.parse(JSON.stringify(S))); ok(GM.count(TK.tk(Gr.S).done)===10,'closed tickets survive a save'); }
   ok(!GM.command(G,'dance')&&!GM.command(G,'clap')&&!GM.command(G,'roll'),'dancing, clapping and rolling belong to the cast');
   for(const r of MAP.rooms) ok(S.rooms[r.id],'room found: '+r.name);
   ok(S.points===GM.MAXPTS,'100% reachable: '+S.points+' / '+GM.MAXPTS); ok(GM.rank(S)==='Hecktown Legend','top rank');
